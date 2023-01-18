@@ -158,6 +158,7 @@ Definition equal_manger_v2
 
 (* conjecture these two equalities are the same *) 
 
+
 End Computation. 
 
 Section Theory.
@@ -942,7 +943,7 @@ Proof.
     congruence.
   +
     intros ? ? ? fassoc fcom fcong Ha Hb.
-    simpl in *|- *.
+    simpl in * |- *.
     case_eq ((in_set eqP X a));
     case_eq (eqP a x); 
     intros Hc Hd.
@@ -1191,7 +1192,7 @@ Proof.
     congruence.
   +
     intros ? ? ? fassoc fcom fcong Ha Hb.
-    simpl in *|- *.
+    simpl in * |- *.
     case_eq ((in_set eqP X a));
     case_eq (eqP a ax); 
     intros Hc Hd;

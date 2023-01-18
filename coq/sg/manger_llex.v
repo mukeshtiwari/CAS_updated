@@ -233,8 +233,10 @@ Section Theory.
   Defined. 
 
   Local Notation "x =S= y" := (eqSAP x y = true) (at level 70). 
-  Local Notation "[P1]" := (uop_manger_phase_1 eqA addP).  (* Phase 1 reduction *) 
-  Local Notation "[P2]" := (@uop_manger_phase_2 A P lteA). (* Phase 2 reduction *)
+  Local Notation "[P1]" := (uop_manger_phase_1 eqA addP)
+    (only parsing).  (* Phase 1 reduction *) 
+  Local Notation "[P2]" := (@uop_manger_phase_2 A P lteA)
+    (only parsing). (* Phase 2 reduction *)
 
   (* show [P1] is a reduction *)  
   Lemma P1_cong : uop_congruence _ eqSAP [P1].
@@ -308,11 +310,89 @@ Section Theory.
            + apply brel_trivial_transitive.
   Qed.
 
+
   (* Now, show that the two reductions commute! 
     **** I hope this is true! *****
-  *) 
+    Seems true but difficult. 
+  *)
+  
   Lemma P1_P2_commute : ∀ X, ([P2] ([P1] X)) =S= ([P1] ([P2] X)). 
+  Proof.
   Admitted.
+
+
+
+
+
+      
+        (*
+      Elim rule:
+        in_set eqAP
+    (uop_manger_phase_1 eqA addP X) (a, p) = true => 
+
+    p is the sum of second component in X whose first component in a. 
+
+    Intro rule 
+
+
+      X = [(a, b); (a, c)] 
+      
+      LHS: when we pass it through the fold_left we get [(a, addP b c)]
+      and running iterate_minset on [(a, addP b c)] return [(a, addP b c)], 
+      unchanged. 
+
+      RHS: we run iterate_minset on X and we get [(a, c)] and 
+      running fold_left on [(a, c)] returns [(a, c)].
+
+      so [(a, addP b c)] =S= [(a, c)], only if we don't 
+      compare the second component.
+    
+    
+    
+      Discuss this with Tim:
+      LHS:
+      We have Y = (fold_left (manger_merge_sets eqA addP) X nil).
+      Basically Y contains incomporable elements, so 
+      my claim is:
+      iterate_minset (manger_pre_order lteA) nil nil Y = Y. 
+    
+      RHS:
+      We have Y = snd (iterate_minset (manger_pre_order lteA) nil nil X).
+      Y contains again incomparable elements so 
+      my claim is 
+      fold_left (manger_merge_sets eqA addP) Y = Y
+
+      Challenge:
+      From LHS I get 
+        (fold_left (manger_merge_sets eqA addP) X nil)
+      From RHS I get 
+        snd (iterate_minset (manger_pre_order lteA) nil nil X)
+      So how can I show them they are:
+      (fold_left (manger_merge_sets eqA addP) X nil) 
+      =S=
+      (snd (iterate_minset (manger_pre_order lteA) nil nil X)). 
+
+      
+
+
+
+
+
+      I feel this is not quite true but this lemma:
+      List.map fst ((fold_left (manger_merge_sets eqA addP) X nil)) 
+      =S=
+      List.map fst (snd (iterate_minset (manger_pre_order lteA) nil nil X))
+
+
+
+
+
+    *)
+
+      
+    
+    
+    
 
   (* Given the above lemmas, we can now use the results of 
      cas/coq/uop/commutative_composition.v to 
@@ -351,7 +431,7 @@ Section Theory.
   Proof. unfold bSAP_not_selective.
          destruct ntot as [[a1 a2] [L R]]. simpl.
          split.
-         - admit. 
+         - admit.
          - admit. 
   Admitted.          
 
