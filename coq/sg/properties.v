@@ -19,11 +19,11 @@ Definition bop_associative (S : Type) (r : brel S) (b : binary_op S)
 (* Commutativity *) 
 
 
-Definition bop_commutative (S : Type) (r : brel S) (b : binary_op S) 
-    := ∀ s t : S, r (b s t) (b t s) = true. 
+Definition bop_commutative (S : Type) (eq : brel S) (b : binary_op S) 
+    := ∀ s t : S, eq (b s t) (b t s) = true. 
 
-Definition bop_not_commutative(S : Type) (r : brel S) (b : binary_op S) 
-    := { z : S * S & match z with (s, t) => r (b s t) (b t s) = false end }. 
+Definition bop_not_commutative(S : Type) (eq : brel S) (b : binary_op S) 
+    := {'(s, t) : S * S & eq (b s t) (b t s) = false}. 
 
 Definition bop_commutative_decidable  (S : Type) (r : brel S) (b : binary_op S) := 
     (bop_commutative S r b) + (bop_not_commutative S r b). 
@@ -35,10 +35,10 @@ Definition bop_commutative_decidable  (S : Type) (r : brel S) (b : binary_op S) 
 Definition bop_selective (S : Type) (r : brel S) (b : binary_op S) 
     := ∀ s t : S, (r (b s t) s = true) + (r (b s t) t = true).
 
-Definition bop_not_selective (S : Type) (r : brel S) (b : binary_op S) 
-(*    := {s : S & {t : S & prod (r (b s t) s = false) (r (b s t) t = false)}}. *) 
-    := { z : S * S & match z with (s, t) =>  (r (b s t) s = false)  * (r (b s t) t = false) end }. 
-
+Definition bop_not_selective (S : Type) (eq : brel S) (b : binary_op S) 
+(*    := {s : S & {t : S & prod (r (b s t) s = false) (r (b s t) t = false)}}. 
+    := { z : S * S & match z with (s, t) =>  (r (b s t) s = false)  * (r (b s t) t = false) end }. *) 
+    := { '(s, t) : S * S &  (eq (b s t) s = false)  * (eq (b s t) t = false) }. 
 
 Definition bop_selective_decidable  (S : Type) (r : brel S) (b : binary_op S) := 
     (bop_selective S r b) + (bop_not_selective S r b). 

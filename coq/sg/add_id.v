@@ -13,6 +13,7 @@ Require Import CAS.coq.eqv.sum.
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
 Require Import CAS.coq.sg.cast_up.
+Require Import CAS.coq.sg.classify. 
 
 Section Computation.
 
@@ -523,7 +524,7 @@ let symS := A_eqv_symmetric _ _ eqvS in
 ; A_sg_CS_selective     := bop_add_id_selective S rS c bS refS (A_sg_CS_selective _ _ _ sgS)
 |}.
 
-Definition A_sg_add_id : ∀ (S : Type) (c : cas_constant),  A_sg S -> A_sg (with_constant S) 
+Definition A_sg_add_id : ∀ {S : Type} (c : cas_constant),  A_sg S -> A_sg (with_constant S) 
 := λ S c sgS, 
   let bS := A_sg_bop S sgS in
   let rS := A_eqv_eq S (A_sg_eqv S sgS) in
@@ -611,14 +612,15 @@ End ACAS.
 
 Section AMCAS.
 
-Open Scope string_scope.
 
-Definition A_mcas_sg_add_id (S : Type) (c : cas_constant) (A : A_sg_mcas S) : A_sg_mcas (with_constant S) :=
-match A_sg_mcas_cast_up _ A with
-| A_MCAS_sg _ A'         => A_sg_classify _ (A_MCAS_sg _ (A_sg_add_id _ c A'))
-| A_MCAS_sg_Error _ sl1  => A_MCAS_sg_Error _ sl1
-| _                      => A_MCAS_sg_Error _ ("Internal Error : A_mcas_add_id" :: nil)
-end.
+  Definition A_sg_add_id_below_sg {S : Type} (c : cas_constant) (A : @A_below_sg S) : @A_below_sg (with_constant S) :=
+            A_classify_sg (A_sg_add_id c (A_cast_up_sg A)). 
+
+  Definition A_mcas_sg_add_id {S : Type} (c : cas_constant) (A : @A_sg_mcas S) : @A_sg_mcas (with_constant S) :=
+    match A with
+    | A_MCAS_sg B       => A_MCAS_sg (A_sg_add_id_below_sg c B)  
+    | A_MCAS_sg_Error sl => A_MCAS_sg_Error sl
+    end.
 
 End AMCAS.
 
@@ -838,14 +840,15 @@ End CAS.
 
 Section MCAS.
 
-Open Scope string_scope.
 
-Definition mcas_sg_add_id {S : Type} (c : cas_constant) (A : @sg_mcas S) : @sg_mcas (with_constant S) :=
-match sg_mcas_cast_up _ A with
-| MCAS_sg A'         => sg_classify _ (MCAS_sg (sg_add_id c A'))
-| MCAS_sg_Error sl1  => MCAS_sg_Error sl1
-| _                  => MCAS_sg_Error ("Internal Error : mcas_add_id" :: nil)
-end.
+  Definition sg_add_id_below_sg {S : Type} (c : cas_constant) (A : @below_sg S) : @below_sg (with_constant S) :=
+            classify_sg (sg_add_id c (cast_up_sg A)). 
+
+  Definition mcas_sg_add_id {S : Type} (c : cas_constant) (A : @sg_mcas S) : @sg_mcas (with_constant S) :=
+    match A with
+    | MCAS_sg B        => MCAS_sg (sg_add_id_below_sg c B)  
+    | MCAS_sg_Error sl => MCAS_sg_Error sl
+    end.
 
 End MCAS.
 
@@ -929,10 +932,9 @@ Proof. intros s refS [ [a p] | np ]; compute; reflexivity. Qed.
 
 
 Lemma correct_sg_certs_add_id : ∀ (s : S) (f : S -> S) (Pf : brel_not_trivial S r f) (P : sg_proofs S r b), 
-       sg_certs_add_id c s f (P2C_sg S r b P) 
+       sg_certs_add_id c s f (P2C_sg r b P) 
        = 
-       P2C_sg (with_constant S) 
-              (brel_sum brel_constant r) 
+       P2C_sg (brel_sum brel_constant r) 
               (bop_add_id b c) 
               (sg_proofs_add_id S r c b s f Pf Q P). 
 Proof. intros s f Pf P. 
@@ -948,10 +950,9 @@ Defined.
 
 
 Lemma correct_sg_C_certs_add_id : ∀ (s : S) (f : S -> S) (Pf : brel_not_trivial S r f) (P : sg_C_proofs S r b),
-       sg_C_certs_add_id c s f (P2C_sg_C S r b P) 
+       sg_C_certs_add_id c s f (P2C_sg_C r b P) 
        = 
-       P2C_sg_C (with_constant S) 
-                (brel_sum brel_constant r) 
+       P2C_sg_C (brel_sum brel_constant r) 
                 (bop_add_id b c) 
                 (sg_C_proofs_add_id S r c b s f Pf Q P). 
 Proof. intros s f Pf P. destruct P. destruct Q. 
@@ -963,10 +964,9 @@ Proof. intros s f Pf P. destruct P. destruct Q.
 Defined. 
 
 Lemma correct_sg_CI_certs_add_id : ∀ (s : S) (P : sg_CI_proofs S r b), 
-       sg_CI_certs_add_id c (P2C_sg_CI S r b P) 
+       sg_CI_certs_add_id c (P2C_sg_CI r b P) 
        = 
-       P2C_sg_CI (with_constant S) 
-                 (brel_sum brel_constant r) 
+       P2C_sg_CI (brel_sum brel_constant r) 
                  (bop_add_id b c) 
                  (sg_CI_proofs_add_id S r c b s Q P). 
 Proof. intros s P. destruct P. destruct Q. 
@@ -977,10 +977,9 @@ Proof. intros s P. destruct P. destruct Q.
 Defined. 
 
 Lemma correct_sg_CS_certs_add_id : ∀ (s : S) (P : sg_CS_proofs S r b),
-       sg_CS_certs_add_id c (P2C_sg_CS S r b P) 
+       sg_CS_certs_add_id c (P2C_sg_CS r b P) 
        = 
-       P2C_sg_CS (with_constant S) 
-                 (brel_sum brel_constant r) 
+       P2C_sg_CS (brel_sum brel_constant r) 
                  (bop_add_id b c) 
                  (sg_CS_proofs_add_id S r c b s Q P). 
 Proof. intros s P. destruct P. destruct Q. 
@@ -996,9 +995,9 @@ Section AddIdCorrect.
   Variable c : cas_constant. 
 
 Theorem correct_sg_add_id  : ∀ (sgS : A_sg S), 
-         sg_add_id c (A2C_sg S sgS) 
+         sg_add_id c (A2C_sg sgS) 
          = 
-         A2C_sg (with_constant S) (A_sg_add_id S c sgS). 
+         A2C_sg (A_sg_add_id c sgS). 
 Proof. intro sgS. 
        unfold sg_add_id, A2C_sg; simpl. 
        rewrite correct_eqv_add_constant. 
@@ -1007,16 +1006,36 @@ Proof. intro sgS.
        reflexivity. 
 Qed.
 
-Theorem correct_mcas_sg_add_id (sgS : A_sg_mcas S) : 
-         mcas_sg_add_id c (A2C_mcas_sg S sgS) 
+Theorem correct_sg_add_id_below_sg  (A : @A_below_sg S) : 
+  sg_add_id_below_sg c (A2C_below_sg A)
+  =
+ A2C_below_sg (A_sg_add_id_below_sg c A).
+Proof. unfold sg_add_id_below_sg, A_sg_add_id_below_sg.
+       (*
+       classify_sg (sg_add_id c (cast_up_sg (A2C_below_sg A)))
+       = {cast_up_sg_A2C_commute}
+       classify_sg (sg_add_id c (A2C_sg (A_cast_up_sg A)))              
+       = {correct_sg_add_id}
+       classify_sg (A2C_sg (A_sg_add_id c (A_cast_up_sg A)))              
+       = {correct_classify_sg} 
+       A2C_below_sg (A_classify_sg (A_sg_add_id c (A_cast_up_sg A)))
+        *) 
+       rewrite cast_up_sg_A2C_commute. 
+       rewrite correct_sg_add_id. 
+       rewrite correct_classify_sg. 
+       reflexivity.
+       
+Qed.
+
+
+Theorem correct_mcas_sg_add_id (sgS : @A_sg_mcas S) : 
+         mcas_sg_add_id c (A2C_sg_mcas sgS) 
          = 
-         A2C_mcas_sg (with_constant S) (A_mcas_sg_add_id S c sgS).
-Proof. unfold mcas_sg_add_id, A_mcas_sg_add_id. 
-       rewrite correct_sg_mcas_cast_up.       
-       destruct (A_sg_cas_up_is_error_or_sg S sgS) as [[l1 A] | [s1 A]]. 
-       + rewrite A; simpl. reflexivity. 
-       + rewrite A; simpl. rewrite correct_sg_add_id. 
-         apply correct_sg_classify_sg. 
+         A2C_sg_mcas (A_mcas_sg_add_id c sgS).
+Proof. unfold mcas_sg_add_id, A_mcas_sg_add_id.
+       destruct sgS; simpl; try reflexivity.
+       rewrite correct_sg_add_id_below_sg.
+       reflexivity. 
 Qed. 
 
 

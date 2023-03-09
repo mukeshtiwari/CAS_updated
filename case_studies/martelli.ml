@@ -263,15 +263,18 @@ let risk_groups_solve_adj_list adjl =
 
 let rg_w i j w = [Inr w] ;;
 
-(*       
+(*      {3}
     0 ------ 3
     |      /  |
     |     /   | 
-    |    /    |
+{1} |    /    | {2, 3} 
     |   /     |
     |  /      |	  
-    1 ------- 2
-*) 
+    1 <-------2
+       {1, 3}
+      -------> 
+        {2}
+ *) 
   
 
 let risk_groups_adj_1 = 

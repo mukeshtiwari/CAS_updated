@@ -41,7 +41,7 @@ Section Theory.
   Variable sym : brel_symmetric S eq.
   Variable trn : brel_transitive S eq.
 
-Lemma bops_union_union_left_distributive : bop_left_distributive (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq). 
+Lemma bops_union_union_left_distributive : A_bs_left_distributive(brel_set eq) (bop_union eq) (bop_union eq). 
 Proof. intros Z X Y.
        apply brel_set_intro_prop; auto. split.
        + intros s A.
@@ -68,8 +68,8 @@ Proof. intros Z X Y.
 Qed. 
 
 Lemma bops_union_union_right_distributive : 
-        bop_right_distributive (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq). 
-Proof. apply bop_left_distributive_implies_right; auto. 
+        A_bs_right_distributive (brel_set eq) (bop_union eq) (bop_union eq). 
+Proof. apply bs_left_distributive_implies_right; auto. 
        apply brel_set_transitive; auto. 
        apply bop_union_congruence; auto. 
        apply bop_union_commutative; auto. 
@@ -78,11 +78,11 @@ Proof. apply bop_left_distributive_implies_right; auto.
 Defined. 
 
 
-Lemma bops_union_union_not_left_left_absorptive : 
-  bops_not_left_left_absorptive (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq). 
+Lemma bops_union_union_not_left_absorptive : 
+  A_bs_not_left_absorptive (brel_set eq) (bop_union eq) (bop_union eq). 
 Proof. exists (nil, wS :: nil). compute. reflexivity. Defined. 
 
-(* strict absorption *)
+(* strict absorption 
 Lemma bops_union_union_not_left_strictly_absorptive : 
   bops_not_left_strictly_absorptive (finite_set S) 
     (brel_set eq) (bop_union eq) (bop_union eq). 
@@ -92,28 +92,20 @@ Lemma bops_union_union_not_right_strictly_absorptive :
   bops_not_right_strictly_absorptive (finite_set S) 
     (brel_set eq) (bop_union eq) (bop_union eq). 
 Proof. exists (nil, wS :: nil). compute. left. reflexivity. Defined.
+*)
 
 
 
 
-
-Lemma bops_union_union_not_left_right_absorptive : 
-  bops_not_left_right_absorptive (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq). 
+Lemma bops_union_union_not_right_absorptive : 
+  A_bs_not_right_absorptive (brel_set eq) (bop_union eq) (bop_union eq). 
 Proof. exists (nil, wS :: nil). compute. reflexivity. Defined.
-
-Lemma bops_union_union_not_right_left_absorptive : 
-  bops_not_right_left_absorptive (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq). 
-Proof. exists (nil, wS :: nil). compute. reflexivity. Defined. 
-
-Lemma bops_union_union_not_right_right_absorptive : 
-  bops_not_right_right_absorptive (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq). 
-Proof. exists (nil, wS :: nil). compute. reflexivity. Defined. 
 
 
 Lemma bops_union_union_id_equals_ann_decide (fin_d : carrier_is_finite_decidable S eq) :
-  exists_id_ann_decidable (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq). 
+  A_bs_exists_id_ann_decidable (brel_set eq) (bop_union eq) (bop_union eq). 
 Proof. destruct fin_d as [finP | nfinP].
-       + assert (A : bops_exists_id_ann_not_equal (finite_set S) (brel_set eq) (bop_union eq) (bop_union eq)).
+       + assert (A : A_bs_exists_id_ann_not_equal (brel_set eq) (bop_union eq) (bop_union eq)).
             exists (nil, (projT1 finP) tt). split. split. 
             apply bop_union_nil_is_id; auto. 
             apply bop_union_enum_is_ann; auto.
@@ -123,14 +115,16 @@ Proof. destruct fin_d as [finP | nfinP].
             apply brel_set_elim_prop in B;auto. destruct B as [B1 B2].
             assert (D := B2 _ C).
             compute in D. discriminate D.
-         exact (Id_Ann_Proof_Not_Equal _ _ _ _ A). 
-       + exact (Id_Ann_Proof_Id_None _ _ _ _
+         exact (A_Id_Ann_Not_Equal _ _ _ A). 
+       + exact (A_Id_Ann_Id_None _ _ _
                    (bop_union_exists_id S eq ref sym trn,
                     bop_union_not_exists_ann S eq ref sym trn nfinP)). 
 Defined.  
 
 End Theory.
 
+
+(*
 Section ACAS.
 
 
@@ -338,3 +332,4 @@ Qed.
  
 End Verify.   
 
+*) 

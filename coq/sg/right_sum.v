@@ -10,7 +10,8 @@ Require Import CAS.coq.eqv.sum.
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
-Require Import CAS.coq.sg.cast_up. 
+Require Import CAS.coq.sg.cast_up.
+Require Import CAS.coq.sg.classify. 
 Require Import CAS.coq.sg.theory.
 
 Section Computation.
@@ -485,18 +486,18 @@ End ACAS.
 
 Section AMCAS.
 
-Open Scope list_scope.
-Open Scope string_scope.
+  Definition A_sg_right_sum_below_sg {S T : Type} (A : @A_below_sg S)  (B : @A_below_sg T)  : @A_below_sg (S + T) :=
+    A_classify_sg (A_sg_right_sum _ _ (A_cast_up_sg A) (A_cast_up_sg B)).
 
   
-Definition A_mcas_sg_right_sum (S T : Type) (A : A_sg_mcas S)  (B : A_sg_mcas T)  : A_sg_mcas (S + T) :=
-match A_sg_mcas_cast_up _ A, A_sg_mcas_cast_up _ B with
-| A_MCAS_sg _ A', A_MCAS_sg _ B'               => A_sg_classify _ (A_MCAS_sg _ (A_sg_right_sum _ _ A' B'))
-| A_MCAS_sg_Error _ sl1, A_MCAS_sg_Error _ sl2 => A_MCAS_sg_Error _ (sl1 ++ sl2)
-| A_MCAS_sg_Error _ sl1, _                     => A_MCAS_sg_Error _ sl1
-| _,  A_MCAS_sg_Error _ sl2                    => A_MCAS_sg_Error _ sl2
-| _, _                                         => A_MCAS_sg_Error _ ("Internal Error : A_mcas_right_sum" :: nil)
-end.
+  Definition A_mcas_sg_right_sum {S T : Type} (A : @A_sg_mcas S)  (B : @A_sg_mcas T)  : @A_sg_mcas (S + T) :=
+    match A, B with
+    | A_MCAS_sg A', A_MCAS_sg B'               => A_MCAS_sg (A_sg_right_sum_below_sg A' B')
+    | A_MCAS_sg_Error sl1, A_MCAS_sg_Error sl2 => A_MCAS_sg_Error (sl1 ++ sl2)
+    | A_MCAS_sg_Error sl1, _                   => A_MCAS_sg_Error sl1
+    | _,  A_MCAS_sg_Error sl2                  => A_MCAS_sg_Error sl2
+    end.
+  
 
 End AMCAS.
 
@@ -682,20 +683,21 @@ End CAS.
 
 Section MCAS.
 
+  
 
-Open Scope list_scope.
-Open Scope string_scope.
-
+  Definition sg_right_sum_below_sg {S T : Type} (A : @below_sg S)  (B : @below_sg T)  : @below_sg (S + T) :=
+    classify_sg (sg_right_sum (cast_up_sg A) (cast_up_sg B)).
 
   
-Definition mcas_sg_right_sum {S T : Type} (A : @sg_mcas S)  (B : @sg_mcas T)  : @sg_mcas (S + T) :=
-match sg_mcas_cast_up _ A, sg_mcas_cast_up _ B with
-| MCAS_sg A', MCAS_sg B'               => sg_classify _ (MCAS_sg (sg_right_sum A' B'))
-| MCAS_sg_Error sl1, MCAS_sg_Error sl2 => MCAS_sg_Error (sl1 ++ sl2)
-| MCAS_sg_Error sl1, _                 => MCAS_sg_Error sl1
-| _,  MCAS_sg_Error sl2                => MCAS_sg_Error sl2
-| _, _                                 => MCAS_sg_Error ("Internal Error : mcas_right_sum" :: nil)
-end.
+  Definition mcas_sg_right_sum {S T : Type} (A : @sg_mcas S)  (B : @sg_mcas T)  : @sg_mcas (S + T) :=
+    match A, B with
+    | MCAS_sg A', MCAS_sg B'               => MCAS_sg (sg_right_sum_below_sg A' B')
+    | MCAS_sg_Error sl1, MCAS_sg_Error sl2 => MCAS_sg_Error (sl1 ++ sl2)
+    | MCAS_sg_Error sl1, _                 => MCAS_sg_Error sl1
+    | _,  MCAS_sg_Error sl2                => MCAS_sg_Error sl2
+    end.
+
+
 
 End MCAS.
 
@@ -804,11 +806,11 @@ Section ProofsCorrect.
 Lemma correct_sg_certs_right_sum : 
       ∀ (pS : sg_proofs S rS bS) (pT : sg_proofs T rT bT),
         
-      sg_certs_right_sum wS f wT g (P2C_sg S rS bS pS) (P2C_sg T rT bT pT) 
+      sg_certs_right_sum wS f wT g (P2C_sg rS bS pS) (P2C_sg rT bT pT) 
       = 
-      P2C_sg (S + T) (brel_sum rS rT) 
-                     (bop_right_sum bS bT) 
-                     (sg_proofs_right_sum S T rS rT bS bT wS f wT g Pf Pg eS eT pS pT). 
+        P2C_sg (brel_sum rS rT)
+               (bop_right_sum bS bT) 
+               (sg_proofs_right_sum S T rS rT bS bT wS f wT g Pf Pg eS eT pS pT). 
 Proof. intros pS pT. 
        unfold sg_proofs_right_sum, sg_certs_right_sum, P2C_sg; simpl. 
        rewrite <- correct_check_commutative_right_sum. 
@@ -820,9 +822,9 @@ Defined.
 
 Lemma correct_sg_C_certs_right_sum : ∀ (pS : sg_C_proofs S rS bS) (pT : sg_C_proofs T rT bT),
         
-      sg_C_certs_right_sum wS f wT g (P2C_sg_C S rS bS pS) (P2C_sg_C T rT bT pT) 
+      sg_C_certs_right_sum wS f wT g (P2C_sg_C rS bS pS) (P2C_sg_C rT bT pT) 
       = 
-      P2C_sg_C (S + T) (brel_sum rS rT) 
+      P2C_sg_C (brel_sum rS rT) 
                      (bop_right_sum bS bT) 
                      (sg_C_proofs_right_sum S T rS rT bS bT wS f wT g Pf Pg eS eT pS pT). 
 Proof. intros pS pT. 
@@ -834,9 +836,9 @@ Defined.
 
 Lemma correct_sg_CS_certs_right_sum : ∀ (pS : sg_CS_proofs S rS bS) (pT : sg_CS_proofs T rT bT),
         
-      sg_CS_certs_right_sum (P2C_sg_CS S rS bS pS) (P2C_sg_CS T rT bT pT) 
+      sg_CS_certs_right_sum (P2C_sg_CS  rS bS pS) (P2C_sg_CS rT bT pT) 
       = 
-      P2C_sg_CS (S + T) (brel_sum rS rT) 
+      P2C_sg_CS (brel_sum rS rT) 
                      (bop_right_sum bS bT) 
                      (sg_CS_proofs_right_sum S T rS rT bS bT wS wT eS eT pS pT). 
 Proof. intros pS pT. 
@@ -847,9 +849,9 @@ Defined.
 
 Lemma correct_sg_CI_certs_right_sum : ∀ (pS : sg_CI_proofs S rS bS) (pT : sg_CI_proofs T rT bT),
         
-      sg_CI_certs_right_sum (P2C_sg_CI S rS bS pS) (P2C_sg_CI T rT bT pT) 
+      sg_CI_certs_right_sum (P2C_sg_CI  rS bS pS) (P2C_sg_CI  rT bT pT) 
       = 
-      P2C_sg_CI (S + T) (brel_sum rS rT) 
+      P2C_sg_CI  (brel_sum rS rT) 
                      (bop_right_sum bS bT) 
                      (sg_CI_proofs_right_sum S T rS rT bS bT wS wT eS eT pS pT). 
 Proof. intros pS pT. 
@@ -864,9 +866,9 @@ End ProofsCorrect.
 
 Theorem correct_sg_right_sum : ∀ (S T : Type) (sgS : A_sg S) (sgT : A_sg T), 
       
-         sg_right_sum (A2C_sg S sgS) (A2C_sg T sgT) 
+         sg_right_sum (A2C_sg  sgS) (A2C_sg  sgT) 
          = 
-         A2C_sg (S + T) (A_sg_right_sum S T sgS sgT). 
+         A2C_sg (A_sg_right_sum _ _ sgS sgT). 
 Proof. intros S T sgS sgT. 
        unfold sg_right_sum, A2C_sg; simpl. 
        rewrite correct_eqv_sum.
@@ -876,21 +878,29 @@ Proof. intros S T sgS sgT.
        reflexivity. 
 Qed. 
 
-Theorem correct_mcas_sg_right_sum (S T : Type) (sgS : A_sg_mcas S) (sgT : A_sg_mcas T) : 
-         mcas_sg_right_sum (A2C_mcas_sg S sgS) (A2C_mcas_sg T sgT) 
-         = 
-         A2C_mcas_sg (S + T) (A_mcas_sg_right_sum S T sgS sgT). 
-Proof. unfold mcas_sg_right_sum, A_mcas_sg_right_sum. 
-       rewrite correct_sg_mcas_cast_up.
-       rewrite correct_sg_mcas_cast_up.       
-       destruct (A_sg_cas_up_is_error_or_sg S sgS) as [[l1 A] | [s1 A]];
-       destruct (A_sg_cas_up_is_error_or_sg T sgT) as [[l2 B] | [s2 B]].
-       + rewrite A, B. simpl. reflexivity. 
-       + rewrite A, B. simpl. reflexivity.
-       + rewrite A, B. simpl. reflexivity.
-       + rewrite A, B. simpl. rewrite correct_sg_right_sum.
-         apply correct_sg_classify_sg. 
+
+Theorem correct_sg_right_sum_below_sg (S T : Type) (A : @A_below_sg S) (B : @A_below_sg T) : 
+  sg_right_sum_below_sg (A2C_below_sg A) (A2C_below_sg B)
+  =
+  A2C_below_sg (A_sg_right_sum_below_sg A B). 
+Proof. unfold sg_right_sum_below_sg, A_sg_right_sum_below_sg.
+       rewrite cast_up_sg_A2C_commute.
+       rewrite cast_up_sg_A2C_commute.
+       rewrite correct_sg_right_sum. 
+       rewrite correct_classify_sg.
+       reflexivity. 
 Qed. 
+
+Theorem correct_mcas_sg_right_sum (S T : Type) (A : @A_sg_mcas S) (B : @A_sg_mcas T) : 
+         mcas_sg_right_sum (A2C_sg_mcas A) (A2C_sg_mcas B) 
+         = 
+         A2C_sg_mcas (A_mcas_sg_right_sum A B). 
+Proof. destruct A, B; unfold mcas_sg_right_sum, A_mcas_sg_right_sum,
+         A2C_sg_mcas; try reflexivity. 
+       rewrite correct_sg_right_sum_below_sg.
+       reflexivity. 
+Qed. 
+
 
 (*
 Theorem correct_sg_C_right_sum : ∀ (S T : Type) (sgS : A_sg_C S) (sgT : A_sg_C T), 

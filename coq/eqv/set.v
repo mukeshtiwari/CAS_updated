@@ -144,6 +144,18 @@ Proof. intros X Y H. unfold brel_set in H. unfold brel_and_sym in H.
 Defined. 
 
 
+Lemma brel_set_false_intro_prop : ∀ (X Y : finite_set S), 
+        {a : S & (in_set eq X a = true) * (in_set eq Y a = false)} 
+      + {a : S & (in_set eq Y a = true) * (in_set eq X a = false)}  
+             -> brel_set eq X Y = false. 
+Proof. intros X Y [ [a [A B]] | [a [A B]] ].
+       - case_eq(brel_set eq X Y); intro C; auto.
+         apply brel_set_elim_prop in C. destruct C as [C D].
+         rewrite (C _ A) in B. discriminate B.
+       - case_eq(brel_set eq X Y); intro C; auto.
+         apply brel_set_elim_prop in C. destruct C as [C D].
+         rewrite (D _ A) in B. discriminate B.          
+Defined. 
 
 Lemma brel_set_false_elim_prop : ∀ (X Y : finite_set S),
      brel_set eq X Y = false -> 
@@ -366,6 +378,10 @@ Definition eqv_proofs_set : ∀ (S : Type) (eq : brel S),
    ; A_eqv_symmetric   := brel_set_symmetric S eq
    |}. 
 
+Definition set_new {S : Type} (eq : brel S) (s : S) (l : finite_set S) :=
+  if brel_set eq nil l then (s :: nil) else nil.
+
+Definition set_witness {S : Type} (s : S) := s :: nil. 
 
 Definition A_eqv_set : ∀ (S : Type),  A_eqv S -> A_eqv (finite_set S)
 := λ S eqvS,
@@ -380,8 +396,8 @@ Definition A_eqv_set : ∀ (S : Type),  A_eqv S -> A_eqv (finite_set S)
    {| 
       A_eqv_eq     := brel_set eq 
     ; A_eqv_proofs := eqv_proofs_set S eq eqP 
-    ; A_eqv_witness := s :: nil 
-    ; A_eqv_new     := λ (l : finite_set S), if brel_set eq nil l then (s :: nil) else nil
+    ; A_eqv_witness := set_witness s 
+    ; A_eqv_new    := set_new eq s 
     ; A_eqv_not_trivial := brel_set_not_trivial S eq s 
     ; A_eqv_exactly_two_d := inr (brel_set_not_exactly_two S eq refS symS trnS s f nt)                              
     ; A_eqv_data   := λ d, DATA_set (List.map (A_eqv_data S eqvS) d)  
@@ -415,8 +431,8 @@ Definition eqv_set : ∀ {S : Type},  @eqv S -> @eqv (finite_set S)
      ; eqv_transitive     := @Assert_Transitive (finite_set S)
      ; eqv_symmetric      := @Assert_Symmetric (finite_set S)
      |}  
-    ; eqv_witness := s :: nil 
-    ; eqv_new     := λ (l : finite_set S), if brel_set eq nil l then (s :: nil) else nil
+    ; eqv_witness := set_witness s 
+    ; eqv_new     := set_new eq s 
     ; eqv_exactly_two_d := Certify_Not_Exactly_Two (not_ex2 (brel_set eq) nil (s :: nil)  ((f s):: nil))
     ; eqv_data    := λ d, DATA_set (List.map (eqv_data eqvS) d)  
     ; eqv_rep     := λ d, d  (* fix this? *)

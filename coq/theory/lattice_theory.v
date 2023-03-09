@@ -4,7 +4,6 @@ Require Import CAS.coq.po.properties.
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.bs.properties.
 
-
 Section LatticeTheory.  (* (S, join, meet) *) 
 
 Variable S : Type.
@@ -28,8 +27,8 @@ Variable m_ass : bop_associative S eqv meet.
 Variable m_com : bop_commutative S eqv meet.
 Variable m_idm : bop_idempotent S eqv meet.
 
-Variable abs      : bops_left_left_absorptive S eqv join meet.
-Variable abs_dual : bops_left_left_absorptive S eqv meet join. 
+Variable abs      : A_bs_left_absorptive eqv join meet.
+Variable abs_dual : A_bs_left_absorptive eqv meet join. 
 
 Notation "a == b"    := (eqv a b = true) (at level 30).
 Notation "a != b"    := (eqv a b = false) (at level 15).
@@ -190,7 +189,7 @@ Proof. intros [a P]. exists a. apply lattice_meet_annihilator_is_zero; auto. Def
 (*
   exists join id <-> join id = meet annihilator 
 *) 
-Lemma lattice_exists_join_id_implies_join_id_equals_meet_ann : bop_exists_id S eqv join -> bops_exists_id_ann_equal S eqv join meet.
+Lemma lattice_exists_join_id_implies_join_id_equals_meet_ann : bop_exists_id S eqv join -> A_bs_exists_id_ann_equal eqv join meet.
 Proof. intros [i P]. exists i. split. exact P. apply lattice_zero_is_meet_annihilator. exact P. Qed. 
 
 (*
@@ -202,7 +201,7 @@ Qed.
 (*
   exists meet id <-> meet id = join annihilator 
 *) 
-Lemma lattice_exists_meet_id_implies_meet_id_equals_join_ann : bop_exists_id S eqv meet -> bops_exists_id_ann_equal S eqv meet join.
+Lemma lattice_exists_meet_id_implies_meet_id_equals_join_ann : bop_exists_id S eqv meet -> A_bs_exists_id_ann_equal eqv meet join.
 Proof. intros [i P]. exists i. split. exact P. apply lattice_one_is_join_annihilator. exact P. Qed. 
 
 (*
@@ -231,7 +230,7 @@ Qed.
   
 (* distributive  <-> distributive dual *)
 
-Lemma lattice_distributive_implies_distributive_dual : bop_left_distributive S eqv join meet -> bop_left_distributive S eqv meet join. 
+Lemma lattice_distributive_implies_distributive_dual : A_bs_left_distributive eqv join meet -> A_bs_left_distributive eqv meet join. 
 Proof. intros D a b c. apply sym.
        assert (F0 := D (a (j) b) a c).
        assert (F1 := abs_dual a b).
@@ -256,7 +255,7 @@ Proof. intros D a b c. apply sym.
 Qed.
 
 
-Lemma lattice_distributive_dual_implies_distributive : bop_left_distributive S eqv meet join -> bop_left_distributive S eqv join meet. 
+Lemma lattice_distributive_dual_implies_distributive : A_bs_left_distributive eqv meet join -> A_bs_left_distributive eqv join meet. 
 Proof. intros D a b c. apply sym.
        assert (F0 := D (a (m) b) a c).
        assert (F1 := abs a b).
@@ -289,7 +288,7 @@ a == a (m) 1
   == (a (m) 1) (j)  (a (m) b)
   == a (j) (a (m) b)
  *)
-Lemma lattice_fact : bops_exists_id_ann_equal S eqv meet join -> bop_left_distributive S eqv join meet -> bops_left_left_absorptive S eqv join meet.
+Lemma lattice_fact : A_bs_exists_id_ann_equal eqv meet join -> A_bs_left_distributive eqv join meet -> A_bs_left_absorptive eqv join meet.
 Proof. intros [i [P Q]] D a b.
        destruct (P a) as [_ R]. apply sym in R.
        destruct (Q b) as [U _]. apply sym in U.
@@ -300,7 +299,7 @@ Proof. intros [i [P Q]] D a b.
        exact C.
 Qed.        
 
-Lemma lattice_fact_dual : bops_exists_id_ann_equal S eqv join meet -> bop_left_distributive S eqv meet join -> bops_left_left_absorptive S eqv meet join.
+Lemma lattice_fact_dual : A_bs_exists_id_ann_equal eqv join meet -> A_bs_left_distributive eqv meet join -> A_bs_left_absorptive eqv meet join.
 Proof. intros [i [P Q]] D a b.
        destruct (P a) as [L R]. apply sym in R.
        destruct (Q b) as [U V]. apply sym in U.

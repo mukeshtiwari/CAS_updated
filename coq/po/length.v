@@ -104,32 +104,31 @@ End Theory.
 
 Section ACAS.
   
-Definition wo_proofs_length (S : Type) (eq : brel S) (wS : S) (f : S → S) (nt : brel_not_trivial S eq f) : 
-    wo_proofs (list S) (brel_list eq) brel_length := 
+Definition fo_proofs_length (S : Type) (eq : brel S) (wS : S) (f : S → S) (nt : brel_not_trivial S eq f) : 
+    fo_proofs (list S) (brel_list eq) brel_length := 
 {|
-  A_wo_congruence    := brel_length_congruence S eq wS 
-; A_wo_reflexive     := brel_length_reflexive S 
-; A_wo_transitive    := brel_length_transitive S eq wS
-; A_wo_not_antisymmetric := brel_length_not_antisymmetric S eq wS f nt
-; A_wo_total         := brel_length_total S
-; A_wo_trivial_d      := inr (brel_length_not_trivial S wS)
+  A_fo_congruence      := brel_length_congruence S eq wS 
+; A_fo_reflexive       := brel_length_reflexive S 
+; A_fo_transitive      := brel_length_transitive S eq wS
+; A_fo_antisymmetric_d := inr (brel_length_not_antisymmetric S eq wS f nt)
+; A_fo_total           := brel_length_total S
+; A_fo_trivial_d       := inr (brel_length_not_trivial S wS)
 |}. 
 
 
-
-Definition A_order_length (S : Type): A_eqv S -> A_wo_with_bottom (list S)
+Definition A_fo_length (S : Type): A_eqv S -> A_fo_with_bottom (list S)
 := λ eqv,
   let wS := A_eqv_witness S eqv in
   let f  := A_eqv_new S eqv in
   let nt := A_eqv_not_trivial S eqv in      
   let eq := A_eqv_eq S eqv in
   {| 
-     A_wo_wb_eqv            := A_eqv_list S eqv 
-   ; A_wo_wb_lte            := brel_length
-   ; A_wo_wb_not_exists_top := brel_length_not_exists_qo_top S eq wS
-   ; A_wo_wb_exists_bottom   := brel_length_exists_qo_bottom S eq                                  
-   ; A_wo_wb_proofs          := wo_proofs_length S eq wS f nt
-   ; A_wo_wb_ast             := Ast_or_length (A_eqv_ast S eqv)
+     A_fo_with_bottom_eqv            := A_eqv_list S eqv 
+   ; A_fo_with_bottom_lte            := brel_length
+   ; A_fo_with_bottom_exists_top_d   := inr (brel_length_not_exists_qo_top S eq wS)
+   ; A_fo_with_bottom_exists_bottom  := brel_length_exists_qo_bottom S eq                                  
+   ; A_fo_with_bottom_proofs         := fo_proofs_length S eq wS f nt
+   ; A_fo_with_bottom_ast            := Ast_or_length (A_eqv_ast S eqv)
    |}. 
 
 End ACAS.
@@ -170,7 +169,7 @@ Section Verify.
 
 
   
-Lemma correct_wo_certs_length (S : Type) (eq : brel S) (wS : S) (f : S -> S) (nt : brel_not_trivial S eq f): 
+Lemma correct_fo_certs_length (S : Type) (eq : brel S) (wS : S) (f : S -> S) (nt : brel_not_trivial S eq f): 
        wo_certs_length wS f 
        = 
        P2C_wo (list S) (brel_list eq) brel_length (wo_proofs_length S eq wS f nt).
@@ -178,9 +177,9 @@ Proof. compute. reflexivity. Qed.
 
 
 Theorem correct_sg_length (S : Type) (E : A_eqv S):  
-         wo_length (A2C_eqv S E)  = A2C_wo (list S) (A_wo_length S E). 
-Proof. unfold wo_length, A_wo_length, A2C_wo; simpl. 
-       rewrite <- correct_wo_certs_length. reflexivity.        
+         wo_length (A2C_eqv S E)  = A2C_wo (list S) (A_fo_length S E). 
+Proof. unfold wo_length, A_fo_length, A2C_wo; simpl. 
+       rewrite <- correct_fo_certs_length. reflexivity.        
 Qed. 
 
 

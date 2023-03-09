@@ -71,19 +71,19 @@ Require Import CAS.coq.bs.union_union.
 Require Import CAS.coq.bs.left.
 Require Import CAS.coq.bs.right.
 Require Import CAS.coq.bs.union_lift. 
-Require Import CAS.coq.bs.cast_up.
+Require Import CAS.coq.bs.cast.
 Require Import CAS.coq.bs.minset_union_lift.
 Require Import CAS.coq.bs.minset_lift_union.
 (* Require Import CAS.coq.bs.dual.*)
 Require Import CAS.coq.os.from_bs_left.
 Require Import CAS.coq.os.from_sg.
 Require Import CAS.coq.os.trivial. 
-Require Import CAS.coq.st.cast_up.
+(*Require Import CAS.coq.st.cast_up.
 Require Import CAS.coq.st.left.min_plus_one.
 Require Import CAS.coq.st.left.llex_product.
 Require Import CAS.coq.st.left.union_insert. 
 Require Import CAS.coq.st.left.add_zero.
-Require Import CAS.coq.st.left.plus_times.
+Require Import CAS.coq.st.left.plus_times.*) 
 Require Import CAS.coq.algorithms.wrapper. 
 (* from coq/tr/left*)
 Require Import CAS.coq.tr.left.add_ann.
@@ -178,8 +178,8 @@ Extraction "Cas.ml"
    mcas_eqv_sum
    mcas_eqv_minset
    (* semigroups *) 
-   mcas_sg_and
-   mcas_sg_or
+   mcas_and
+   mcas_or
    mcas_sg_min
    mcas_sg_max   
    mcas_sg_plus
@@ -199,24 +199,24 @@ Extraction "Cas.ml"
    mcas_sg_intersect
    mcas_sg_intersect_with_id    
    mcas_sg_minset_union
-    mcas_minset_lift
-   (* orders *)
+   (*mcas_minset_lift *)
+   (* orders 
    mcas_or_add_top
    mcas_or_add_bottom
    mcas_or_product
    mcas_or_left_lex
    mcas_or_trivial 
-   mcas_left_order_from_sg
+   mcas_left_order_from_sg*)
    (* mcas_right_order_from_sg *) 
    (* b-semigroups *)    
-   bs_mcas_cast_up  (* used in ocaml/Describe.ml *)
+   cast_up_bs  (* used in ocaml/Describe.ml *)
    mcas_bs_and_or
    mcas_bs_or_and     
-   mcas_min_plus
-   mcas_max_plus
+   mcas_bs_min_plus
+   mcas_bs_max_plus
    mcas_plus_times
-   mcas_max_min
-   mcas_min_max      
+   mcas_bs_max_min
+   mcas_bs_min_max      
    mcas_bs_product
    mcas_bs_llex_product   
    mcas_bs_add_zero
@@ -226,10 +226,10 @@ Extraction "Cas.ml"
    mcas_bs_union_intersect_with_one
    mcas_bs_intersect_union 
    mcas_bs_intersect_union_with_zero
-   mcas_bs_union_union 
+   (*mcas_bs_union_union *) 
    mcas_bs_left
    mcas_bs_right
-   mcas_minset_union_lift
+   (* mcas_minset_union_lift*) 
    (* mcas_minset_lift_union TGG: fix this! *) 
 (*
    mcas_left_sum_right_sum
@@ -238,13 +238,14 @@ Extraction "Cas.ml"
  *)
    (* transform tr/left *)
    mcas_ltr_add_ann
-   (* order semirgroups *)
+   (* order semirgroups 
    mcas_os_from_bs_left
    mcas_os_from_sg_right
    mcas_os_from_sg_trivial
+*)
    (*
    semigroup transforms 
-    *)
+
    cast_slt_mcas_to_slt  (* used in ocaml/Describe.ml *)
    mcas_slt_min_plus_one
    mcas_slt_llex_product
@@ -252,9 +253,10 @@ Extraction "Cas.ml"
    mcas_slt_llex_product
    mcas_slt_add_zero
    mcas_slt_plus_times
-   bs_instantiate_matrix_exp_square_matrix 
+    *)
+   
    (* algorithms *)
-   bs_instantiate_matrix_exp_square_matrix.    
+   path_algebra_matrix_solver. 
    (* semigroup left transform *)
 
 

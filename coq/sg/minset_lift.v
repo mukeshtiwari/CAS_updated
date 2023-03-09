@@ -20,6 +20,8 @@ Require Import CAS.coq.sg.structures.
 Require Import CAS.coq.sg.theory. 
 Require Import CAS.coq.sg.lift.
 Require Import CAS.coq.sg.reduce.
+Require Import CAS.coq.sg.classify.
+Require Import CAS.coq.sg.cast_up. 
 
 Require Import CAS.coq.os.properties.
 Require Import CAS.coq.os.structures.
@@ -99,75 +101,109 @@ Definition below_pseudo_transitive_left := below_pseudo_transitive_left S lteS l
 Definition below_pseudo_transitive_right := below_pseudo_transitive_right S lteS lteTrans.
 Definition uop_minset_is_antichain := uop_minset_is_antichain S rS refS symS lteS lteCong lteRefl. 
 
-(*
- *)
+Lemma uop_minset_equational_idempotence (X Y : finite_set S): 
+  ([ms] ([ms] X)) [=S] ([ms] ([ms] Y)) -> ([ms] X) [=S] ([ms] Y). 
+Proof. intro A.
+       assert (B := minset_idempotent X). 
+       assert (C := minset_idempotent Y).
+       apply set_symmetric in B. 
+       assert (D := set_transitive _ _ _ B A). 
+       exact (set_transitive _ _ _ D C).        
+Qed. 
+
+Lemma simplify_minset_lift_minset_eq (X Y Z : finite_set S) :
+    ((X <^> Y) [=MS] Z) -> ([ms] (X [^] Y)) [=S] ([ms] Z).
+Proof. intro H.
+       unfold brel_minset in H.
+       unfold brel_reduce in H.
+       apply brel_set_elim_prop in H; auto.
+       destruct H as [L R].
+       apply brel_set_intro_prop; auto. split.
+       - intros s A.
+         assert (B : s [in] ([ms] (X <^> Y))).
+         {
+           unfold bop_minset_lift.
+           unfold bop_reduce.
+           assert (C := uop_minset_idempotent (X [^] Y)).
+           rewrite (in_set_left_congruence S rS symS tranS s _ _ C).
+           exact A. 
+         }
+         exact (L _ B). 
+       - intros s A.
+         assert (B := R _ A).
+         apply in_minset_elim in B; auto.
+         destruct B as [B _].
+         exact B. 
+Qed. 
+
 
 
 
 
 Lemma minset_lift_right_inclusion_1
-      (LM : os_left_monotone lteS bS) 
       (RM : os_right_monotone lteS bS) 
       (DDD : (brel_antisymmetric S rS lteS) +
                ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS)))
-      (X Y : finite_set S) (a : S) (H : a [in] ([ms] (X [^] Y))) : 
-     a [in] ([ms] (([ms] X) [^] Y)).
+      (X Y : finite_set S)
+      (a : S)
+      (H : a [in] ([ms] (X [^] Y))) :  a [in] ([ms] (([ms] X) [^] Y)).
 Proof. apply in_minset_elim in H; auto. destruct H as [H1 H2].
         apply in_set_bop_lift_elim in H1; auto.
         destruct H1 as [x [y [[H3 H4] H5]]]. 
         apply in_minset_intro; auto. split.
-           apply symS in H5. 
-           rewrite (in_set_right_congruence S rS symS tranS (bS x y) a (([ms] X) [^] Y) H5);auto.
-           case_eq(in_set rS ([ms] X) x); intro H6.
-              apply in_set_bop_lift_intro; auto. 
-              assert (B := H6). 
-              apply in_set_minset_false_elim in B; auto.
-              destruct B as [s [H7 H8]]. apply below_elim in H8.  destruct H8 as [H8 H9].
-              assert (R := RM y _ _ H8).
-              case_eq (lteS (bS x y) (bS s y)) ; intro H10. assert (H7' := H7). 
-                 apply in_minset_elim in H7; auto. 
-                 destruct H7 as [H7 H7'']. 
-                 assert (H : (bS s y) [in] (X [^] Y)). apply in_set_bop_lift_intro; auto. 
-                 assert (H11 := H2 _ H). 
-                 apply symS in H5.
-                 rewrite(below_congruence _ _ _ lteCong _ _ _ _ H5 (refS (bS s y))) in H11.
-                 apply below_false_elim in H11. 
-                 destruct H11 as [H11 | H11].
-                    rewrite H11 in R. discriminate R.
-                    destruct DDD as [AntiSym | [_ RSM]] .
-                       (* AntiSym *) 
-                       assert (G := AntiSym _ _ R H10).
-                       rewrite (in_set_right_congruence S rS symS tranS _  _ (([ms] X) [^] Y) G); auto. 
-                       apply in_set_bop_lift_intro; auto.
-                       (* RSM *) 
-                     destruct (RSM y  _  _ H8 H9) as [H12 H13].
-                     rewrite H13 in H10. discriminate H10. 
-
-                 assert (H11 : bS s y [in] (X [^] Y)).
+        - apply symS in H5. 
+          rewrite (in_set_right_congruence S rS symS tranS (bS x y) a (([ms] X) [^] Y) H5);auto.
+          case_eq(in_set rS ([ms] X) x); intro H6.
+          + apply in_set_bop_lift_intro; auto. 
+          + assert (B := H6). 
+            apply in_set_minset_false_elim in B; auto.
+            destruct B as [s [H7 H8]]. apply below_elim in H8.  destruct H8 as [H8 H9].
+            assert (R := RM y _ _ H8).
+            case_eq (lteS (bS x y) (bS s y)) ; intro H10.
+            * assert (H7' := H7). 
+              apply in_minset_elim in H7; auto. 
+              destruct H7 as [H7 H7'']. 
+              assert (H : (bS s y) [in] (X [^] Y)). apply in_set_bop_lift_intro; auto. 
+              assert (H11 := H2 _ H). 
+              apply symS in H5.
+              rewrite(below_congruence _ _ _ lteCong _ _ _ _ H5 (refS (bS s y))) in H11.
+              apply below_false_elim in H11. 
+              destruct H11 as [H11 | H11].
+              -- rewrite H11 in R. discriminate R.
+              -- destruct DDD as [AntiSym | [_ RSM]] .
+                 (* AntiSym *) 
+                 ++ assert (G := AntiSym _ _ R H10).
+                    rewrite (in_set_right_congruence S rS symS tranS _  _ (([ms] X) [^] Y) G); auto. 
                     apply in_set_bop_lift_intro; auto.
-                    apply in_minset_elim in H7; auto.                     
-                    destruct H7 as [H7 _]; auto. 
-                 assert (Q := H2 (bS s y) H11). apply below_false_elim in Q.   destruct Q as [H12 | H12]. 
-                    apply symS in H5. rewrite (lteCong _ _ _ _ (refS (bS s y)) H5) in H12.
-                    rewrite H12 in R. discriminate R. 
-                    apply symS in H5. rewrite (lteCong _ _ _ _ H5 (refS (bS s y))) in H12.
-                    rewrite H12 in H10. discriminate H10.                    
-
-           intros s H6.  apply H2. 
-           apply in_set_bop_lift_elim in H6; auto.
-           destruct H6 as [x' [y' [[H7 H8] H9]]].
-           apply symS in H9. 
-           rewrite (in_set_right_congruence S rS symS tranS (bS x' y') s (X [^] Y) H9);auto. 
-           apply in_set_bop_lift_intro; auto.
-           apply in_minset_elim in H7; auto. destruct H7 as [H7 _]; auto. 
+                 (* RSM *) 
+                 ++ destruct (RSM y  _  _ H8 H9) as [H12 H13].
+                    rewrite H13 in H10. discriminate H10. 
+            * assert (H11 : bS s y [in] (X [^] Y)).
+              apply in_set_bop_lift_intro; auto.
+              apply in_minset_elim in H7; auto.                     
+              destruct H7 as [H7 _]; auto. 
+              assert (Q := H2 (bS s y) H11). apply below_false_elim in Q.
+              destruct Q as [H12 | H12]. 
+              -- apply symS in H5. rewrite (lteCong _ _ _ _ (refS (bS s y)) H5) in H12.
+                 rewrite H12 in R. discriminate R. 
+              -- apply symS in H5. rewrite (lteCong _ _ _ _ H5 (refS (bS s y))) in H12.
+                 rewrite H12 in H10. discriminate H10.                    
+           - intros s H6.  apply H2. 
+             apply in_set_bop_lift_elim in H6; auto.
+             destruct H6 as [x' [y' [[H7 H8] H9]]].
+             apply symS in H9. 
+             rewrite (in_set_right_congruence S rS symS tranS (bS x' y') s (X [^] Y) H9);auto. 
+             apply in_set_bop_lift_intro; auto.
+             apply in_minset_elim in H7; auto. destruct H7 as [H7 _]; auto. 
 Qed.            
 
 
 (* nb : this did not use strictness or antisym *) 
 Lemma minset_lift_right_inclusion_2
       (RM : os_right_monotone lteS bS) 
-      (X Y : finite_set S) (a : S) (H : a [in] ([ms] (([ms] X) [^] Y))) : 
-  a [in] ([ms] (X [^] Y)).
+      (X Y : finite_set S)
+      (a : S)
+      (H : a [in] ([ms] (([ms] X) [^] Y))) : a [in] ([ms] (X [^] Y)).
 Proof. apply in_minset_elim in H; auto. destruct H as [H1 H2].
         apply in_set_bop_lift_elim in H1; auto.
         destruct H1 as [x [y [[H3 H4] H5]]]. 
@@ -205,7 +241,6 @@ Proof. apply in_minset_elim in H; auto. destruct H as [H1 H2].
 Qed.
 
   Lemma lift_left_minset_invariant
-    (LM : os_left_monotone lteS bS) 
     (RM : os_right_monotone lteS bS) 
     (DDD : (brel_antisymmetric S rS lteS) +
              ((os_left_strictly_monotone lteS bS)
@@ -228,8 +263,9 @@ Lemma minset_lift_left_inclusion_1
       (LM : os_left_monotone lteS bS) 
       (DDD : (brel_antisymmetric S rS lteS) +
                ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS)))
-      (X Y : finite_set S) (a : S) (H : a [in] ([ms] (X [^] Y))) : 
-  a [in] ([ms] (X [^] ([ms] Y))).
+      (X Y : finite_set S)
+      (a : S)
+      (H : a [in] ([ms] (X [^] Y))) : a [in] ([ms] (X [^] ([ms] Y))).
 Proof. apply in_minset_elim in H; auto. destruct H as [H1 H2].
         apply in_set_bop_lift_elim in H1; auto.
         destruct H1 as [x [y [[H3 H4] H5]]]. 
@@ -318,7 +354,6 @@ Qed.
 
 Lemma lift_right_minset_invariant
   (LM : os_left_monotone lteS bS) 
-  (RM : os_right_monotone lteS bS) 
   (DDD : (brel_antisymmetric S rS lteS) +
            ((os_left_strictly_monotone lteS bS)
             *
@@ -355,7 +390,7 @@ Qed.
 
 (* Note: congruence could be proved directly as shown here.  However, 
    I find that tracing it all the way back to the "ground truth" of 
-   the classical model is a reassuring sanity check, even though this
+   the classical model is a reassuring sanity check, even though that
    proof requires extra assumptions. 
 
 Lemma bop_minset_lift_congruence_weak : bop_congruence (finite_set S) (brel_set rS) bop_minset_lift.
@@ -380,8 +415,6 @@ Proof. unfold bop_congruence. intros X1 X2 Y1 Y2 A B.
 Qed.
  *)
 
-
-
 Lemma bop_minset_lift_congruence
   (LM : os_left_monotone lteS bS) 
   (RM : os_right_monotone lteS bS) 
@@ -396,7 +429,7 @@ Proof. apply bop_reduce_congruence.
        - exact bop_lift_congruence.
        - exact uop_minset_congruence_weak.
        - exact (minset_lift_uop_invariant LM RM DDD). 
-Qed. 
+Qed.
 
 Lemma bop_minset_lift_associative
   (LM : os_left_monotone lteS bS) 
@@ -414,8 +447,8 @@ Proof. apply bop_reduce_associative.
        - exact bop_lift_associative. 
        - exact uop_minset_congruence_weak.
        - exact minset_idempotent.
-       - exact (lift_left_minset_invariant LM RM DDD).
-       - exact (lift_right_minset_invariant LM RM DDD). 
+       - exact (lift_left_minset_invariant RM DDD).
+       - exact (lift_right_minset_invariant LM DDD). 
 Qed. 
   
 (* Note: Here is my first "brute force" proof of associativity.  Ugh! 
@@ -486,8 +519,8 @@ Proof. apply bop_reduce_commutative.
        - exact bop_lift_congruence.
        - exact uop_minset_congruence_weak.
        - exact minset_idempotent.
-       - exact (lift_left_minset_invariant LM RM DDD).
-       - exact (lift_right_minset_invariant LM RM DDD).
+       - exact (lift_left_minset_invariant RM DDD).
+       - exact (lift_right_minset_invariant LM DDD).
        - apply bop_lift_commutative; auto. 
 Qed. 
   
@@ -499,15 +532,6 @@ Proof. compute.
        rewrite refS in A. discriminate A. 
 Qed. 
 
-(*
-Lemma bop_minset_lift_not_commutative
-  (ncomm : bop_not_commutative S rS bS) :
-     bop_not_commutative (finite_set S) (brel_minset rS lteS) bop_minset_lift.
-Proof. 
-Admitted. 
-*) 
-  
-(* old proof: *) 
 Lemma bop_minset_lift_not_commutative (ncomm : bop_not_commutative S rS bS) :
      bop_not_commutative (finite_set S) (brel_minset rS lteS) bop_minset_lift.
 Proof. destruct ncomm as [[s t] A].
@@ -548,108 +572,6 @@ match comm_d with
 | inr ncomm => inr(bop_minset_lift_not_commutative ncomm) 
 end. 
 
-(*
-Lemma minset_lift_left_invariant_v1
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS)))      
-      (X Y : finite_set S) :  [ms] (([ms] X) [^] Y) [=MS] [ms] (X [^] Y). 
-Proof. assert (A := minset_lift_left_invariant_v0 LM RM DDD X Y).
-       apply set_equal_implies_minset_equal; auto. 
-Qed.
-
-
-(* proves   (([ms] X) <^> Y) [=S] (X <^> Y)   *) 
-Lemma minset_lift_left_invariant_v2 
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS))): 
-     bop_left_uop_invariant (finite_set S) (brel_set rS) bop_minset_lift (uop_minset lteS).
-Proof. unfold bop_left_uop_invariant. intros X Y. 
-       apply brel_set_intro_prop; auto. split. 
-          intros a H.
-          apply minset_lift_right_inclusion_2; auto. 
-          intros a H.
-          apply minset_lift_right_inclusion_1; auto. 
-Qed.
-
-(* (([ms] X) <^> Y) [=MS] (X <^> Y)   *) 
-Lemma minset_lift_left_invariant
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS))):       
-     bop_left_uop_invariant (finite_set S) (brel_minset rS lteS) bop_minset_lift (uop_minset lteS).
-Proof. intros X Y. 
-       assert (A := minset_lift_left_invariant_v2 LM RM DDD X Y). 
-       apply set_equal_implies_minset_equal; auto. 
-Qed.
-
-
-
-
-
-Lemma minset_lift_right_invariant_v1
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS)))
-      (X Y : finite_set S) :  [ms] (X [^] ([ms] Y)) [=MS] [ms] (X [^] Y). 
-Proof. assert (A := minset_lift_right_invariant_v0 LM RM DDD X Y).
-       apply set_equal_implies_minset_equal; auto. 
-Qed.
-
-
-Lemma minset_lift_right_invariant_v2
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS))):       
-     bop_right_uop_invariant (finite_set S) (brel_set rS) bop_minset_lift (uop_minset lteS).
-Proof. unfold bop_right_uop_invariant. intros X Y. 
-       apply brel_set_intro_prop; auto. split. 
-          intros a H. apply minset_lift_left_inclusion_2; auto. 
-          intros a H. apply minset_lift_left_inclusion_1; auto. 
-Qed.
-
-Lemma minset_lift_right_invariant
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS))) :       
-     bop_right_uop_invariant (finite_set S) (brel_minset rS lteS) bop_minset_lift (uop_minset lteS).
-Proof. intros X Y. 
-       assert (A := minset_lift_right_invariant_v2 LM RM DDD X Y). 
-       apply set_equal_implies_minset_equal; auto. 
-Qed.
-
-
-Lemma minset_lift_uop_invariant_weak
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS)))
-      (X Y : finite_set S): ([ms] (([ms] X) [^] ([ms] Y))) [=S] ([ms] (X [^] Y)).
-Proof. assert (A : ([ms] (([ms] X) [^] ([ms] Y))) [=S]  ([ms] (([ms] X) [^] Y))).
-          exact (minset_lift_right_invariant_v0 LM RM DDD ([ms] X) Y).   
-       assert (B : ([ms] (([ms] X) [^] Y)) [=S] ([ms] (X [^] Y))).
-          exact (minset_lift_left_invariant_v0 LM RM DDD X Y).    
-       assert (C := set_transitive _ _ _ A B). 
-       exact C. 
-Qed.   
-
-Lemma minset_lift_uop_invariant_weak_v2
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS)))
-      (X Y : finite_set S):  (X <^> Y) [=S] ([ms] (X [^] Y)).
-Proof. unfold bop_minset_lift. apply minset_lift_uop_invariant_weak; auto. Qed.   
-*) 
-
-
 Lemma bop_minset_lift_nil_left (X : finite_set S) :  (nil <^> X) [=MS] nil. 
 Proof. compute. reflexivity. Qed. 
 
@@ -680,13 +602,7 @@ Qed.
 Lemma bop_minset_lift_exists_ann : bop_exists_ann (finite_set S) (brel_minset rS lteS) bop_minset_lift. 
 Proof. exists nil. apply bop_minset_lift_ann_is_nil. Defined.
 
-
-
 Lemma bop_minset_lift_id_is_bottom
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-               ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS)))
       (b : S) (P : bop_is_id S rS bS b) : 
       bop_is_id (finite_set S) (brel_minset rS lteS) bop_minset_lift (b :: nil). 
 Proof. intro X.   
@@ -704,15 +620,30 @@ Proof. intro X.
 Qed. 
 
 Lemma bop_minset_lift_exists_id
-      (bId  : bop_exists_id S rS bS)
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-             ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS))) :
+      (bId  : bop_exists_id S rS bS):
   bop_exists_id (finite_set S) (brel_minset rS lteS) bop_minset_lift. 
 Proof. destruct bId as [b P]. exists (b :: nil).
        apply bop_minset_lift_id_is_bottom; auto.
-Defined. 
+Defined.
+
+(* Open problem: when does bop_not_exists_id hold? 
+   This seems tricky. 
+   Imagine a case where "bop_not_exists_id S rS bS" holds. 
+   There could be a left id l (l * s = s) and a 
+   right id r (s * r = s), where 
+   s * l = top and r * s = top. 
+   So, I = {l, r} is an idenity for minset_lift. 
+   One could have many variations of this. 
+   s1 could act as left id on X subset S
+   and a right id on S - X, while s2 is a 
+   right id on X and a left id on S - X, 
+   so I = {s1, s2} is an idenity for minset_lift. 
+   And, we can rig up simular things for 
+   some {s1, s2, s3}, {s1, s2, s3, s4}, ...,  where 
+   some s_i are always return (left or right) top 
+   on some subset of S and act as left or right 
+   ids on others....
+*) 
 
 Lemma bop_minset_lift_not_is_left : bop_not_is_left (finite_set S) (brel_minset rS lteS) bop_minset_lift. 
 Proof. exists (wS :: nil, nil). compute. reflexivity. Defined. 
@@ -725,17 +656,6 @@ Proof. exists (nil, nil). compute. reflexivity.  Defined.
 
 Lemma bop_minset_lift_not_anti_right : bop_not_anti_right (finite_set S) (brel_minset rS lteS) bop_minset_lift. 
 Proof. exists (nil, nil). compute. reflexivity. Defined.
-
-
-Lemma uop_minset_equational_idempotence (X Y : finite_set S): 
-  ([ms] ([ms] X)) [=S] ([ms] ([ms] Y)) -> ([ms] X) [=S] ([ms] Y). 
-Proof. intro A.
-       assert (B := minset_idempotent X). 
-       assert (C := minset_idempotent Y).
-       apply set_symmetric in B. 
-       assert (D := set_transitive _ _ _ B A). 
-       exact (set_transitive _ _ _ D C).        
-Qed. 
 
 Lemma bop_minset_lift_not_left_constant : bop_not_left_constant (finite_set S) (brel_minset rS lteS) bop_minset_lift.
 Proof. exists (wS :: nil, (wS :: nil, nil)). compute. reflexivity. Defined.        
@@ -787,15 +707,46 @@ However, this case causes problems:
 
 since we could have "X [^] Y not in {X, Y}", but  "[ms] (X [^] Y) in {X, Y}".
 
+Note that bop_lift_not_selective for lift has 15 cases. 
+
 Somehow we have to bring the order in to the picture. 
 
 For now, we have only: 
      not_selective(bS) -> not_selective(minset_lift(<=, bS). 
 
 So, for now we will insist on not_selective(bS). 
+
+=================================================================
+1. bop_not_selective bS → bop_not_selective bop_minset_lift. 
+2. bop_selective bS → bop_idempotent bop_minset_lift. 
+3. (assume anti, LI, LM RM, DDD) bop_idempotent bS → bop_idempotent bop_minset_lift. 
+4  bop_not_idempotent bS → bop_not_idempotent bop_minset_lift. 
+
+Need id = bottom 
+not_idem + (idem * not_sel) 
+Need comm???? 
+Monotone increasing. 
+anti (for now) 
+
+what does minset_union need?
+bottom 
+po + qo 
+
+What does minset_union_lift need? 
+comm????  
+nidem + (idem * nsel) 
+Monotone increasing. 
+
+What does minset_lift_union need? 
+(not implemented yet!) 
+same as above? 
+
+Need 
+
+os_monotone_increasing_po_sg_CI_with_bottom
+os_monotone_increasing_po_sg_CNI_with_bottom
+
 *) 
-
-
 
 Lemma bop_minset_lift_not_selective_v1 :
          (bop_not_selective S rS bS) → bop_not_selective (finite_set S) (brel_minset rS lteS) bop_minset_lift. 
@@ -867,135 +818,6 @@ Proof. intros X.
        exact (set_transitive _ _ _ A B).
 Qed.
 
-(*
-   if selective 
-   then idempotent(minset_lift) 
-   else not_selective(minset_lift) 
-        if idempotent 
-        then if anti-sym and LI and RI 
-             then idempotent(minset_lift) 
-             else ??? 
-        else not_idempotent(minset_lift) 
-
-
-
-Lemma test 
-      (idem : bop_idempotent S rS bS)
-      (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
-      (DDD : (brel_antisymmetric S rS lteS) +
-             ((os_left_strictly_monotone lteS bS) * (os_right_strictly_monotone lteS bS))):
-  bop_idempotent (finite_set S) (brel_minset rS lteS) bop_minset_lift.
-Proof. compute in LM. compute in RM.
-(*
-   ms { .. s ... t ...}  = { .. s ... t ...}      s # t or s ~ t
-
-   ms ({ .. s ... t ...}  <^> { .. s ... t ...}) = ms {... s... t... st .. ts....} 
-      
-      need  s <= st  s <= ts 
-            t <= st  t <= ts 
-
-
-      s !<= st  and (s # t or s ~ t)
-
-      s <=st or not (s # t or s ~ t)
-
-      (s # t or s ~ t) -> s <=st 
-
-
-*)        
-Admitted. 
- *)
-
-Definition bop_strongly_selective (S : Type) (eq lte : brel S) (b : binary_op S) 
-  := ∀ s t : S, ((eq (b s t) s = true) + (eq (b s t) t = true))
-                + (  (below lte (b s t) s = true) 
-                   * (below lte (b s t) t = true)
-                   * ((incomp lte s t = true) + (equiv lte s t = true))                       
-                   * ((eq (b t s) s = true) + (eq (b t s) t = true) + ((below lte (b t s) s = true) * (below lte (b t s) t = true)))). 
-
-(*
-Definition bop_not_strongly_selective (S : Type) (r : brel S) (b : binary_op S) 
-    := { z : S * S & match z with (s, t) =>  (r (b s s) s = false) * (r (b t t) t = false) * (r (b s t) s = false)  * (r (b s t) t = false) end }. 
-
-Lemma strongly_selective_implies_idempotent (r : brel S) (b : binary_op S) (ssel : bop_strongly_selective S r b) :
-    bop_idempotent S r b. 
-Proof. intros s. destruct (ssel s s) as [[[A | A] | A] | A]; auto. Qed. 
-
-Lemma idempotent_implies_strongly_selective (r : brel S) (b : binary_op S) (idem : bop_idempotent S r b) :
-    bop_strongly_selective S r b. 
-Proof. intros s t. left. left. left. exact (idem s). Qed. 
-
-Lemma not_strongly_selective_implies_not_idempotent (r : brel S) (b : binary_op S) (nssel : bop_not_strongly_selective S r b) :
-    bop_not_idempotent S r b. 
-Proof. destruct nssel as [[s t] [[[A B] C] D]]. exists s. auto. Defined. 
-
-Lemma not_idempotent_implies_not_strongly_selective (r : brel S) (b : binary_op S) (nidem : bop_not_idempotent S r b) :
-    bop_not_strongly_selective S r b. 
-Proof. destruct nidem as [s A]. exists (s, s). auto. Defined. 
-*) 
-(*
-Print os_left_increasing. 
-
-Lemma bop_minset_lift_idempotent_v2_aux'
-      (anti : brel_antisymmetric S rS lteS)
-      (idem : bop_idempotent S rS bS)
-      (LI : os_right_increasing lteS bS) 
-      (X : finite_set S) :
-                [ms] (([ms] X) [^] ([ms] X)) [=S] ([ms] X).
-Proof. apply brel_set_intro_prop; auto. split. 
-       - intros a A.
-         apply in_minset_elim in A; auto. destruct A as [A1 A2].          
-         apply in_set_bop_lift_elim in A1; auto. 
-         destruct A1 as [x [y [[B C] D]]].     
-         assert (F := LI x y). 
-         case_eq(in_set rS X a); intro E. 
-         + apply in_minset_intro; auto. split; auto. 
-           intros t G. 
-           case_eq(in_set rS ([ms] X) t); intro H. 
-           * apply A2. 
-             assert (I := idem t).
-             apply (in_set_right_congruence S rS symS tranS _ _ _ I).
-             apply in_set_bop_lift_intro; auto.
-           * apply in_set_minset_false_elim in H; auto. 
-             destruct H as [u [I J]]. 
-             case_eq(below lteS a t); intro K; auto. 
-                assert (L := below_transitive _ lteS lteTrans _ _ _ J K). 
-                assert (M : u [in] (([ms] X) [^] ([ms] X))). 
-                   assert (H := idem u).
-                   apply (in_set_right_congruence S rS symS tranS _ _ _ H).
-                   apply in_set_bop_lift_intro; auto.
-                rewrite (A2 _ M) in L. discriminate L. 
-         + assert (G : x [in] (([ms] X) [^] ([ms] X))).
-              assert (H := idem x).
-              apply (in_set_right_congruence S rS symS tranS _ _ _ H).
-              apply in_set_bop_lift_intro; auto.
-           assert (H := A2 _ G).
-           rewrite (below_congruence S rS lteS lteCong _ _ _ _ D (refS x)) in H.           
-           apply below_false_elim in H. destruct H as [H | H]. 
-           * rewrite F in H. discriminate H. 
-           * assert (I := anti _ _ H F).            (* only use of anti *)
-             assert (J := tranS _ _ _ D I). apply symS in J. 
-             apply (in_set_right_congruence S rS symS tranS _ _ _ J).
-             exact B. (* could also get contradiction from a [!in] X *)
-       - intros a A. 
-         apply in_minset_intro; auto. split. 
-         + assert (B := idem a).  
-           apply (in_set_right_congruence S rS symS tranS _ _ _ B).
-           apply in_set_bop_lift_intro; auto. 
-         + intros t B.
-           apply in_set_bop_lift_elim in B; auto. 
-           destruct B as [x [y [[B C] D]]].
-           rewrite (below_congruence S rS lteS lteCong _ _ _ _ (refS a) D). 
-           case_eq(below lteS a (bS x y)); intro E; auto. 
-              apply in_minset_elim in A; auto. destruct A as [A1 A2].
-              assert (F := LI x y). 
-              assert (G := below_pseudo_transitive_left _ _ _ F E).
-              apply in_minset_elim in B; auto. destruct B as [B1 B2].
-              rewrite (A2 x B1) in G. discriminate G. 
-Qed. 
-*) 
-
 Lemma bop_minset_lift_idempotent_v2_aux
       (anti : brel_antisymmetric S rS lteS)
       (idem : bop_idempotent S rS bS)
@@ -1059,11 +881,12 @@ Lemma bop_minset_lift_idempotent_v2
       (idem : bop_idempotent S rS bS)
       (LI : os_left_increasing lteS bS)
       (LM : os_left_monotone lteS bS) 
-      (RM : os_right_monotone lteS bS) 
+      (RM : os_right_monotone lteS bS) :
+  (*
       (DDD : (brel_antisymmetric S rS lteS) +
                ((os_left_strictly_monotone lteS bS)
                 *
-               (os_right_strictly_monotone lteS bS))):
+               (os_right_strictly_monotone lteS bS))): *) 
          bop_idempotent (finite_set S) (brel_minset rS lteS) bop_minset_lift.
 Proof. intros X. unfold bop_minset_lift. unfold brel_minset, brel_reduce, bop_reduce. 
        assert (A := uop_minset_idempotent (X [^] X)).
@@ -1077,7 +900,353 @@ Proof. intros X. unfold bop_minset_lift. unfold brel_minset, brel_reduce, bop_re
        } 
        assert (D := set_transitive _ _ _ A C).
        exact (set_transitive _ _ _ D B). 
+Qed.
+
+(* from Vilius *)
+Definition os_selective_increasing {S : Type} (lte : brel S) (b : binary_op S)  
+  := ∀ s t : S, (lte s (b s t) = true) + (lte t (b s t) = true) .
+
+Definition os_not_selective_increasing {S : Type} (lte : brel S) (b : binary_op S)  
+  := { '(s, t) & (lte s (b s t) = false) * (lte t (b s t) = false)} .
+
+Lemma bop_minset_lift_idempotent_using_selective_increasing_pointwise_proof 
+      (anti : brel_antisymmetric S rS lteS)
+      (idem : bop_idempotent S rS bS)
+      (SI : os_selective_increasing lteS bS)
+      (X : finite_set S) :
+                [ms] (([ms] X) [^] ([ms] X)) [=S] ([ms] X).
+Proof. apply brel_set_intro_prop; auto. split. 
+       - intros a A.
+         apply in_minset_elim in A; auto. destruct A as [A1 A2].          
+         apply in_set_bop_lift_elim in A1; auto. 
+         destruct A1 as [x [y [[B C] D]]].     
+         case_eq(in_set rS X a); intro E. 
+         + apply in_minset_intro; auto. split; auto. 
+           intros t G. 
+           case_eq(in_set rS ([ms] X) t); intro H. 
+           * apply A2. 
+             assert (I := idem t).
+             apply (in_set_right_congruence S rS symS tranS _ _ _ I).
+             apply in_set_bop_lift_intro; auto.
+           * apply in_set_minset_false_elim in H; auto. 
+             destruct H as [u [I J]]. 
+             case_eq(below lteS a t); intro K; auto. 
+                assert (L := below_transitive _ lteS lteTrans _ _ _ J K). 
+                assert (M : u [in] (([ms] X) [^] ([ms] X))). 
+                   assert (H := idem u).
+                   apply (in_set_right_congruence S rS symS tranS _ _ _ H).
+                   apply in_set_bop_lift_intro; auto.
+                rewrite (A2 _ M) in L. discriminate L. 
+         + assert (G : x [in] (([ms] X) [^] ([ms] X))).
+              assert (H := idem x).
+              apply (in_set_right_congruence S rS symS tranS _ _ _ H).
+              apply in_set_bop_lift_intro; auto.
+           assert (H := A2 _ G).
+           rewrite (below_congruence S rS lteS lteCong _ _ _ _ D (refS x)) in H.           
+           apply below_false_elim in H.
+           destruct H as [H | H]; destruct (SI x y) as [F | F]. 
+           * rewrite F in H. discriminate H.
+           * assert (I : y [in] (([ms] X) [^] ([ms] X))). admit.
+             assert (J := A2 _ I).
+             apply below_false_elim in J.
+             destruct J as [J | J].
+             -- admit. 
+             -- admit. 
+           * assert (I := anti _ _ H F).            
+             assert (J := tranS _ _ _ D I). apply symS in J. 
+             apply (in_set_right_congruence S rS symS tranS _ _ _ J).
+             exact B.
+           * assert (I : y [in] (([ms] X) [^] ([ms] X))). admit.
+             assert (J := A2 _ I).
+             apply below_false_elim in J.
+             destruct J as [J | J].
+             -- admit. 
+             -- admit. 
+       - intros a A. 
+         apply in_minset_intro; auto. split. 
+         + assert (B := idem a).  
+           apply (in_set_right_congruence S rS symS tranS _ _ _ B).
+           apply in_set_bop_lift_intro; auto. 
+         + intros t B.
+           apply in_set_bop_lift_elim in B; auto. 
+           destruct B as [x [y [[B C] D]]].
+           rewrite (below_congruence S rS lteS lteCong _ _ _ _ (refS a) D). 
+           case_eq(below lteS a (bS x y)); intro E; auto. 
+              apply in_minset_elim in A; auto. destruct A as [A1 A2].
+              destruct (SI x y) as [F | F]. 
+              * assert (G := below_pseudo_transitive_left _ _ _ F E).
+                apply in_minset_elim in B; auto. destruct B as [B1 B2].
+                rewrite (A2 x B1) in G. discriminate G.
+              * assert (G := below_pseudo_transitive_left _ _ _ F E).
+                apply in_minset_elim in C; auto. destruct C as [C1 C2].
+                rewrite (A2 _ C1) in G. discriminate G.
+Admitted.
+
+
+Lemma bop_minset_lift_idempotent_using_selective_increasing_upperset_proof 
+      (anti : brel_antisymmetric S rS lteS)
+      (idem : bop_idempotent S rS bS)
+      (SI : os_selective_increasing lteS bS)
+      (X : finite_set S) :
+                [ms] (([ms] X) [^] ([ms] X)) [=S] ([ms] X).
+Proof. apply minset_equal_intro; auto. 
+       intro a.
+       case_eq(in_upperset S rS lteS X a); intro A.
+       - apply in_upperset_elim in A; auto. 
+         destruct A as [b [A B]].
+         assert (D : b [in] (([ms] X) [^] ([ms] X))).
+         {
+           assert (C := idem b).
+           apply (in_set_right_congruence S rS symS tranS _ _ _ C). 
+           apply in_set_bop_lift_intro; auto. 
+         } 
+         assert (E : b [in] [ms] (([ms] X) [^] ([ms] X))).
+         {
+           apply in_minset_intro; auto. split; auto.
+           intros t F. 
+           apply in_set_bop_lift_elim in F; auto. 
+           destruct F as [c [d [[G H] I]]].
+           apply in_minset_elim in A; auto.
+           destruct A as [A A']. 
+           destruct (SI c d) as [J | J].
+           + case_eq(below lteS b t); intro K; auto.
+             rewrite (lteCong _ _ _ _ (refS c) (symS _ _ I)) in J.
+             assert (L := below_pseudo_transitive_left _ _ _ J K).
+             apply in_minset_elim in G; auto. destruct G as [G _].
+             rewrite (A' _ G) in L.
+             discriminate L. 
+           + case_eq(below lteS b t); intro K; auto.
+             rewrite (lteCong _ _ _ _ (refS d) (symS _ _ I)) in J.
+             assert (L := below_pseudo_transitive_left _ _ _ J K).
+             apply in_minset_elim in H; auto. destruct H as [H _].
+             rewrite (A' _ H) in L.
+             discriminate L. 
+         } 
+         exact(in_upperset_intro S rS refS symS tranS lteS lteCong lteRefl lteTrans anti _ _ _ E B).
+       - assert (B := in_upperset_false_elim S rS refS symS tranS lteS lteCong lteRefl lteTrans anti _ _ A).
+         case_eq(in_upperset S rS lteS (([ms] X) [^] ([ms] X)) a); intro C; auto.
+         apply in_upperset_elim in C; auto.
+         destruct C as [b [D E]].
+         apply in_minset_elim in D; auto. destruct D as [D F].
+         apply in_set_bop_lift_elim in D; auto.
+         destruct D as [c [d [[G H] I]]].
+         destruct (SI c d) as [J | J].
+         + rewrite <- (lteCong _ _ _ _ (refS c) I) in J.
+           assert (K := lteTrans _ _ _ J E).
+           destruct (B c) as [L | L]. 
+           * rewrite G in L. discriminate L. 
+           * rewrite K in L. discriminate L. 
+         + rewrite <- (lteCong _ _ _ _ (refS d) I) in J.
+           assert (K := lteTrans _ _ _ J E).
+           destruct (B d) as [L | L]. 
+           * rewrite H in L. discriminate L. 
+           * rewrite K in L. discriminate L. 
+Qed.
+
+Lemma bop_minset_lift_idempotent_vilus_version 
+      (anti : brel_antisymmetric S rS lteS) 
+      (idem : bop_idempotent S rS bS)
+      (SI : os_selective_increasing lteS bS)
+      (LM : os_left_monotone lteS bS) 
+      (RM : os_right_monotone lteS bS) :
+         bop_idempotent (finite_set S) (brel_minset rS lteS) bop_minset_lift.
+Proof. intros X. unfold bop_minset_lift. unfold brel_minset, brel_reduce, bop_reduce. 
+       assert (A := uop_minset_idempotent (X [^] X)).
+       assert (B : ([ms] (([ms] X) [^] ([ms] X))) [=S] ([ms] X)).
+       {
+         apply bop_minset_lift_idempotent_using_selective_increasing_upperset_proof ; auto.
+       }
+       assert (C : ([ms] (X [^] X)) [=S] ([ms] (([ms] X) [^] ([ms] X)))).
+       {
+         apply minset_lift_uop_invariant; auto.
+       } 
+       assert (D := set_transitive _ _ _ A C).
+       exact (set_transitive _ _ _ D B). 
+Qed.
+
+Lemma bop_minset_lift_not_idempotent_aux_from_not_selective_increasing_pointwise_version 
+      (anti : brel_antisymmetric S rS lteS)
+      (idem : bop_idempotent S rS bS)
+      (NSI : os_not_selective_increasing lteS bS) :
+  { X : finite_set S &  [ms] (([ms] X) [^] ([ms] X)) [<>S] ([ms] X) }.
+Proof. destruct NSI as [[s t] [A B]].
+       exists (s :: t :: nil).
+       case_eq(brel_set rS
+                 ([ms] (([ms] (s :: t :: nil)) [^] ([ms] (s :: t :: nil))))
+                 ([ms] (s :: t :: nil))
+              ); intro C; auto.
+       apply brel_set_elim_prop in C; auto.
+       destruct C as [C D].
+       assert (E : s [in] ([ms] (s :: t :: nil))). admit.
+       assert (F := D _ E).
+       apply in_minset_elim in F; auto.
+       destruct F as [F G]. 
+(*
+       assert (E : bS s t [in] ([ms] (([ms] (s :: t :: nil)) [^] ([ms] (s :: t :: nil))))).
+       {
+         
+       } 
+       assert (F : ∀ x, x [in] ([ms] (s :: t :: nil)) -> (s [=] x) + (t [=] x)).
+       {
+         intros x G.
+         apply in_minset_elim in G; auto.
+         destruct G as [G _].
+         apply in_set_cons_elim in G; auto.
+         destruct G as [G | G]; auto.
+         apply in_set_cons_elim in G; auto.
+         destruct G as [G | G]; auto.
+         compute in G. discriminate G. 
+       } 
+       destruct (F _ (C _ E)) as [I | I].
+       - assert (K : s <<= bS s t).
+         {
+           rewrite (lteCong _ _ _ _ (refS s) I). apply lteRefl.
+         }
+         rewrite K in A. discriminate A. 
+       - assert (K : t <<= bS s t).
+         {
+           rewrite (lteCong _ _ _ _ (refS t) I). apply lteRefl.
+         }
+         rewrite K in B. discriminate B.
+*) 
+Admitted.
+
+Lemma bop_minset_lift_not_idempotent_aux_from_not_selective_increasing_upperset_version 
+      (anti : brel_antisymmetric S rS lteS)
+      (idem : bop_idempotent S rS bS)
+      (NSI : os_not_selective_increasing lteS bS) :
+  { X : finite_set S &  [ms] (([ms] X) [^] ([ms] X)) [<>S] ([ms] X) }.
+Proof. destruct NSI as [[s t] [A B]].
+       exists (s :: t :: nil).
+       case_eq(brel_set rS
+                 ([ms] (([ms] (s :: t :: nil)) [^] ([ms] (s :: t :: nil))))
+                 ([ms] (s :: t :: nil))
+              ); intro C;auto. 
+       assert (D := minset_equal_elim _ _ refS symS tranS lteS lteCong lteRefl lteTrans _ _ anti C (bS s t)).
+       assert (E : in_upperset S rS lteS (s :: t :: nil) (bS s t) = false).
+       {
+         case_eq(in_upperset S rS lteS (s :: t :: nil) (bS s t)); intro E; auto.
+         apply in_upperset_elim in E; auto.
+         destruct E as [b [F G]].
+         apply in_minset_elim in F; auto. destruct F as [F _].
+         apply in_set_cons_elim in F; auto. destruct F as [F | F].
+         - rewrite (lteCong _ _ _ _ F (refS (bS s t))) in A.
+           rewrite A in G. discriminate G. 
+         - apply in_set_singleton_elim in F; auto. 
+           rewrite (lteCong _ _ _ _ F (refS (bS s t))) in B.
+           rewrite B in G. discriminate G. 
+       }
+       rewrite E in D. 
+       assert (F := in_upperset_false_elim _ _ refS symS tranS lteS lteCong lteRefl lteTrans anti _ _ D).
+       case_eq(lteS s t); intro G; case_eq(lteS t s); intro H. 
+       - assert (I := anti _ _ G H).
+         assert (J := bCong _ _ _ _ (refS s) I).
+         assert (K := idem s). apply symS in J.
+         assert (L := tranS _ _ _ J K). 
+         rewrite (lteCong _ _ _ _ (refS s) L) in A.
+         rewrite lteRefl in A. discriminate A. 
+       - admit. 
+       - admit. 
+       - assert (I : (bS s t) [in] ([ms] (([ms] (s :: t :: nil)) [^] ([ms] (s :: t :: nil))))).
+         {
+           apply in_minset_intro; auto. split.
+           + admit.
+           + admit. 
+         } 
+Admitted. 
+
+
+       (*
+Lemma bop_minset_lift_idempotent_v3_aux
+      (nanti : brel_not_antisymmetric S rS lteS) 
+      (idem : bop_idempotent S rS bS)
+      (LI : os_left_increasing lteS bS)
+      (LSM : os_left_strictly_monotone lteS bS)
+      (RSM : os_right_strictly_monotone lteS bS)
+      (X : finite_set S) :
+                [ms] (([ms] X) [^] ([ms] X)) [=S] ([ms] X).
+Proof. destruct nanti as [[z1 z2] [[H1 H2] H3]].
+       compute in LI, LSM, RSM. 
+       apply brel_set_intro_prop; auto. split. 
+       - intros a A.
+         apply in_minset_elim in A; auto. destruct A as [A1 A2].          
+         apply in_set_bop_lift_elim in A1; auto. 
+         destruct A1 as [x [y [[B C] D]]].     
+         assert (F := LI x y). 
+         case_eq(in_set rS X a); intro E. 
+         + apply in_minset_intro; auto. split; auto. 
+           intros t G. 
+           case_eq(in_set rS ([ms] X) t); intro H. 
+           * apply A2. 
+             assert (I := idem t).
+             apply (in_set_right_congruence S rS symS tranS _ _ _ I).
+             apply in_set_bop_lift_intro; auto.
+           * apply in_set_minset_false_elim in H; auto. 
+             destruct H as [u [I J]]. 
+             case_eq(below lteS a t); intro K; auto. 
+                assert (L := below_transitive _ lteS lteTrans _ _ _ J K). 
+                assert (M : u [in] (([ms] X) [^] ([ms] X))). 
+                   assert (H := idem u).
+                   apply (in_set_right_congruence S rS symS tranS _ _ _ H).
+                   apply in_set_bop_lift_intro; auto.
+                rewrite (A2 _ M) in L. discriminate L. 
+         + assert (G : x [in] (([ms] X) [^] ([ms] X))).
+              assert (H := idem x).
+              apply (in_set_right_congruence S rS symS tranS _ _ _ H).
+              apply in_set_bop_lift_intro; auto.
+           assert (H := A2 _ G).
+           rewrite (below_congruence S rS lteS lteCong _ _ _ _ D (refS x)) in H.           
+           apply below_false_elim in H. destruct H as [H | H]. 
+           * rewrite F in H. discriminate H. 
+           * case_eq(in_set rS ([ms] X) a); intro I; auto.
+             apply in_set_minset_false_elim in I; auto.
+             destruct I as [z [J K]].
+             (* OK *) admit.
+             (* NO *) admit. 
+       - intros a A. 
+         apply in_minset_intro; auto. split. 
+         + assert (B := idem a).  
+           apply (in_set_right_congruence S rS symS tranS _ _ _ B).
+           apply in_set_bop_lift_intro; auto. 
+         + intros t B.
+           apply in_set_bop_lift_elim in B; auto. 
+           destruct B as [x [y [[B C] D]]].
+           rewrite (below_congruence S rS lteS lteCong _ _ _ _ (refS a) D). 
+           case_eq(below lteS a (bS x y)); intro E; auto. 
+              apply in_minset_elim in A; auto. destruct A as [A1 A2].
+              assert (F := LI x y). 
+              assert (G := below_pseudo_transitive_left _ _ _ F E).
+              apply in_minset_elim in B; auto. destruct B as [B1 B2].
+              rewrite (A2 x B1) in G. discriminate G. 
 Qed. 
+
+Lemma bop_minset_lift_idempotent_v3
+      (nanti : brel_not_antisymmetric S rS lteS) 
+      (idem : bop_idempotent S rS bS)
+      (LI : os_left_increasing lteS bS)
+      (LM : os_left_monotone lteS bS) 
+      (RM : os_right_monotone lteS bS) 
+      (LSM : os_left_strictly_monotone lteS bS)
+      (RSM : os_right_strictly_monotone lteS bS):
+         bop_idempotent (finite_set S) (brel_minset rS lteS) bop_minset_lift.
+Proof. intros X. unfold bop_minset_lift. unfold brel_minset, brel_reduce, bop_reduce. 
+       assert (A := uop_minset_idempotent (X [^] X)).
+       assert (B : ([ms] (([ms] X) [^] ([ms] X))) [=S] ([ms] X)).
+       {
+         admit. 
+       }
+       assert (C : ([ms] (X [^] X)) [=S] ([ms] (([ms] X) [^] ([ms] X)))).
+       {
+         apply minset_lift_uop_invariant; auto.
+       } 
+       assert (D := set_transitive _ _ _ A C).
+       exact (set_transitive _ _ _ D B). 
+Qed. 
+
+*) 
+
+
+
 
 Lemma bop_minset_lift_not_idempotent :
   (bop_not_idempotent S rS bS)
@@ -1104,6 +1273,7 @@ Proof. intros [ s A].
 Defined.
 
 
+
 End Theory.
 
 Section ACAS.
@@ -1124,13 +1294,48 @@ Variables
     (DDD : (brel_antisymmetric S rS lteS) +
              ((os_left_strictly_monotone lteS b)
               *
-             (os_right_strictly_monotone lteS b))).
+                (os_right_strictly_monotone lteS b))).
+
+(*
+Definition sg_proofs_minset_lift_from_po
+  (sgS : sg_proofs S rS b) :
+         sg_proofs (finite_set S) (brel_minset rS lteS) (bop_minset_lift S rS lteS b) := 
+let congS := A_eqv_congruence S rS eqvS in  
+let refS := A_eqv_reflexive S rS eqvS in
+let symS := A_eqv_symmetric S rS eqvS in
+let tranS := A_eqv_transitive S rS eqvS in
+
+let lteCong    := A_po_congruence S rS lteS poS in
+let lteRefl    := A_po_reflexive S rS lteS poS in
+let lteTran    := A_po_transitive S rS lteS poS in
+let anti       := A_po_antisymmetric S rS lteS poS in
+
+let bCong  := A_sg_congruence _ _ _ sgS in
+let bAssoc := A_sg_associative _ _ _ sgS in
+let bComm_d := A_sg_commutative_d _ _ _ sgS in
+{|
+  A_sg_associative      := bop_minset_lift_associative S rS refS symS tranS lteS lteCong lteRefl lteTran  b bCong bAssoc LM RM (inl anti) 
+; A_sg_congruence       := bop_minset_lift_congruence S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong LM RM DDD
+; A_sg_commutative_d    := bop_minset_lift_commutatice_decide S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong bComm_d LM RM DDD
+; A_sg_idempotent_d     := inr (bop_minset_lift_not_idempotent S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong nIdem)
+; A_sg_C_selective_d    := inr (bop_minset_lift_not_selective S rS refS symS tranS lteS lteCong lteRefl lteTran b nsel)
+
+
+                                 
+; A_sg_C_cancel_d         := inr (bop_minset_lift_not_left_cancellative S rS s f ntS lteS b)
+; A_sg_C_constant_d       := inr (bop_minset_lift_not_left_constant S rS s lteS b)
+; A_sg_C_anti_left_d      := inr (bop_minset_lift_not_anti_left S rS lteS b)
+; A_sg_C_anti_right_d     := inr (bop_minset_lift_not_anti_right S rS lteS b)
+
+|}. 
+*) 
 
 Definition sg_CI_proofs_minset_lift_from_po
     (bComm  : bop_commutative S rS b) 
     (bIdem  : bop_idempotent S rS b) 
     (NotSel : bop_not_selective S rS b) 
-    (sgS : sg_proofs S rS b)
+    (bAssoc : bop_associative S rS b)
+    (bCong  : bop_congruence S rS b) 
     (LI : os_left_increasing lteS b) : 
         sg_CI_proofs (finite_set S) (brel_minset rS lteS) (bop_minset_lift S rS lteS b) := 
 let congS := A_eqv_congruence S rS eqvS in  
@@ -1141,21 +1346,18 @@ let lteCong    := A_po_congruence S rS lteS poS in
 let lteRefl    := A_po_reflexive S rS lteS poS in
 let lteTran    := A_po_transitive S rS lteS poS in
 let anti       := A_po_antisymmetric S rS lteS poS in
-let bCong  := A_sg_congruence _ _ _ sgS in
-let bAssoc := A_sg_associative _ _ _ sgS in
 {|
   A_sg_CI_associative        := bop_minset_lift_associative S rS refS symS tranS lteS lteCong lteRefl lteTran  b bCong bAssoc LM RM (inl anti) 
 ; A_sg_CI_congruence         := bop_minset_lift_congruence S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong LM RM DDD
 ; A_sg_CI_commutative        := bop_minset_lift_commutative S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong bComm LM RM DDD
-; A_sg_CI_idempotent         := bop_minset_lift_idempotent_v2 S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong anti bIdem LI LM RM DDD
+; A_sg_CI_idempotent         := bop_minset_lift_idempotent_v2 S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong anti bIdem LI LM RM
 ; A_sg_CI_not_selective      := bop_minset_lift_not_selective_v1 S rS refS symS tranS lteS lteCong lteRefl lteTran b NotSel
 
-|}. 
+|}.
+
 
 Definition sg_CNI_proofs_minset_lift_from_po
-           (sgS : sg_proofs S rS b)
-           (bComm  : bop_commutative S rS b) 
-           (nIdem  : bop_not_idempotent S rS b) : 
+           (sgS : sg_CNI_proofs S rS b) : 
         sg_CNI_proofs (finite_set S) (brel_minset rS lteS) (bop_minset_lift S rS lteS b) := 
 let congS := A_eqv_congruence S rS eqvS in  
 let refS := A_eqv_reflexive S rS eqvS in
@@ -1167,8 +1369,11 @@ let lteRefl    := A_po_reflexive S rS lteS poS in
 let lteTran    := A_po_transitive S rS lteS poS in
 let anti       := A_po_antisymmetric S rS lteS poS in
 
-let bCong  := A_sg_congruence _ _ _ sgS in
-let bAssoc := A_sg_associative _ _ _ sgS in
+let bComm   := A_sg_CNI_commutative _ _ _ sgS in
+let nIdem   := A_sg_CNI_not_idempotent _ _ _ sgS in
+
+let bCong  := A_sg_CNI_congruence _ _ _ sgS in
+let bAssoc := A_sg_CNI_associative _ _ _ sgS in
 {|
   A_sg_CNI_associative      := bop_minset_lift_associative S rS refS symS tranS lteS lteCong lteRefl lteTran  b bCong bAssoc LM RM (inl anti) 
 ; A_sg_CNI_congruence       := bop_minset_lift_congruence S rS refS symS tranS lteS lteCong lteRefl lteTran b bCong LM RM DDD
@@ -1185,80 +1390,77 @@ End Proofs.
 
 Section Combinators. 
 
+Definition A_sg_CI_minset_lift {S : Type} 
+           (A : @A_monotone_increasing_po_with_bottom_sg_CI S) : A_sg_CI (finite_set S) :=             
+let eqv := A_mi_powb_sg_CI_eqv A in
+let eqvP := A_eqv_proofs _ eqv in
+let refS := A_eqv_reflexive _ _ eqvP in
+let symS := A_eqv_symmetric _ _ eqvP in
+let trnS := A_eqv_transitive _ _ eqvP in 
+let eq  := A_eqv_eq _ eqv in
+let lte := A_mi_powb_sg_CI_lte A in 
+let bop := A_mi_powb_sg_CI_times A in
+let lteP := A_mi_powb_sg_CI_lte_properties A in
+let lteCong := A_po_congruence _ _ _ lteP in 
+let lteRef  := A_po_reflexive  _ _ _ lteP in 
+let lteTrn  := A_po_transitive  _ _ _ lteP in             
+let lteAnti := A_po_antisymmetric  _ _ _ lteP in 
+let bopP := A_mi_powb_sg_CI_times_properties A in
+let bopAssoc := A_sg_CI_associative _ _ _ bopP in
+let bopCong := A_sg_CI_congruence _ _ _ bopP in
+let bComm   := A_sg_CI_commutative _ _ _ bopP in
+let bIdem   := A_sg_CI_idempotent _ _ _ bopP in
+let bNotSel := A_sg_CI_not_selective _ _ _ bopP in
+let bottom_id_equal := A_bottom_is_id  _ _ _ _ (A_mi_powb_sg_CI_bottom_top_properties A) in
+let idP  := A_extract_exist_id_from_exists_bottom_id_equal _ _ _ _ bottom_id_equal in 
+let AP   := A_mi_powb_sg_CI_properties A in
+let LM   := A_mono_inc_left_monotonic _ _ _ AP in 
+let RM   := A_mono_inc_right_monotonic _ _ _ AP in 
+let LI   := A_mono_inc_left_increasing _ _ _ AP in 
+{|
+  A_sg_CI_eqv          := A_eqv_minset_from_po _ (A_po_from_monotone_increasing_po_with_bottom_sg_CI _ A)
+; A_sg_CI_bop          := bop_minset_lift S eq lte bop
+; A_sg_CI_exists_id_d  := inl (bop_minset_lift_exists_id S eq refS symS trnS lte lteCong lteRef lteTrn bop bopCong idP)
+; A_sg_CI_exists_ann_d := inl (bop_minset_lift_exists_ann S eq refS symS trnS lte lteCong lteRef lteTrn bop)
+; A_sg_CI_proofs       := sg_CI_proofs_minset_lift_from_po S eq lte bop eqvP lteP LM RM (inl lteAnti) bComm bIdem bNotSel bopAssoc bopCong  LI 
+; A_sg_CI_ast          := Ast_sg_minset_lift (A_mi_powb_sg_CI_ast A)
+|}.  
 
-Definition A_sg_CNI_minset_lift_GUARDED 
-           (S : Type)
-           (A : A_bounded_monotone_increasing_posg S) 
-           (bComm : bop_commutative S (A_eqv_eq _ (A_bmiposg_eqv _ A)) (A_bmiposg_times _ A)) 
-           (bNotIdem : bop_not_idempotent S (A_eqv_eq _ (A_bmiposg_eqv _ A)) (A_bmiposg_times _ A)) : A_sg_BCNI (finite_set S) :=             
-let eqv := A_bmiposg_eqv _ A in
+
+Definition A_sg_CNI_minset_lift {S : Type} 
+           (A : @A_monotone_increasing_po_with_bottom_sg_CNI S) : A_sg_CNI (finite_set S) :=             
+let eqv := A_mi_powb_sg_CNI_eqv A in
 let eqvP := A_eqv_proofs _ eqv in
 let refS := A_eqv_reflexive _ _ eqvP in
 let symS := A_eqv_symmetric _ _ eqvP in
 let trnS := A_eqv_transitive _ _ eqvP in 
 let eq  := A_eqv_eq _ eqv in
 let wS  := A_eqv_witness _ eqv in
-let f  := A_eqv_new _ eqv in
-let nt  := A_eqv_not_trivial _ eqv in
-let lte := A_bmiposg_lte _ A in 
-let bop := A_bmiposg_times _ A in
-let lteP := A_bmiposg_lte_proofs _ A in
+let f   := A_eqv_new _ eqv in
+let nt   := A_eqv_not_trivial _ eqv in
+let lte := A_mi_powb_sg_CNI_lte A in 
+let bop := A_mi_powb_sg_CNI_times A in
+let lteP := A_mi_powb_sg_CNI_lte_properties A in
 let lteCong := A_po_congruence _ _ _ lteP in 
 let lteRef  := A_po_reflexive  _ _ _ lteP in 
 let lteTrn  := A_po_transitive  _ _ _ lteP in             
-let lteAnti := A_po_antisymmetric  _ _ _ lteP in             
-let bopP := A_bmiposg_times_proofs _ A in
-let bopCong := A_sg_congruence _ _ _ bopP in
-let bottom_id_equal := A_bounded_bottom_id  _ _ _ _ (A_bmiposg_top_bottom _ A) in
+let lteAnti := A_po_antisymmetric  _ _ _ lteP in 
+let bopP := A_mi_powb_sg_CNI_times_properties A in
+let bopAssoc := A_sg_CNI_associative _ _ _ bopP in
+let bopCong := A_sg_CNI_congruence _ _ _ bopP in
+let bottom_id_equal := A_bottom_is_id  _ _ _ _ (A_mi_powb_sg_CNI_bottom_top_properties A) in
 let idP  := A_extract_exist_id_from_exists_bottom_id_equal _ _ _ _ bottom_id_equal in 
-let AP   := A_bmiposg_proofs _ A in
+let AP   := A_mi_powb_sg_CNI_properties A in
 let LM   := A_mono_inc_left_monotonic _ _ _ AP in 
 let RM   := A_mono_inc_right_monotonic _ _ _ AP in 
 let LI   := A_mono_inc_left_increasing _ _ _ AP in 
 {|
-  A_sg_BCNI_eqv        := A_eqv_minset_from_po_bounded _ (A_po_from_bounded_monotone_increasing_posg _ A)
-; A_sg_BCNI_bop        := bop_minset_lift S eq lte bop
-; A_sg_BCNI_exists_id  := bop_minset_lift_exists_id S eq refS symS trnS lte lteCong lteRef lteTrn bop bopCong idP LM RM (inl lteAnti) 
-; A_sg_BCNI_exists_ann := bop_minset_lift_exists_ann S eq refS symS trnS lte lteCong lteRef lteTrn bop 
-; A_sg_BCNI_proofs     := sg_CNI_proofs_minset_lift_from_po S eq lte wS f bop nt eqvP lteP LM RM (inl lteAnti) bopP bComm bNotIdem 
-; A_sg_BCNI_ast        := Ast_sg_minset_lift (A_bmiposg_ast _ A)
-|}.  
-
-
-Definition A_sg_BCI_minset_lift_GUARDED 
-           (S : Type)
-           (A : A_bounded_monotone_increasing_posg S) 
-           (bComm : bop_commutative S (A_eqv_eq _ (A_bmiposg_eqv _ A)) (A_bmiposg_times _ A)) 
-           (bIdem : bop_idempotent S (A_eqv_eq _ (A_bmiposg_eqv _ A)) (A_bmiposg_times _ A)) 
-           (bNotSel : bop_not_selective S (A_eqv_eq _ (A_bmiposg_eqv _ A)) (A_bmiposg_times _ A)) : A_sg_BCI (finite_set S) :=             
-let eqv := A_bmiposg_eqv _ A in
-let eqvP := A_eqv_proofs _ eqv in
-let refS := A_eqv_reflexive _ _ eqvP in
-let symS := A_eqv_symmetric _ _ eqvP in
-let trnS := A_eqv_transitive _ _ eqvP in 
-let eq  := A_eqv_eq _ eqv in
-let lte := A_bmiposg_lte _ A in 
-let bop := A_bmiposg_times _ A in
-let lteP := A_bmiposg_lte_proofs _ A in
-let lteCong := A_po_congruence _ _ _ lteP in 
-let lteRef  := A_po_reflexive  _ _ _ lteP in 
-let lteTrn  := A_po_transitive  _ _ _ lteP in             
-let lteAnti := A_po_antisymmetric  _ _ _ lteP in             
-let bopP := A_bmiposg_times_proofs _ A in
-let bopCong := A_sg_congruence _ _ _ bopP in
-let bottom_id_equal := A_bounded_bottom_id  _ _ _ _ (A_bmiposg_top_bottom _ A) in
-let idP  := A_extract_exist_id_from_exists_bottom_id_equal _ _ _ _ bottom_id_equal in 
-let AP   := A_bmiposg_proofs _ A in
-let LM   := A_mono_inc_left_monotonic _ _ _ AP in 
-let RM   := A_mono_inc_right_monotonic _ _ _ AP in 
-let LI   := A_mono_inc_left_increasing _ _ _ AP in 
-{|
-  A_sg_BCI_eqv        := A_eqv_minset_from_po_bounded _ (A_po_from_bounded_monotone_increasing_posg _ A)
-; A_sg_BCI_bop        := bop_minset_lift S eq lte bop
-; A_sg_BCI_exists_id  := bop_minset_lift_exists_id S eq refS symS trnS lte lteCong lteRef lteTrn bop bopCong idP LM RM (inl lteAnti) 
-; A_sg_BCI_exists_ann := bop_minset_lift_exists_ann S eq refS symS trnS lte lteCong lteRef lteTrn bop 
-; A_sg_BCI_proofs     := sg_CI_proofs_minset_lift_from_po S eq lte bop eqvP lteP LM RM (inl lteAnti) bComm bIdem bNotSel bopP LI 
-; A_sg_BCI_ast        := Ast_sg_minset_lift (A_bmiposg_ast _ A)
+  A_sg_CNI_eqv          := A_eqv_minset_from_po _ (A_po_from_monotone_increasing_po_with_bottom_sg_CNI _ A)
+; A_sg_CNI_bop          := bop_minset_lift S eq lte bop
+; A_sg_CNI_exists_id_d  := inl (bop_minset_lift_exists_id S eq refS symS trnS lte lteCong lteRef lteTrn bop bopCong idP)
+; A_sg_CNI_exists_ann_d := inl (bop_minset_lift_exists_ann S eq refS symS trnS lte lteCong lteRef lteTrn bop)
+; A_sg_CNI_proofs       := sg_CNI_proofs_minset_lift_from_po S eq lte wS f bop nt eqvP lteP LM RM (inl lteAnti) bopP 
+; A_sg_CNI_ast          := Ast_sg_minset_lift (A_mi_powb_sg_CNI_ast A)
 |}.  
 
 
@@ -1269,6 +1471,37 @@ End ACAS.
 Section AMCAS.
 
 Local Open Scope string_scope.
+
+Definition A_minset_lift_from_monotone_increasing_po_with_bottom_sg_CI
+             {S : Type} 
+             (A : @A_monotone_increasing_po_with_bottom_sg_CI S) : @A_below_sg_CI (finite_set S) :=
+  A_classify_sg_CI (A_sg_CI_minset_lift A).
+
+
+Definition A_minset_lift_from_monotone_increasing_po_with_bottom_sg_CNI
+             {S : Type} 
+             (A : @A_monotone_increasing_po_with_bottom_sg_CNI S) : @A_below_sg_CNI (finite_set S) :=
+  A_classify_sg_CNI (A_sg_CNI_minset_lift A).
+
+(*
+
+
+  Definition A_sg_llex_below_sg_CS {S T : Type} (A : @A_below_sg_CS S) (B : @A_below_sg T) := 
+    A_classify_sg (A_sg_llex (A_cast_up_sg_CS A) (A_cast_up_sg B)).  
+
+  Definition A_mcas_sg_llex {S T : Type} (A : @A_sg_mcas S)  (B : @A_sg_mcas T)  : @A_sg_mcas (S * T) :=
+    match A, B with
+    | A_MCAS_sg A', A_MCAS_sg B'               =>
+        match A_cast_below_sg_to_below_sg_CS A' with
+        | Some bcs => A_MCAS_sg (A_sg_llex_below_sg_CS bcs B')
+        | None     => A_MCAS_sg_Error ("sg_llex : the first argument must be commutative and selective." :: nil)
+        end 
+    | A_MCAS_sg_Error sl1, A_MCAS_sg_Error sl2 => A_MCAS_sg_Error (sl1 ++ sl2)
+    | A_MCAS_sg_Error sl1, _                   => A_MCAS_sg_Error sl1
+    | _,  A_MCAS_sg_Error sl2                  => A_MCAS_sg_Error sl2
+    end.
+
+
 
 
 Definition A_mcas_minset_lift (S : Type) (M : A_os_mcas S) : A_sg_mcas (finite_set S ) :=
@@ -1292,10 +1525,10 @@ match M with
   end
 | _ => A_MCAS_sg_Error _ ("mcas_minset_lift : (currently) can only be applied to a bounded, monotone, and increasing order-semigroup" :: nil)
 end. 
-
+*) 
 End AMCAS.
 
-
+(********************************************************************************************
 Section CAS.
 Section Proofs.
 
@@ -1338,6 +1571,7 @@ match nIdem with
 end. 
 
 End Proofs.
+
 
 Section Combinators. 
 
@@ -1528,3 +1762,4 @@ End Combinators.
  
 End Verify.   
   
+********************************************************************************************)

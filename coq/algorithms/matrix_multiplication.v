@@ -281,12 +281,12 @@ Section Matrix_Multiplication.
   Local Notation "a =M= b" := (eq_functional_matrix_prop R eqR a b) (at level 70).
 
   Lemma bop_left_distribitive_implies_slt_distributive
-      (LD: bop_left_distributive R eqR plusR mulR) :
+      (LD: A_bs_left_distributive eqR plusR mulR) :
          slt_distributive eqR plusR mulR. 
   Proof. apply LD. Qed.
 
   Lemma bop_right_distribitive_implies_srt_distributive
-      (LD: bop_right_distributive R eqR plusR mulR) :
+      (LD: A_bs_right_distributive eqR plusR mulR) :
          srt_distributive eqR plusR mulR. 
   Proof. apply LD. Qed.
 
@@ -299,7 +299,7 @@ Section Matrix_Multiplication.
   Proof. intro l. apply (ann l). Qed. 
 
   Lemma bop_sum_fn_left_distributive
-        (LD: bop_left_distributive R eqR plusR mulR) 
+        (LD: A_bs_left_distributive eqR plusR mulR) 
         (mulANN : bop_is_ann R eqR mulR 0)
           (v : R) (f : nat -> R) (l : list nat) : v * (sum_fn zeroR plusR f l) =r= sum_fn zeroR plusR (fun h => v* (f h)) l.
   Proof. assert (A := bop_left_distribitive_implies_slt_distributive LD).
@@ -309,7 +309,7 @@ Section Matrix_Multiplication.
 
   Lemma bop_sum_fn_right_distributive
         (mulANN : bop_is_ann R eqR mulR 0)
-        (RD : bop_right_distributive R eqR plusR mulR)
+        (RD : A_bs_right_distributive eqR plusR mulR)
         (v : R) (f : nat -> R) (l : list nat) : (sum_fn zeroR plusR f l) * v =r= sum_fn zeroR plusR (fun h => (f h) * v) l.
   Proof. assert (A := bop_right_distribitive_implies_srt_distributive RD).
          assert (B := bop_is_ann_implies_rtr_is_ann 0 mulANN). 
@@ -424,8 +424,8 @@ Qed.
         (plusID : bop_is_id R eqR plusR 0)
         (mul_associative : bop_associative R eqR mulR)
         (mulANN : bop_is_ann R eqR mulR 0)
-        (left_distributive_mul_over_plus : bop_left_distributive R eqR plusR mulR) 
-        (right_distributive_mul_over_plus : bop_right_distributive R eqR plusR mulR)
+        (left_distributive_mul_over_plus : A_bs_left_distributive eqR plusR mulR) 
+        (right_distributive_mul_over_plus : A_bs_right_distributive eqR plusR mulR)
         (n : nat) : 
     ∀ m₁ m₂ m₃,  ~R m₁ -> ~R m₂ -> ~R m₃ -> 
                  (m₁ *[n] (m₂ *[n] m₃)) =M= ((m₁ *[n] m₂) *[n] m₃).
@@ -529,7 +529,7 @@ Qed.
           (plus_associative : bop_associative R eqR plusR)
           (plus_commutative  : bop_commutative R eqR plusR)
           (plusID : bop_is_id R eqR plusR 0)
-          (LD : bop_left_distributive R eqR plusR mulR)
+          (LD : A_bs_left_distributive eqR plusR mulR)
           (l : list nat) : 
       ∀ m₁ m₂ m₃ i j,
         sum_fn zeroR plusR (left_row_i_dot_col_j mulR m₁ (λ c d : nat, m₂ c d + m₃ c d) i j) l 
@@ -543,7 +543,7 @@ Qed.
           (plus_associative : bop_associative R eqR plusR)
           (plus_commutative  : bop_commutative R eqR plusR)
           (plusID : bop_is_id R eqR plusR 0)
-          (left_distributive_mul_over_plus : bop_left_distributive R eqR plusR mulR)
+          (left_distributive_mul_over_plus : A_bs_left_distributive eqR plusR mulR)
           (n : nat) : 
       ∀ m₁ m₂ m₃, (m₁ *[n] (m₂ +M m₃)) =M= ((m₁ *[n] m₂) +M (m₁ *[n] m₃)).
     Proof. intros m₁ m₂ m₃ i j.
@@ -556,7 +556,7 @@ Qed.
           (plus_associative : bop_associative R eqR plusR)
           (plus_commutative  : bop_commutative R eqR plusR)
           (plusID : bop_is_id R eqR plusR 0)
-          (right_distributive_mul_over_plus : bop_right_distributive R eqR plusR mulR)
+          (right_distributive_mul_over_plus : A_bs_right_distributive eqR plusR mulR)
           (l : list nat) : 
       ∀ m₁ m₂ m₃ i j, 
          sum_fn zeroR plusR (left_row_i_dot_col_j mulR (λ c d : nat, m₂ c d + m₃ c d) m₁ i j) l 
@@ -590,7 +590,7 @@ Qed.
           (plus_associative : bop_associative R eqR plusR)
           (plus_commutative  : bop_commutative R eqR plusR)
           (plusID : bop_is_id R eqR plusR 0)
-          (right_distributive_mul_over_plus : bop_right_distributive R eqR plusR mulR)
+          (right_distributive_mul_over_plus : A_bs_right_distributive eqR plusR mulR)
           (n : nat): 
       ∀ m₁ m₂ m₃, ((m₂ +M m₃) *[n] m₁) =M= ((m₂ *[n] m₁) +M (m₃ *[n] m₁)).
     Proof. intros m₁ m₂ m₃ i j.

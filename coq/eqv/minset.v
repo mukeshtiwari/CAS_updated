@@ -542,9 +542,7 @@ Proof. intros s A. split.
           intros a D t E. compute in E. discriminate E. 
        assert (C := in_iterate_minset_elim X nil nil empty_set_is_antichain B s A).
        intros t D. exact (C t (inr D)). 
-Qed. 
-
-
+Qed.
 
 Lemma in_iterate_minset_intro (X : finite_set S) :
   ∀ (W Y : finite_set S), 
@@ -1601,7 +1599,296 @@ Proof. induction X.
              compute in B. discriminate B. 
              fold (iterate_minset lteS (a :: nil) X). admit. 
 Admitted. 
+ *)
+
+
+
+(*****************************************************************************)
+(***************************** UPPER SETS ************************************)
+(*****************************************************************************)
+
+Definition in_upperset (X :finite_set S) (s : S) := brel_set rS ([ms] (s :: X)) ([ms] X).
+
+Notation "a [inup] b"  := (in_upperset b a = true)   (at level 15).
+Notation "a [!inup] b"  := (in_upperset b a = false)   (at level 15).
+
+Lemma minset_is_minimal (a : S) (X : finite_set S) (A : a [in] X) : {b : S & (b [in] [ms] X) * (b <<= a)}.
+Proof. case_eq(in_set rS ([ms] X) a); intro C.
+       - exists a. split; auto. 
+       - apply in_set_minset_false_elim in C; auto. 
+         * destruct C as [t [D E]].
+           exists t. split; auto.
+           apply below_elim in E. destruct E as [E _]; auto. 
+Defined. 
+
+
+
+Lemma in_upperset_intro
+  (anti : brel_antisymmetric S rS lteS)
+  (a b : S) (X : finite_set S) (A : b [in] [ms] X) (B : b <<= a) : a [inup] X.
+Proof. (*apply in_minset_elim in A; auto. destruct A as [A C].*) 
+       unfold in_upperset.
+       apply brel_set_intro_prop; auto. split; intros c D. 
+       - apply in_minset_elim in D; auto. destruct D as [D E].
+         apply in_set_cons_elim in D; auto.
+         destruct D as [D | D].
+         + assert (F : b [in] (a :: X)).
+           {
+             apply in_minset_elim in A; auto. destruct A as [A _].
+             apply in_set_cons_intro; auto. 
+           } 
+           assert (G := E _ F). apply symS in D. 
+           rewrite (below_congruence _ _ _ _  D (refS b)) in G.
+           apply below_false_elim in G.
+           destruct G as [G | G].
+           * rewrite G in B. discriminate B. 
+           * assert (H := anti _ _ G B).
+             assert (I := tranS _ _ _ D H). apply symS in I. 
+             exact(in_set_right_congruence S rS symS tranS _ _ _ I A). 
+         + apply in_minset_intro. split; auto.
+           intros t F. apply E. 
+           apply in_set_cons_intro; auto. 
+       - apply in_minset_elim in D; auto.
+         destruct D as [D E]. 
+         apply in_minset_intro. split; auto.
+         + apply in_set_cons_intro; auto. 
+         + intros t F. 
+           apply in_set_cons_elim in F; auto.
+           destruct F as [F | F]; auto.
+           * case_eq(below lteS c t); intro G; auto.
+             rewrite <- (below_congruence _ _ _ _  (refS c) F) in G.
+             assert (H := below_pseudo_transitive_left _ lteS lteTrans _ _ _ B G).
+             apply in_minset_elim in A; auto. destruct A as [A C].
+             rewrite (E _ A) in H.
+             discriminate H. 
+Qed. 
+
+
+Lemma in_upperset_elim (a : S) (X : finite_set S) (A : a [inup] X) : {b : S & (b [in] [ms] X) * (b <<= a)}.
+Proof. case_eq(in_set rS X a); intro B.
+       - apply minset_is_minimal; auto.
+       - unfold in_upperset in A.
+         apply brel_set_elim_prop in A; auto.
+         destruct A as [A C].
+         case_eq(in_set rS ([ms] (a :: X)) a); intro D.
+         + assert (E := A _ D).
+           apply in_minset_elim in E; auto.
+           destruct E as [E _].
+           rewrite E in B. discriminate B. 
+         + apply in_set_minset_false_elim in D.
+           * destruct D as [t [E F]].
+             exists t. split.
+             -- apply in_minset_elim in E; auto.
+                destruct E as [E G].
+                apply in_set_cons_elim in E; auto. 
+                destruct E as [E | E].
+                ++ assert (H := below_congruence _ _ _ _ (refS a) E).
+                   rewrite <- H in F.
+                   rewrite below_not_reflexive in F; auto. 
+                   discriminate F. 
+                ++ apply in_minset_intro; auto; split; auto.
+                   intros v H.
+                   assert (I : v [in] (a :: X)). apply in_set_cons_intro; auto. 
+                   exact (G _ I). 
+             -- apply below_elim in F. destruct F as [F _]; auto. 
+           * apply in_set_cons_intro; auto. 
+Defined. 
+
+Lemma in_upperset_false_elim
+  (anti : brel_antisymmetric S rS lteS)      
+  (a : S) (X : finite_set S) (A : a [!inup] X) : ∀ b: S, (b [!in] [ms] X) + (b !<<= a).
+Proof. intro b. case_eq(lteS b a); intro B; auto. left.
+       case_eq(in_set rS ([ms] X) b); intro C; auto.
+       unfold in_upperset in A.
+       apply brel_set_false_elim_prop in A; auto. 
+       destruct A as [ [c [D E]] | [c [D E]] ].
+       - apply in_minset_elim in D; auto. destruct D as [D F].
+         apply in_set_minset_false_elim in E; auto.
+         + destruct E as [t [E G]].
+           apply in_minset_elim in E; auto. destruct E as [E H].
+           assert (I : t [in] (a :: X)). apply in_set_cons_intro; auto. 
+           rewrite (F _ I) in G. discriminate G.
+         + apply in_set_cons_elim in D; auto. 
+           destruct D as [D | D]; auto.
+           assert (I : b [in] (a :: X)).
+           {
+             assert (G := in_minset_implies_in_set _ _ C).
+             apply in_set_cons_intro; auto. 
+           } 
+           assert (J := F _ I).
+           apply below_false_elim in J.
+           destruct J as [J | J].
+           * rewrite <- (lteCong _ _ _ _ (refS b) D) in J.
+             rewrite J in B. discriminate B. 
+           * rewrite <- (lteCong _ _ _ _ D (refS b)) in J.
+             assert (K := anti _ _ J B).
+             apply in_minset_elim in C. destruct C as [C _].
+             apply symS in D.
+             assert (L := tranS _ _ _ D K). apply symS in L. 
+             exact(in_set_right_congruence S rS symS tranS _ _ _ L C). 
+       - apply in_minset_elim in D; auto. destruct D as [D F].
+         apply in_set_minset_false_elim in E; auto.
+         + destruct E as [t [E G]].
+           apply in_minset_elim in E; auto. destruct E as [E H].
+           apply in_set_cons_elim in E; auto.
+           destruct E as [E | E].
+           * assert (I : b [in] (a :: X)).
+             {
+               assert (J := in_minset_implies_in_set _ _ C).
+               apply in_set_cons_intro; auto. 
+             } 
+             assert (J := H _ I).
+             rewrite (lteCong _ _ _ _ (refS b) E) in B.
+             assert (L := below_pseudo_transitive_left _ lteS lteTrans _ _ _ B G).
+             assert (M : b [in] X). exact(in_minset_implies_in_set _ _ C).
+             rewrite (F _ M) in L. discriminate L. 
+           * rewrite (F _ E) in G. discriminate G. 
+         + apply in_set_cons_intro; auto. 
+Qed.
+
+(* needed? 
+Lemma in_upperset_false_intro 
+  (anti : brel_antisymmetric S rS lteS)      
+  (a : S) (X : finite_set S) (A : ∀ b: S, (b [!in] [ms] X) + (b !<<= a)) : a [!inup] X.
+Admitted.
+(*
+Proof. unfold in_upperset.
+       apply brel_set_false_intro_prop; auto.
+       destruct (A a) as [B | B].
+       - case_eq(in_set rS ([ms] (a :: X)) a); intro C.
+         + left. exists a; auto. 
+         + case_eq(in_set rS X a); intro D.
+           * assert (E := minset_is_minimal _ _ D).
+             destruct E as [b [E F]].
+             admit. 
+           * apply in_set_minset_false_elim in C; auto.
+             -- destruct C as [t [C E]].
+                apply in_minset_elim in C; auto.
+                destruct C as [C F]. 
+             -- apply in_set_cons_intro; auto. 
+
+
+
+
+
+
+           assert (D : a [in] ([ms] (a :: X))).
+           {
+             apply in_minset_intro; auto. split.
+             * apply in_set_cons_intro; auto. 
+             * intros t D.
+               destruct (A t) as [E | E].
+               -- apply below_false_intro.
+                  apply in_set_cons_elim in D.
+                  destruct D as [D | D].
+                  ++ right. rewrite (lteCong _ _ _ _ D (refS t)); auto. 
+                  ++ 
+               -- apply below_false_intro. left. auto. 
+           }
+           rewrite D in C. discriminate C. 
+       - rewrite lteRefl in B. discriminate B. 
+Defined. 
 *) 
+*) 
+
+Lemma in_minset_implies_in_upperset
+  (anti : brel_antisymmetric S rS lteS)
+  (a : S) (X : finite_set S) (A : a [in] [ms] X) : a [inup] X.
+Proof. exact (in_upperset_intro anti a a X A (lteRefl a)). Qed.  
+
+
+(* needed? 
+Lemma ttt (a : S) (X : finite_set S) : (a [inup] X) = (a [inup] ([ms] X)).
+Proof. unfold in_upperset.
+       case_eq(brel_set rS ([ms] (a :: X)) ([ms] X)); intro A;
+         case_eq(brel_set rS (([ms] (a :: [ms] X))) ([ms] ([ms] X))); intro B; auto.
+       - admit. 
+       - admit. 
+Admitted.
+*) 
+
+Lemma mimimal_elements_are_equal
+  (anti : brel_antisymmetric S rS lteS)
+  (a b: S) (X : finite_set S) (A : a [in] X) (B : b [in] [ms] X) (C : a <<= b) : a [=] b. 
+Proof. apply in_minset_elim in B; auto. destruct B as [_ E].
+       assert (G := E _ A). apply below_false_elim in G.
+       destruct G as [G | G].
+       - rewrite C in G. discriminate G.
+       - apply anti; auto. 
+Qed.
+
+Lemma minset_equal_intro_aux
+  (anti : brel_antisymmetric S rS lteS) 
+  (a : S) (X Y: finite_set S)
+  (A : ∀ a : S, in_upperset X a = in_upperset Y a) 
+  (B : a [in] ([ms] Y)) : a [in] ([ms] X). 
+Proof. case_eq(in_set rS X a); intro Z.
+         + case_eq(in_set rS ([ms] X) a); intro E; auto.
+           apply in_set_minset_false_elim in E; auto. 
+           destruct E as [t [F G]].
+           assert (H := in_minset_implies_in_upperset anti _ _ F).
+           assert (I := A t). rewrite H in I. symmetry in I. 
+           apply in_upperset_elim in I.
+           destruct I as [s [J K]].
+           assert (L := below_pseudo_transitive_left _ lteS lteTrans _ _ _ K G).
+           apply in_minset_elim in B.
+           destruct B as [B M].
+           apply in_minset_elim in J. destruct J as [J _].
+           rewrite (M _ J) in L. discriminate L.
+         + assert (C := in_minset_implies_in_upperset anti _ _ B).
+           assert (D := A a). rewrite C in D.
+           apply in_upperset_elim in D.
+           destruct D as [b [E F]].
+           assert (G := A b).
+           assert (H := in_minset_implies_in_upperset anti _ _ E).
+           rewrite H in G. symmetry in G.
+           apply in_upperset_elim in G.
+           destruct G as [c [I J]].
+           assert (K := lteTrans _ _ _ J F).
+           apply in_minset_elim in I; auto. destruct I as [I _]. 
+           assert (L := mimimal_elements_are_equal anti _ _ _ I B K). 
+           rewrite (lteCong _ _ _ _ L (refS b)) in J.
+           assert (M := anti _ _ F J).
+           apply in_minset_elim in E; auto. destruct E as [E _].
+           rewrite (in_set_right_congruence S rS symS tranS _ _ _ M E) in Z. 
+           discriminate Z.
+Qed. 
+
+Lemma minset_equal_intro (X Y: finite_set S)
+  (anti : brel_antisymmetric S rS lteS) : 
+  (∀ a : S, (in_upperset X a) = (in_upperset Y a)) -> ([ms] X) [=S] ([ms] Y).
+Proof. intro A.
+       apply brel_set_intro_prop; auto. split; intros a B.
+       - assert (A' : ∀ a : S, in_upperset Y a = in_upperset X a).
+         {
+           intro b. rewrite (A b). reflexivity. 
+         }
+         exact (minset_equal_intro_aux anti a Y X A' B). 
+       - exact (minset_equal_intro_aux anti a X Y A B). 
+Qed. 
+
+Lemma minset_equal_elim (X Y: finite_set S)
+  (anti : brel_antisymmetric S rS lteS) : 
+  ([ms] X) [=S] ([ms] Y) -> ∀ a : S, (in_upperset X a) = (in_upperset Y a).
+Proof. intros A a.
+       apply brel_set_elim_prop in A; auto.
+       destruct A as [A B]. 
+       case_eq(in_upperset X a); intro C;
+         case_eq(in_upperset Y a); intro D; auto.
+       - apply in_upperset_elim in C.
+         destruct C as [b [E F]].
+         assert (G := A _ E).
+         destruct (in_upperset_false_elim anti _ _ D b) as [H | H].
+         + rewrite H in G. discriminate G. 
+         + rewrite H in F. discriminate F. 
+       - apply in_upperset_elim in D.
+         destruct D as [b [E F]].
+         assert (G := B _ E).
+         destruct (in_upperset_false_elim anti _ _ C b) as [H | H].
+         + rewrite H in G. discriminate G. 
+         + rewrite H in F. discriminate F. 
+Qed. 
+
 End Theory.
 
 
@@ -1609,45 +1896,12 @@ End Theory.
 Section ACAS.
 
 
-Definition eqv_proofs_brel_minset_from_or :
- ∀ (S : Type) (r : brel S) (lteS : brel S), eqv_proofs S r → or_proofs S r lteS → eqv_proofs (finite_set S) (brel_minset r lteS)
-:= λ S r lteS eqv lteP,
-  let refS := A_eqv_reflexive S r eqv in
-  let symS := A_eqv_symmetric S r eqv in
-  let trnS := A_eqv_transitive S r eqv in
-  let lteCong := A_or_congruence _ _ _ lteP in
-  let lteRefl := A_or_reflexive _ _ _ lteP in
-  let lteTrns := A_or_transitive _ _ _ lteP in     
-   {| 
-     A_eqv_congruence  := brel_minset_congruence S r refS symS trnS lteS lteCong lteRefl lteTrns
-   ; A_eqv_reflexive   := brel_minset_reflexive S r  refS symS lteS
-   ; A_eqv_transitive  := brel_minset_transitive S r refS symS trnS lteS
-   ; A_eqv_symmetric   := brel_minset_symmetric S r lteS
-   |}.
-
-
-
-Definition eqv_proofs_brel_minset_from_po :
- ∀ (S : Type) (r : brel S) (lteS : brel S), eqv_proofs S r → po_proofs S r lteS → eqv_proofs (finite_set S) (brel_minset r lteS)
-:= λ S r lteS eqv lteP,
-  let refS := A_eqv_reflexive S r eqv in
-  let symS := A_eqv_symmetric S r eqv in
-  let trnS := A_eqv_transitive S r eqv in
-  let lteCong := A_po_congruence _ _ _ lteP in
-  let lteRefl := A_po_reflexive _ _ _ lteP in
-  let lteTrns := A_po_transitive _ _ _ lteP in     
-   {| 
-     A_eqv_congruence  := brel_minset_congruence S r refS symS trnS lteS lteCong lteRefl lteTrns
-   ; A_eqv_reflexive   := brel_minset_reflexive S r  refS symS lteS
-   ; A_eqv_transitive  := brel_minset_transitive S r refS symS trnS lteS
-   ; A_eqv_symmetric   := brel_minset_symmetric S r lteS
-   |}.
-
-
-(* Uhg!  huge duplication here ... only change "po" -> "qo"! *)
-Definition eqv_proofs_brel_minset_from_qo :
- ∀ (S : Type) (r : brel S) (lteS : brel S), eqv_proofs S r → qo_proofs S r lteS → eqv_proofs (finite_set S) (brel_minset r lteS)
-:= λ S r lteS eqv lteP,
+Definition eqv_proofs_brel_minset_from_qo
+  (S : Type)
+  (r : brel S)
+  (lteS : brel S)
+  (eqv : eqv_proofs S r)
+  (lteP : qo_proofs S r lteS) : eqv_proofs (finite_set S) (brel_minset r lteS) := 
   let refS := A_eqv_reflexive S r eqv in
   let symS := A_eqv_symmetric S r eqv in
   let trnS := A_eqv_transitive S r eqv in
@@ -1662,35 +1916,25 @@ Definition eqv_proofs_brel_minset_from_qo :
    |}.
 
 
-Definition A_eqv_minset_from_or : ∀ (S : Type),  A_or S -> A_eqv (finite_set S) 
-  := λ S poS,
-  let eqvS  := A_or_eqv S poS in 
-  let rS    := A_eqv_eq S eqvS in
-  let wS    := A_eqv_witness S eqvS in
-  let fS    := A_eqv_new S eqvS in
-  let nt    := A_eqv_not_trivial S eqvS in
-  let eqP   := A_eqv_proofs S eqvS in
-  let congS := A_eqv_congruence S rS eqP in 
-  let refS  := A_eqv_reflexive S rS eqP in  
-  let symS  := A_eqv_symmetric S rS eqP in
-  let trnS  := A_eqv_transitive S rS eqP in
-  let lteS  := A_or_lte S poS in
-  let lteP  := A_or_proofs S poS in 
-  let lte_congS := A_or_congruence S rS lteS lteP in 
-  let lte_refS  := A_or_reflexive S rS lteS lteP in  
-  let lte_trnS  := A_or_transitive S rS lteS lteP in  
+
+Definition eqv_proofs_brel_minset_from_po 
+  (S : Type)
+  (r : brel S)
+  (lteS : brel S)
+  (eqv : eqv_proofs S r)
+  (lteP : po_proofs S r lteS) : eqv_proofs (finite_set S) (brel_minset r lteS) := 
+  let refS := A_eqv_reflexive S r eqv in
+  let symS := A_eqv_symmetric S r eqv in
+  let trnS := A_eqv_transitive S r eqv in
+  let lteCong := A_po_congruence _ _ _ lteP in
+  let lteRefl := A_po_reflexive _ _ _ lteP in
+  let lteTrns := A_po_transitive _ _ _ lteP in     
    {| 
-      A_eqv_eq            := brel_minset rS lteS 
-    ; A_eqv_proofs        := eqv_proofs_brel_minset_from_or S rS lteS eqP lteP 
-    ; A_eqv_witness       := nil 
-    ; A_eqv_new           := brel_minset_new S rS wS 
-    ; A_eqv_not_trivial   := brel_minset_not_trivial S rS wS refS symS trnS lteS 
-    ; A_eqv_exactly_two_d := inr (brel_minset_not_exactly_two S rS wS fS nt refS symS trnS lteS)                              
-    ; A_eqv_data          := λ l, DATA_list (List.map (A_eqv_data S eqvS) (uop_minset rS l))   
-    ; A_eqv_rep           := λ l, List.map (A_eqv_rep S eqvS) (uop_minset rS l)
-    ; A_eqv_finite_d      := brel_minset_finite_decidable S rS wS fS nt congS refS symS trnS lteS lte_congS lte_refS lte_trnS (A_eqv_finite_d S eqvS)
-    ; A_eqv_ast           := Ast_eqv_minset (A_or_ast S poS)
-   |}. 
+     A_eqv_congruence  := brel_minset_congruence S r refS symS trnS lteS lteCong lteRefl lteTrns
+   ; A_eqv_reflexive   := brel_minset_reflexive S r  refS symS lteS
+   ; A_eqv_transitive  := brel_minset_transitive S r refS symS trnS lteS
+   ; A_eqv_symmetric   := brel_minset_symmetric S r lteS
+   |}.
 
 
 Definition A_eqv_minset_from_po : ∀ (S : Type),  A_po S -> A_eqv (finite_set S) 
@@ -1724,6 +1968,7 @@ Definition A_eqv_minset_from_po : ∀ (S : Type),  A_po S -> A_eqv (finite_set S
    |}. 
 
 
+(*
 Definition A_eqv_minset_from_po_bounded : ∀ (S : Type),  A_po_bounded S -> A_eqv (finite_set S) 
   := λ S poS,
   let eqvS  := A_po_bd_eqv S poS in 
@@ -1754,7 +1999,7 @@ Definition A_eqv_minset_from_po_bounded : ∀ (S : Type),  A_po_bounded S -> A_e
     ; A_eqv_ast           := Ast_eqv_minset (A_po_bd_ast S poS)
    |}. 
 
-
+*) 
 
 Definition A_eqv_minset_from_qo : ∀ (S : Type),  A_qo S -> A_eqv (finite_set S) 
   := λ S poS,
@@ -1789,6 +2034,22 @@ Definition A_eqv_minset_from_qo : ∀ (S : Type),  A_qo S -> A_eqv (finite_set S
 
 End ACAS.
 
+
+Section AMCAS.
+
+Definition A_eqv_minset_below_qo {S : Type} (E : @A_below_qo S) : A_eqv (finite_set S)  :=
+    A_eqv_minset_from_qo _ (A_cast_up_qo E). 
+  
+
+Definition A_mcas_eqv_minset {S : Type}  (A : @A_qo_mcas S) : @A_mcas_eqv (finite_set S) :=
+match A with
+| A_MCAS_qo_Error sl => A_EQV_Error sl
+| A_MCAS_qo B        => A_EQV_eqv (A_eqv_minset_below_qo B) 
+end.
+
+End AMCAS.
+
+
 Section CAS.
 
 Definition check_brel_minset_finite {S : Type} (lteS : brel S) (d : @check_is_finite S) : @check_is_finite (finite_set S)
@@ -1798,13 +2059,13 @@ Definition check_brel_minset_finite {S : Type} (lteS : brel S) (d : @check_is_fi
      end.
 
 
-Definition eqv_minset_from_or : ∀ {S : Type},  @or S -> @eqv (finite_set S)
+Definition eqv_minset_from_qo : ∀ {S : Type},  @qo S -> @eqv (finite_set S)
 := λ {S} poS,
-  let eqvS := or_eqv poS in  
+  let eqvS := qo_eqv poS in  
   let rS   := eqv_eq eqvS in
   let wS   := eqv_witness eqvS in
   let fS   := eqv_new eqvS in  
-  let lteS := or_lte poS in 
+  let lteS := qo_lte poS in 
    {| 
       eqv_eq            := brel_minset rS lteS 
     ; eqv_certs := 
@@ -1820,9 +2081,8 @@ Definition eqv_minset_from_or : ∀ {S : Type},  @or S -> @eqv (finite_set S)
     ; eqv_data          := λ l, DATA_list (List.map (eqv_data eqvS) (uop_minset rS l))   
     ; eqv_rep           := λ l, List.map (eqv_rep eqvS) (uop_minset rS  l)
     ; eqv_finite_d      := check_brel_minset_finite lteS (eqv_finite_d eqvS)  
-    ; eqv_ast           := Ast_eqv_minset (or_ast poS)
+    ; eqv_ast           := Ast_eqv_minset (qo_ast poS)
    |}.
-
 
 
 
@@ -1851,7 +2111,7 @@ Definition eqv_minset_from_po : ∀ {S : Type},  @po S -> @eqv (finite_set S)
     ; eqv_ast           := Ast_eqv_minset (po_ast poS)
    |}.
 
-
+(*
 Definition eqv_minset_from_po_bounded : ∀ {S : Type},  @po_bounded S -> @eqv (finite_set S)
 := λ {S} poS,
   let eqvS := po_bd_eqv poS in  
@@ -1877,32 +2137,7 @@ Definition eqv_minset_from_po_bounded : ∀ {S : Type},  @po_bounded S -> @eqv (
     ; eqv_ast           := Ast_eqv_minset (po_bd_ast poS)
    |}.
 
-
-
-Definition eqv_minset_from_qo : ∀ {S : Type},  @qo S -> @eqv (finite_set S)
-:= λ {S} poS,
-  let eqvS := qo_eqv poS in  
-  let rS   := eqv_eq eqvS in
-  let wS   := eqv_witness eqvS in
-  let fS   := eqv_new eqvS in  
-  let lteS := qo_lte poS in 
-   {| 
-      eqv_eq            := brel_minset rS lteS 
-    ; eqv_certs := 
-     {|
-       eqv_congruence     := @Assert_Brel_Congruence (finite_set S)
-     ; eqv_reflexive      := @Assert_Reflexive (finite_set S)
-     ; eqv_transitive     := @Assert_Transitive (finite_set S)
-     ; eqv_symmetric      := @Assert_Symmetric (finite_set S)
-     |}  
-    ; eqv_witness       := nil 
-    ; eqv_new           := brel_minset_new S rS wS 
-    ; eqv_exactly_two_d := Certify_Not_Exactly_Two (minset_negate S wS fS lteS) 
-    ; eqv_data          := λ l, DATA_list (List.map (eqv_data eqvS) (uop_minset rS l))   
-    ; eqv_rep           := λ l, List.map (eqv_rep eqvS) (uop_minset rS  l)
-    ; eqv_finite_d      := check_brel_minset_finite lteS (eqv_finite_d eqvS)  
-    ; eqv_ast           := Ast_eqv_minset (qo_ast poS)
-   |}.
+*) 
 
   
 End CAS.
@@ -1910,32 +2145,29 @@ End CAS.
 
 Section MCAS.
 
-Local Open Scope string_scope.
+Definition eqv_minset_below_qo {S : Type} (E : @below_qo S) : @eqv (finite_set S)  :=
+    eqv_minset_from_qo (cast_up_qo E). 
+  
 
-Definition mcas_eqv_minset {S : Type}  (A : @or_mcas S) : @mcas_eqv (finite_set S) :=
-match or_mcas_cast_up A with
-| OR_or B       => EQV_eqv (eqv_minset_from_or B)
-| OR_Error sl   => EQV_Error sl
-| _             => EQV_Error ("Internal Error : mcas_eqv_minset" :: nil)
+Definition mcas_eqv_minset {S : Type}  (A : @qo_mcas S) : @mcas_eqv (finite_set S) :=
+match A with
+| MCAS_qo_Error sl => EQV_Error sl
+| MCAS_qo B        => EQV_eqv (eqv_minset_below_qo B) 
 end.
 
 End MCAS.
 
-
-
 Section Verify.
 
-Theorem correct_eqv_minset_from_or : ∀ (S : Type) (P : A_or S),  
-    eqv_minset_from_or (A2C_or P) = A2C_eqv (finite_set S) (A_eqv_minset_from_or S P).
+Theorem correct_eqv_minset_from_qo : ∀ (S : Type) (P : A_qo S),  
+    eqv_minset_from_qo (A2C_qo P) = A2C_eqv (finite_set S) (A_eqv_minset_from_qo S P).
 Proof. intros S P. 
-       unfold eqv_minset_from_or, A_eqv_minset_from_or, A2C_eqv; simpl. 
+       unfold eqv_minset_from_qo, A_eqv_minset_from_qo, A2C_eqv; simpl. 
        destruct P; simpl.
-       destruct A_or_proofs; destruct A_or_eqv; simpl.
+       destruct A_qo_proofs; destruct A_qo_eqv; simpl.
        destruct A_eqv_finite_d as [ [fS FS] | NFS ]; simpl; auto. 
 Qed.        
-
   
-
 Theorem correct_eqv_minset_from_po : ∀ (S : Type) (P : A_po S),  
     eqv_minset_from_po (A2C_po P) = A2C_eqv (finite_set S) (A_eqv_minset_from_po S P).
 Proof. intros S P. 
@@ -1945,7 +2177,7 @@ Proof. intros S P.
        destruct A_eqv_finite_d as [ [fS FS] | NFS ]; simpl; auto. 
 Qed.        
 
-
+(*
 Theorem correct_eqv_minset_from_po_bounded : ∀ (S : Type) (P : A_po_bounded S),  
     eqv_minset_from_po_bounded (A2C_po_bounded P)
     =
@@ -1956,17 +2188,45 @@ Proof. intros S P.
        destruct A_po_bd_proofs; destruct A_po_bd_eqv; simpl.
        destruct A_eqv_finite_d as [ [fS FS] | NFS ]; simpl; auto. 
 Qed.        
+*) 
 
+Theorem correct_eqv_minset_below_qo (S : Type) (A : @A_below_qo S) : 
+  eqv_minset_below_qo (A2C_below_qo A)
+  =
+    A2C_eqv _ (A_eqv_minset_below_qo A).
+Proof. destruct A; unfold eqv_minset_below_qo, A_eqv_minset_below_qo; simpl.
+       - apply correct_eqv_minset_from_qo. 
+       - (*
+           eqv_minset_from_qo (qo_from_po (cast_up_po (A2C_below_po a))) 
+           = {cast_up_po_A2C_commute}
+           eqv_minset_from_qo (qo_from_po (A2C_po (A_cast_up_po a)))
+           = {correct_qo_from_po}
+           eqv_minset_from_qo (A2C_qo (A_qo_from_po (A_cast_up_po a)))
+           = {correct_eqv_minset_from_qo }
+           A2C_eqv _ (A_eqv_minset_from_qo S (A_qo_from_po (A_cast_up_po a)))
+          *)
+         rewrite cast_up_po_A2C_commute.
+         rewrite correct_qo_from_po.
+         apply correct_eqv_minset_from_qo. 
+       - (* similar *)
+         rewrite cast_up_fo_A2C_commute.
+         rewrite correct_qo_from_fo.
+         apply correct_eqv_minset_from_qo.
+       - (* similar *)
+         rewrite cast_up_qo_with_bottom_A2C_commute.
+         rewrite correct_qo_from_qo_with_bottom.
+         apply correct_eqv_minset_from_qo.
+Qed.
 
-Theorem correct_eqv_minset_from_qo : ∀ (S : Type) (P : A_qo S),  
-    eqv_minset_from_qo (A2C_qo P) = A2C_eqv (finite_set S) (A_eqv_minset_from_qo S P).
-Proof. intros S P. 
-       unfold eqv_minset_from_qo, A_eqv_minset_from_qo, A2C_eqv; simpl. 
-       destruct P; simpl.
-       destruct A_qo_proofs; destruct A_qo_eqv; simpl.
-       destruct A_eqv_finite_d as [ [fS FS] | NFS ]; simpl; auto. 
-Qed.        
+Theorem correct_mcas_eqv_minset (S : Type)  (A : @A_qo_mcas S) :
+  mcas_eqv_minset (A2C_qo_mcas A)
+  =
+  A2C_mcas_eqv _ (A_mcas_eqv_minset A). 
+Proof. destruct A; unfold mcas_eqv_minset, A_mcas_eqv_minset; simpl.
+       - reflexivity.
+       - rewrite correct_eqv_minset_below_qo.
+         reflexivity. 
+Qed.
 
- 
 End Verify.   
  

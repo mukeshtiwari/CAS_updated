@@ -55,8 +55,8 @@ Section Classical.
 
 
   Lemma reduced_bop_left_distributive
-    (ld : bop_left_distributive S eqS add mul) :
-      bop_left_distributive [rtype] [req] [add] [mul]. 
+    (ld : A_bs_left_distributive eqS add mul) :
+      @A_bs_left_distributive [rtype] [req] [add] [mul]. 
   Proof. intros [s1 p1] [s2 p2] [s3 p3]. compute. 
          assert (H1 := mul_right s1 (add s2 s3)).
          unfold bop_reduce in H1.
@@ -69,13 +69,13 @@ Section Classical.
   Qed.
 
   Lemma reduced_bop_not_left_distributive
-    (nld : bop_not_left_distributive S eqS add mul)
+    (nld : A_bs_not_left_distributive eqS add mul)
     (Q1 : let (s, _) := projT1 nld in is_a_fixed_point S eqS r s) 
     (Q2 : let '(_, (s, _)) := projT1 nld in is_a_fixed_point S eqS r s)
     (Q3 : let '(_, (_, s)) := projT1 nld in is_a_fixed_point S eqS r s) 
     (P : let '(s1, (s2, s3)) := projT1 nld in
          eqS (r (mul s1 (add s2 s3))) (r (add (mul s1 s2) (mul s1 s3))) = false) : 
-    bop_not_left_distributive [rtype] [req] [add] [mul]. 
+    @A_bs_not_left_distributive [rtype] [req] [add] [mul]. 
   Proof. destruct nld as [[s1 [s2 s3]] A].
          exists ((existT (fun x => is_a_fixed_point S eqS r x) s1 Q1),
                  ((existT (fun x => is_a_fixed_point S eqS r x) s2 Q2),
@@ -90,8 +90,8 @@ Section Classical.
 
 
   Lemma reduced_bop_right_distributive
-    (rd : bop_right_distributive S eqS add mul) :
-      bop_right_distributive [rtype] [req] [add] [mul]. 
+    (rd : A_bs_right_distributive eqS add mul) :
+      @A_bs_right_distributive [rtype] [req] [add] [mul]. 
   Proof. intros [s1 p1] [s2 p2] [s3 p3]. compute. 
          assert (H1 := mul_left (add s2 s3) s1).
          unfold bop_reduce in H1.
@@ -104,13 +104,13 @@ Section Classical.
   Qed.
 
   Lemma reduced_bop_not_right_distributive
-    (nrd : bop_not_right_distributive S eqS add mul)
+    (nrd : A_bs_not_right_distributive eqS add mul)
     (Q1 : let (s, _) := projT1 nrd in is_a_fixed_point S eqS r s) 
     (Q2 : let '(_, (s, _)) := projT1 nrd in is_a_fixed_point S eqS r s)
     (Q3 : let '(_, (_, s)) := projT1 nrd in is_a_fixed_point S eqS r s) 
     (P : let '(s1, (s2, s3)) := projT1 nrd in
          eqS (r (mul (add s2 s3) s1)) (r (add (mul s2 s1) (mul s3 s1))) = false) : 
-    bop_not_right_distributive [rtype] [req] [add] [mul]. 
+    @A_bs_not_right_distributive [rtype] [req] [add] [mul]. 
   Proof. destruct nrd as [[s1 [s2 s3]] A].
          exists ((existT (fun x => is_a_fixed_point S eqS r x) s1 Q1),
                  ((existT (fun x => is_a_fixed_point S eqS r x) s2 Q2),
@@ -123,9 +123,9 @@ Section Classical.
          exact P. 
   Defined.
 
-  Lemma reduced_bop_left_left_absorptive 
-    (lla : bops_left_left_absorptive S eqS add mul) :
-    bops_left_left_absorptive [rtype] [req] [add] [mul]. 
+  Lemma reduced_bop_left_absorptive 
+    (lla : A_bs_left_absorptive eqS add mul) :
+    @A_bs_left_absorptive [rtype] [req] [add] [mul]. 
   Proof. intros [s1 p1] [s2 p2]. compute. 
          assert (H1 := add_right s1 (mul s1 s2)).
          unfold bop_reduce in H1.
@@ -137,12 +137,12 @@ Section Classical.
          exact H4. 
   Qed.
 
-  Lemma reduced_bop_not_left_left_absorptive 
-    (nlla : bops_not_left_left_absorptive S eqS add mul)
+  Lemma reduced_bop_not_left_absorptive 
+    (nlla : A_bs_not_left_absorptive eqS add mul)
     (Q1 : let (s, _) := projT1 nlla in is_a_fixed_point S eqS r s) 
     (Q2 : let (_, t) := projT1 nlla in is_a_fixed_point S eqS r t) 
     (P : let (s, t) := projT1 nlla in eqS s (r (add s (mul s t))) = false) : 
-    bops_not_left_left_absorptive [rtype] [req] [add] [mul]. 
+    @A_bs_not_left_absorptive [rtype] [req] [add] [mul]. 
   Proof. destruct nlla as [[s1 s2] A].
          exists ((existT (fun x => is_a_fixed_point S eqS r x) s1 Q1),
                  (existT (fun x => is_a_fixed_point S eqS r x) s2 Q2)).
@@ -152,9 +152,9 @@ Section Classical.
          exact P. 
   Defined.
 
-  Lemma reduced_bop_left_right_absorptive 
-    (lra : bops_left_right_absorptive S eqS add mul) :
-    bops_left_right_absorptive [rtype] [req] [add] [mul]. 
+  Lemma reduced_bop_right_absorptive 
+    (lra : A_bs_right_absorptive eqS add mul) :
+    @A_bs_right_absorptive [rtype] [req] [add] [mul]. 
   Proof. intros [s1 p1] [s2 p2]. compute. 
          assert (H1 := add_right s1 (mul s2 s1)).
          unfold bop_reduce in H1.
@@ -166,12 +166,12 @@ Section Classical.
          exact H4. 
   Qed.
 
-  Lemma reduced_bop_not_left_right_absorptive 
-    (nlra : bops_not_left_right_absorptive S eqS add mul)
+  Lemma reduced_bop_not_right_absorptive 
+    (nlra : A_bs_not_right_absorptive eqS add mul)
     (Q1 : let (s, _) := projT1 nlra in is_a_fixed_point S eqS r s) 
     (Q2 : let (_, t) := projT1 nlra in is_a_fixed_point S eqS r t) 
     (P : let (s, t) := projT1 nlra in eqS s (r (add s (mul t s))) = false) : 
-    bops_not_left_right_absorptive [rtype] [req] [add] [mul]. 
+    @A_bs_not_right_absorptive [rtype] [req] [add] [mul]. 
   Proof. destruct nlra as [[s1 s2] A].
          exists ((existT (fun x => is_a_fixed_point S eqS r x) s1 Q1),
                  (existT (fun x => is_a_fixed_point S eqS r x) s2 Q2)).
@@ -180,67 +180,6 @@ Section Classical.
          rewrite (eqS_cong _ _ _ _ (refS s1) H1).
          exact P. 
   Defined.
-
-
-  Lemma reduced_bop_right_left_absorptive 
-    (rla : bops_right_left_absorptive S eqS add mul) :
-    bops_right_left_absorptive [rtype] [req] [add] [mul]. 
-  Proof. intros [s1 p1] [s2 p2]. compute. 
-         assert (H1 := add_left (mul s1 s2) s1).
-         unfold bop_reduce in H1.
-         assert (H2 := rla s1 s2).
-         unfold is_a_fixed_point in p1. apply symS in p1.
-         apply r_cong in H2. 
-         assert (H3 := trnS _ _ _ p1 H2). apply symS in H1.
-         assert (H4 := trnS _ _ _ H3 H1).
-         exact H4. 
-  Qed.
-
-  Lemma reduced_bop_not_right_left_absorptive 
-    (nrla : bops_not_right_left_absorptive S eqS add mul)
-    (Q1 : let (s, _) := projT1 nrla in is_a_fixed_point S eqS r s) 
-    (Q2 : let (_, t) := projT1 nrla in is_a_fixed_point S eqS r t) 
-    (P : let (s, t) := projT1 nrla in eqS s (r (add (mul s t) s)) = false) : 
-    bops_not_right_left_absorptive [rtype] [req] [add] [mul]. 
-  Proof. destruct nrla as [[s1 s2] A].
-         exists ((existT (fun x => is_a_fixed_point S eqS r x) s1 Q1),
-                 (existT (fun x => is_a_fixed_point S eqS r x) s2 Q2)).
-         compute. compute in Q1, Q2, P.
-         assert (H1 := add_left (mul s1 s2) s1). compute in H1. 
-         rewrite (eqS_cong _ _ _ _ (refS s1) H1).
-         exact P. 
-  Defined.
-
-  Lemma reduced_bop_right_right_absorptive 
-    (rra : bops_right_right_absorptive S eqS add mul) :
-    bops_right_right_absorptive [rtype] [req] [add] [mul]. 
-  Proof. intros [s1 p1] [s2 p2]. compute. 
-         assert (H1 := add_left (mul s2 s1) s1).
-         unfold bop_reduce in H1.
-         assert (H2 := rra s1 s2).
-         unfold is_a_fixed_point in p1. apply symS in p1.
-         apply r_cong in H2. 
-         assert (H3 := trnS _ _ _ p1 H2). apply symS in H1.
-         assert (H4 := trnS _ _ _ H3 H1).
-         exact H4. 
-  Qed.
-
-  Lemma reduced_bop_not_right_right_absorptive 
-    (nrra : bops_not_right_right_absorptive S eqS add mul)
-    (Q1 : let (s, _) := projT1 nrra in is_a_fixed_point S eqS r s) 
-    (Q2 : let (_, t) := projT1 nrra in is_a_fixed_point S eqS r t) 
-    (P : let (s, t) := projT1 nrra in eqS s (r (add (mul t s) s)) = false) : 
-    bops_not_right_right_absorptive [rtype] [req] [add] [mul]. 
-  Proof. destruct nrra as [[s1 s2] A].
-         exists ((existT (fun x => is_a_fixed_point S eqS r x) s1 Q1),
-                 (existT (fun x => is_a_fixed_point S eqS r x) s2 Q2)).
-         compute. compute in Q1, Q2, P.
-         assert (H1 := add_left (mul s2 s1) s1). compute in H1. 
-         rewrite (eqS_cong _ _ _ _ (refS s1) H1).
-         exact P. 
-  Defined.
-
-
 
   Lemma reduced_bop_exists_id_ann_equal
     (ia : S)
@@ -251,7 +190,7 @@ Section Classical.
     (P2 : ∀ s, (eqS (r (mul ia s)) ia = true)
                *
                (eqS (r (mul s ia)) ia = true)): 
-    bops_exists_id_ann_equal [rtype] [req] [add] [mul].
+    @A_bs_exists_id_ann_equal [rtype] [req] [add] [mul].
   Proof. compute in Q. 
          exists (inject_into_reduced_type _ eqS r r_idem ia).
          compute. split.
@@ -316,9 +255,9 @@ Section Classical_vs_Bop_Reduce.
 
 
 Lemma reduced_bop_left_distributive_implies_bop_reduce_left_distributive : 
-  bop_left_distributive [RT] [REQ] [add] [mul] 
+  @A_bs_left_distributive [RT] [REQ] [add] [mul] 
   ->
-  bop_left_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
+  @A_bs_left_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right). 
        intros H0 a b c.
@@ -353,9 +292,9 @@ Qed.
 
 
 Lemma bop_reduce_distributive_implies_reduced_bop_left_distributive : 
-  bop_left_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
+  @A_bs_left_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
   ->
-  bop_left_distributive [RT] [REQ] [add] [mul]. 
+  @A_bs_left_distributive [RT] [REQ] [add] [mul]. 
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right). 
        intros H0 [a P1] [b P2] [c P3].
@@ -378,9 +317,9 @@ Qed.
 
 
 Lemma reduced_bop_right_distributive_implies_bop_reduce_right_distributive : 
-  bop_right_distributive [RT] [REQ] [add] [mul] 
+  @A_bs_right_distributive [RT] [REQ] [add] [mul] 
   ->
-  bop_right_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
+  @A_bs_right_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right). 
        intros H0 a b c.
@@ -414,9 +353,9 @@ Qed.
 
 
 Lemma bop_reduce_right_distributive_implies_reduced_bop_right_distributive : 
-  bop_right_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
+  @A_bs_right_distributive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
   ->
-  bop_right_distributive [RT] [REQ] [add] [mul] .
+  @A_bs_right_distributive [RT] [REQ] [add] [mul] .
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right). 
        intros H0 [a P1] [b P2] [c P3].
@@ -438,10 +377,10 @@ Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add
 Qed.
 
 
-Lemma reduced_bop_left_left_absorptive_implie_bop_reduce_left_left_absorptive : 
-  bops_left_left_absorptive [RT] [REQ] [add] [mul] 
+Lemma reduced_bop_left_absorptive_implie_bop_reduce_left_absorptive : 
+  @A_bs_left_absorptive [RT] [REQ] [add] [mul] 
   ->
-  bops_left_left_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
+  @A_bs_left_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
        intros H0 a b.
@@ -466,10 +405,10 @@ Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add
 Qed. 
 
 
-Lemma bop_reduce_left_left_absorptive_implies_reduced_bop_left_left_absorptive : 
-  bops_left_left_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
+Lemma bop_reduce_left_absorptive_implies_reduced_bop_left_absorptive : 
+  @A_bs_left_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
   ->
-  bops_left_left_absorptive [RT] [REQ] [add] [mul]. 
+  @A_bs_left_absorptive [RT] [REQ] [add] [mul]. 
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
        intros H0 [a P1] [b P2]. 
@@ -488,10 +427,10 @@ Qed.
 
 
 
-Lemma reduced_bop_left_right_absorptive_implie_bop_reduce_left_right_absorptive : 
-  bops_left_right_absorptive [RT] [REQ] [add] [mul] 
+Lemma reduced_bop_right_absorptive_implie_bop_reduce_right_absorptive : 
+  @A_bs_right_absorptive [RT] [REQ] [add] [mul] 
   ->
-  bops_left_right_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
+  @A_bs_right_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
        intros H0 a b.
@@ -516,10 +455,10 @@ Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add
 Qed. 
 
 
-Lemma bop_reduce_left_right_absorptive_implies_reduced_bop_left_right_absorptive : 
-  bops_left_right_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
+Lemma bop_reduce_right_absorptive_implies_reduced_bop_right_absorptive : 
+  @A_bs_right_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
   ->
-  bops_left_right_absorptive [RT] [REQ] [add] [mul]. 
+  @A_bs_right_absorptive [RT] [REQ] [add] [mul]. 
 Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
        assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
        intros H0 [a P1] [b P2]. 
@@ -537,110 +476,12 @@ Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add
 Qed.
 
 
-Lemma reduced_bop_right_left_absorptive_implie_bop_reduce_right_left_absorptive : 
-  bops_right_left_absorptive [RT] [REQ] [add] [mul] 
-  ->
-  bops_right_left_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
-Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
-       assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
-       intros H0 a b.
-       assert (H1 := H0 ([inj] a) ([inj] b)). compute in H1.
-       compute.
-         (* 
-           H1 : r a == r (r (r a [*] r b) [+] r a)
-           ============================
-               r a == r (r (r (a [*] b) [+] a))
-          *)
-         assert (H2 : r (r (r a [*] r b) [+] r a) == r (r (r (a [*] b) [+] a))).
-         {
-           assert (H3 := mul_is_red a b).
-           assert (H4 := add_cong _ _ _ _  H3 (refS (r a))).
-           apply r_cong in H4. apply symS in H4.
-           assert (H5 := add_right (r (a [*] b)) a). unfold bop_reduce in H5.
-           assert (H6 := trnS _ _ _ H4 H5).
-           assert (H7 := r_idem ((r (a [*] b)) [+] a)). apply symS in H7. 
-           exact (trnS _ _ _ H6 H7). 
-         }
-         exact (trnS _ _ _ H1 H2).
-Qed. 
-
-
-Lemma bop_reduce_right_left_absorptive_implies_reduced_bop_right_left_absorptive : 
-  bops_right_left_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
-  ->
-  bops_right_left_absorptive [RT] [REQ] [add] [mul]. 
-Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
-       assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
-       intros H0 [a P1] [b P2]. 
-       assert (H1 := H0 a b). compute in H1.
-       compute.
-         (* 
-           H1 : r a == r (r (r (a [*] b) [+] a))
-           ============================
-                 a == r (r (a [*] b) [+] a)
-                
-          *)
-         assert (H2 := r_idem ((r (a [*] b)) [+] a)).
-         apply symS in P1.
-         exact (trnS _ _ _ (trnS _ _ _ P1 H1) H2). 
-Qed. 
-
-
-Lemma reduced_bop_right_right_absorptive_implie_bop_reduce_right_right_absorptive : 
-  bops_right_right_absorptive [RT] [REQ] [add] [mul] 
-  ->
-  bops_right_right_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul).
-Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
-       assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
-       intros H0 a b.
-       assert (H1 := H0 ([inj] a) ([inj] b)). compute in H1.
-       compute.
-         (* 
-           H1 : r a == r (r (r b [*] r a) [+] r a)
-           ============================
-               r a == r (r (r (b [*] a) [+] a))
-          *)
-         assert (H2 : r (r (r b [*] r a) [+] r a) == r (r (r (b [*] a) [+] a))).
-         {
-           assert (H3 := mul_is_red b a).
-           assert (H4 := add_cong _ _ _ _  H3 (refS (r a))).
-           apply r_cong in H4. apply symS in H4.
-           assert (H5 := add_right (r (b [*] a)) a). unfold bop_reduce in H5.
-           assert (H6 := trnS _ _ _ H4 H5).
-           assert (H7 := r_idem ((r (b [*] a)) [+] a)). apply symS in H7. 
-           exact (trnS _ _ _ H6 H7). 
-         }
-         exact (trnS _ _ _ H1 H2).
-Qed. 
-
-
-Lemma bop_reduce_right_right_absorptive_implies_reduced_bop_right_right_absorptive : 
-  bops_right_right_absorptive S (brel_reduce eqS r) (bop_reduce r add) (bop_reduce r mul)
-  ->
-  bops_right_right_absorptive [RT] [REQ] [add] [mul]. 
-Proof. assert (add_is_red := r_is_b_reduction _ add r eqS symS trnS add_left add_right).
-       assert (mul_is_red := r_is_b_reduction _ mul r eqS symS trnS mul_left mul_right).
-       intros H0 [a P1] [b P2]. 
-       assert (H1 := H0 a b). compute in H1.
-       compute.
-         (* 
-           H1 : r a == r (r (r (b [*] a) [+] a))
-           ============================
-                 a == r (r (b [*] a) [+] a)
-                
-          *)
-         assert (H2 := r_idem ((r (b [*] a)) [+] a)).
-         apply symS in P1.
-         exact (trnS _ _ _ (trnS _ _ _ P1 H1) H2). 
-Qed. 
-
-
 (* ********************************************************** 
    Bop Reduce 
 **********************************************************  *)
 Lemma bop_reduce_left_distributive
-  (LD : bop_left_distributive S eqS add mul) : 
-    bop_left_distributive S
+  (LD : A_bs_left_distributive eqS add mul) : 
+    A_bs_left_distributive 
       (brel_reduce eqS r)
       (bop_reduce r add)
       (bop_reduce r mul).
@@ -649,8 +490,8 @@ Lemma bop_reduce_left_distributive
   Qed. 
 
   Lemma bop_reduce_right_distributive
-  (RD : bop_right_distributive S eqS add mul) : 
-    bop_right_distributive S
+  (RD : A_bs_right_distributive eqS add mul) : 
+    A_bs_right_distributive 
       (brel_reduce eqS r)
       (bop_reduce r add)
       (bop_reduce r mul).
@@ -659,45 +500,25 @@ Lemma bop_reduce_left_distributive
   Qed.
 
 
-  Lemma bop_reduce_left_left_absorptive
-    (LLA : bops_left_left_absorptive S eqS add mul): 
-    bops_left_left_absorptive S
+  Lemma bop_reduce_left_absorptive
+    (LLA : A_bs_left_absorptive eqS add mul): 
+    A_bs_left_absorptive 
       (brel_reduce eqS r)
       (bop_reduce r add)
       (bop_reduce r mul).
-  Proof. apply reduced_bop_left_left_absorptive_implie_bop_reduce_left_left_absorptive. 
-         apply reduced_bop_left_left_absorptive; auto. 
+  Proof. apply reduced_bop_left_absorptive_implie_bop_reduce_left_absorptive. 
+         apply reduced_bop_left_absorptive; auto. 
   Qed.
 
 
-  Lemma bop_reduce_left_right_absorptive
-    (LRA : bops_left_right_absorptive S eqS add mul): 
-    bops_left_right_absorptive S
+  Lemma bop_reduce_right_absorptive
+    (LRA : A_bs_right_absorptive eqS add mul): 
+    A_bs_right_absorptive 
       (brel_reduce eqS r)
       (bop_reduce r add)
       (bop_reduce r mul).
-  Proof. apply reduced_bop_left_right_absorptive_implie_bop_reduce_left_right_absorptive. 
-         apply reduced_bop_left_right_absorptive; auto. 
-  Qed.
-
-  Lemma bop_reduce_right_left_absorptive
-    (LLA : bops_right_left_absorptive S eqS add mul): 
-    bops_right_left_absorptive S
-      (brel_reduce eqS r)
-      (bop_reduce r add)
-      (bop_reduce r mul).
-  Proof. apply reduced_bop_right_left_absorptive_implie_bop_reduce_right_left_absorptive. 
-         apply reduced_bop_right_left_absorptive; auto. 
-  Qed.
-
-  Lemma bop_reduce_right_right_absorptive
-    (LLA : bops_right_right_absorptive S eqS add mul): 
-    bops_right_right_absorptive S
-      (brel_reduce eqS r)
-      (bop_reduce r add)
-      (bop_reduce r mul).
-  Proof. apply reduced_bop_right_right_absorptive_implie_bop_reduce_right_right_absorptive. 
-         apply reduced_bop_right_right_absorptive; auto. 
+  Proof. apply reduced_bop_right_absorptive_implie_bop_reduce_right_absorptive. 
+         apply reduced_bop_right_absorptive; auto. 
   Qed.
 
   

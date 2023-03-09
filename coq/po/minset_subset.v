@@ -83,7 +83,7 @@ let trnS := A_eqv_transitive _ _ eqvP in
  ; A_po_reflexive     := brel_minset_subset_reflexive S eq refS symS lte 
  ; A_po_transitive    := brel_minset_subset_transitive S eq refS symS trnS lte
  ; A_po_antisymmetric := brel_minset_subset_antisymmetric S eq lte
- ; A_po_not_total     := brel_minset_subset_not_total S eq lte wS f nt 
+ ; A_po_not_total     := brel_minset_subset_not_total S eq lte wS f nt
 |}.
 
 End ACAS. 

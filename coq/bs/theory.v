@@ -10,7 +10,7 @@ RD( +,* )  right distributive      (b + c) * a = (b * a) + (c * a)
 LA( +,* )  left absorptive         a = a + (a * b) 
 RA( +,* )  right absorptive        a = (a * b) + a
 0A( +,* ) plus id is times ann     id+ * a = id+ = a * id+
-OA( *,+ ) times id is times ann    id* + a = id* = a + id*
+OA( *,+ ) times id is plus ann     id* + a = id* = a + id*
 
 LD( +,* )  a * (b + c) = (a * b) + (a * c) 
 LD( *,+ )  a + (b * c) = (a + b) * (a + c) 
@@ -50,18 +50,76 @@ S( + ), LD( *,+ )
 
 ---------------------------------------------------------
 
-
-
-
  *)
 
 
-Lemma bop_left_distributive_implies_right : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
+Lemma one_is_plus_annihilator_implies_left_absorptive
+  (S : Type) (eq : brel S) (plus times : binary_op S)
+  (ref : brel_reflexive S eq)
+  (sym : brel_symmetric S eq)
+  (trn : brel_transitive S eq)
+  (pcng : bop_congruence S eq plus)
+  (tcng : bop_congruence S eq times) 
+  (A : A_bs_exists_id_ann_equal eq times plus)
+  (B : A_bs_left_distributive eq plus times) :  
+  A_bs_left_absorptive eq plus times. 
+Proof. intros a b. compute in A.
+       destruct A as [one [C D]].
+       assert (E := B a one b). 
+       destruct (D b) as [F G]. 
+       destruct (C a) as [H I].
+       assert (J : eq a (times a (plus one b)) = true). 
+       {
+         assert (K := tcng _ _ _ _ (ref a) F).
+         assert (L := trn _ _ _ K I).
+         apply sym; auto. 
+       }
+       assert (K: eq (plus (times a one) (times a b)) (plus a (times a b)) = true).
+       {
+         exact (pcng _ _ _ _ I (ref ((times a b)))). 
+       }
+       assert (L := trn _ _ _ J E). 
+       assert (M := trn _ _ _ L K).
+       exact M. 
+Qed.
+
+
+Lemma one_is_plus_annihilator_implies_right_absorptive
+  (S : Type) (eq : brel S) (plus times : binary_op S)
+  (ref : brel_reflexive S eq)
+  (sym : brel_symmetric S eq)
+  (trn : brel_transitive S eq)
+  (pcng : bop_congruence S eq plus)
+  (tcng : bop_congruence S eq times) 
+  (A : A_bs_exists_id_ann_equal eq times plus)
+  (B : A_bs_right_distributive eq plus times) :  
+  A_bs_right_absorptive eq plus times. 
+Proof. intros a b. compute in A.
+       destruct A as [one [C D]].
+       assert (E := B a one b). 
+       destruct (D b) as [F G]. 
+       destruct (C a) as [H I].
+       assert (J : eq a (times (plus one b) a) = true). 
+       {
+         assert (K := tcng _ _ _ _ F (ref a)).
+         assert (L := trn _ _ _ K H).
+         apply sym; auto. 
+       }
+       assert (K: eq (plus (times one a) (times b a)) (plus a (times b a)) = true).
+       {
+         exact (pcng _ _ _ _ H (ref ((times b a)))). 
+       }
+       assert (L := trn _ _ _ J E). 
+       assert (M := trn _ _ _ L K).
+       exact M. 
+Qed.
+
+Lemma bs_left_distributive_implies_right : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
         brel_transitive S r -> 
         bop_congruence S r b1 -> 
         bop_commutative S r b1 -> 
         bop_commutative S r b2 -> 
-           bop_left_distributive S r b1 b2 -> bop_right_distributive S r b1 b2. 
+           A_bs_left_distributive r b1 b2 -> A_bs_right_distributive r b1 b2. 
 Proof. intros S r b1 b2 transS cong1 c1 c2 ld s t u.
        assert (fact1 := ld s t u).        
        assert (fact2 := c2 s u). 
@@ -75,12 +133,12 @@ Proof. intros S r b1 b2 transS cong1 c1 c2 ld s t u.
 Defined. 
 
 
-Lemma bop_not_left_distributive_implies_not_right : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
+Lemma bs_not_left_distributive_implies_not_right : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
         brel_transitive S r -> 
         bop_congruence S r b1 -> 
         bop_commutative S r b1 -> 
         bop_commutative S r b2 -> 
-           bop_not_left_distributive S r b1 b2 -> bop_not_right_distributive S r b1 b2. 
+           A_bs_not_left_distributive r b1 b2 -> A_bs_not_right_distributive r b1 b2. 
 Proof. intros S r b1 b2 transS cong1 c1 c2 [[a [b c]] NLD].
        exists (a, (b, c)). 
        case_eq(r (b2 (b1 b c) a) (b1 (b2 b a) (b2 c a))); intro H; auto. 
@@ -95,15 +153,15 @@ Proof. intros S r b1 b2 transS cong1 c1 c2 [[a [b c]] NLD].
 Defined. 
 
 
-Lemma bop_left_distributive_decidable_implies_right_decidable : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
+Lemma bs_left_distributive_decidable_implies_right_decidable : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
         brel_transitive S r -> 
         bop_congruence S r b1 -> 
         bop_commutative S r b1 -> 
         bop_commutative S r b2 -> 
-        bop_left_distributive_decidable S r b1 b2 -> bop_right_distributive_decidable S r b1 b2.
+        A_bs_left_distributive_decidable r b1 b2 -> A_bs_right_distributive_decidable r b1 b2.
 Proof. intros S r b1 b2 transS cong1 c1 c2 [LD | NLD].
-       left. apply bop_left_distributive_implies_right; auto. 
-       right. apply bop_not_left_distributive_implies_not_right; auto. 
+       left. apply bs_left_distributive_implies_right; auto. 
+       right. apply bs_not_left_distributive_implies_not_right; auto. 
 Defined.
 
 
@@ -115,11 +173,10 @@ Lemma bops_left_distributive_and_times_commutative_imply_right_distributive :
         brel_congruence S rS rS ->         
         bop_congruence S rS plusS ->         
         bop_commutative S rS timesS ->         
-        bop_left_distributive S rS plusS timesS -> 
-           bop_right_distributive S rS plusS timesS. 
+        A_bs_left_distributive rS plusS timesS -> 
+           A_bs_right_distributive rS plusS timesS. 
 Proof. intros S rS plusS timesS congS cong_plusS commS ldS s1 s2 s3. 
        unfold bop_commutative in commS. 
-       unfold bop_left_distributive in ldS. 
        unfold bop_congruence in cong_plusS. 
        unfold brel_congruence in congS. 
        assert (A := commS s1 (plusS s2 s3)). 
@@ -411,9 +468,9 @@ Lemma id_ann_implies_left_left_absorptive
       (plus times : binary_op S)
       (c_plus : bop_congruence S eq plus)
       (c_times : bop_congruence S eq times)       
-      (ld : bop_left_distributive S eq plus times)       
-      (id_ann : bops_exists_id_ann_equal S eq times plus) :
-      bops_left_left_absorptive S eq plus times.   
+      (ld : A_bs_left_distributive eq plus times)       
+      (id_ann : A_bs_exists_id_ann_equal eq times plus) :
+      A_bs_left_absorptive eq plus times.   
 Proof. destruct id_ann as [id [A B]]. 
        intros a b.
        assert (C : eq (plus a (times a b)) (plus (times a id) (times a b)) = true).
@@ -441,9 +498,9 @@ Lemma id_ann_implies_left_right_absorptive
       (c_plus : bop_congruence S eq plus)
       (comm : bop_commutative S eq plus)      
       (c_times : bop_congruence S eq times)       
-      (rd : bop_right_distributive S eq plus times)       
-      (id_ann : bops_exists_id_ann_equal S eq times plus) :
-      bops_left_right_absorptive S eq plus times.   
+      (rd : A_bs_right_distributive eq plus times)       
+      (id_ann : A_bs_exists_id_ann_equal eq times plus) :
+      A_bs_right_absorptive eq plus times.   
 Proof. destruct id_ann as [id [A B]]. 
        intros a b.
        assert (C : eq (plus (times b a) a) (plus  (times b a) (times id a)) = true).
@@ -463,11 +520,11 @@ Qed.
 
 
        
-
+(*
 Lemma bops_left_right_absorptive_implies_right_right : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
         brel_transitive S r -> 
         bop_commutative S r b1 -> 
-        bops_left_right_absorptive S r b1 b2 -> bops_right_right_absorptive S r b1 b2. 
+        A_bs_right_absorptive S r b1 b2 -> A_bs_right_right_absorptive S r b1 b2. 
 Proof. intros S r b1 b2 transS comm_b1 abs s t.
        assert (fact1 := abs s t).
        assert (fact2 := comm_b1 s (b2 t s)). 
@@ -530,7 +587,7 @@ Definition bops_right_left_absorptive_decide_I : ∀ (S : Type) (r : brel S) (b1
    | inr nlr => inr _ (bops_not_left_left_absorptive_implies_not_right_left S r b1 b2 trans comm nlr)
    end. 
 
-
+*) 
 
 
 
@@ -539,19 +596,19 @@ Definition bops_right_left_absorptive_decide_I : ∀ (S : Type) (r : brel S) (b1
 
 
 
-Lemma bops_left_left_absorptive_implies_left_right : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
+Lemma bs_left_absorptive_implies_right : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),
         brel_reflexive S r -> 
         brel_transitive S r -> 
         bop_congruence S r b1 -> 
         bop_commutative S r b2 -> 
-        bops_left_left_absorptive S r b1 b2 -> bops_left_right_absorptive S r b1 b2. 
+        A_bs_left_absorptive r b1 b2 -> A_bs_right_absorptive r b1 b2. 
 Proof. intros S r b1 b2 refS transS cong_b1 comm_b2 lla s t.
        assert (fact1 := lla s t).        
        assert (fact2 : r (b1 s (b2 s t)) (b1 s (b2 t s)) = true). apply cong_b1; auto. 
        apply (transS _ _ _ fact1 fact2). 
 Defined. 
 
-
+(*
  Lemma bops_left_right_absorptive_implies_right_left : ∀ (S : Type) (r : brel S) (b1 b2 : binary_op S),        brel_reflexive S r -> 
         brel_transitive S r -> 
         bop_congruence S r b1 -> 
@@ -580,3 +637,4 @@ Proof. intros S r b1 b2 refS transS cong_b1 comm_b2 lla s t.
        assert (fact2 : r (b1 (b2 s t) s) (b1 (b2 t s) s) = true). apply cong_b1; auto. 
        apply (transS _ _ _ fact1 fact2). 
 Defined. 
+*) 

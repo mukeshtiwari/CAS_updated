@@ -255,15 +255,11 @@ Section ACAS.
     (wL : L)
     (eqS : brel S)
     (eqL : brel L)
-    (ltr : ltr_type L S) : 
-    left_transform_proofs 
-      L S eqS eqL ltr ->
+    (ltr : ltr_type L S) 
+    (Ha : left_transform_proofs L S eqS eqL ltr) : 
     left_transform_proofs L (with_constant S)
       (brel_sum brel_constant eqS) eqL 
-      (ltr_add_ann_op ltr c).
-  Proof.
-    intros Ha.
-    refine
+      (ltr_add_ann_op ltr c) := 
     {|
       A_left_transform_congruence  := 
         ltr_add_ann_congruence c eqS eqL ltr 
@@ -278,17 +274,14 @@ Section ACAS.
         ltr_add_ann_left_cancellative_decidable c eqS ltr
           (A_left_transform_left_cancellative_d _ _ _ _ _ Ha)
     |}.
-  Defined.
 
 
 
-  Lemma A_ltr_add_ann 
+Definition A_ltr_add_ann 
     {L S : Type}
     (c : cas_constant)
     (Hl : A_left_transform L S) : 
-    A_left_transform L (with_constant S).
-  Proof.
-    refine 
+    A_left_transform L (with_constant S) := 
     {|
         A_left_transform_carrier :=  
           A_eqv_add_constant S (A_left_transform_carrier _ _ Hl) c
@@ -316,7 +309,6 @@ Section ACAS.
       ; A_left_transform_ast  := Cas_ast ("A_left_transform_with_constant", 
         [A_left_transform_ast _ _ Hl])
     |}.
-  Defined.
 
 End ACAS.
 
@@ -344,39 +336,27 @@ Section Certificate.
   Context {L S : Type}.
 
 
-  Lemma ltr_add_ann_congruence_cert : 
-    @assert_ltr_congruence L S -> 
-    @assert_ltr_congruence L (with_constant S). 
-  Proof.
-    intros Ha.
-    exact Assert_Ltr_Congruence.
-  Defined.
-  
+Definition ltr_add_ann_congruence_cert 
+    (Ha : @assert_ltr_congruence L S) : 
+  @assert_ltr_congruence L (with_constant S) :=
+  @Assert_Ltr_Congruence L (with_constant S).
 
-  Lemma ltr_add_ann_is_right_certs : 
-    @check_ltr_is_right L S ->
-    @check_ltr_is_right L (with_constant S). 
-  Proof.
-    intros Ha.
-    case Ha eqn:Hwc.
-    + exact Certify_Ltr_Is_Right.
-    + apply Certify_Ltr_Not_Is_Right.
-      exact (fst p, inr (snd p)).
-  Defined. 
+Definition  ltr_add_ann_is_right_certs 
+    (Ha : @check_ltr_is_right L S) :
+  @check_ltr_is_right L (with_constant S) :=
+  match Ha with
+  | Certify_Ltr_Is_Right => Certify_Ltr_Is_Right
+  | Certify_Ltr_Not_Is_Right p => Certify_Ltr_Not_Is_Right (fst p, inr (snd p))
+  end. 
     
-  
-  Lemma ltr_add_ann_exists_id_certs : 
-    @check_ltr_exists_id L S -> 
-    @check_ltr_exists_id L (with_constant S).
-  Proof.
-    intros Ha.
-    case_eq Ha.
-    + intros l Hb.
-      apply Certify_Ltr_Exists_Id.
-      exact l. 
-    + intros Hb.
-      apply Certify_Ltr_Not_Exists_Id.
-  Defined.
+Definition ltr_add_ann_exists_id_certs 
+    (Ha : @check_ltr_exists_id L S): 
+        @check_ltr_exists_id L (with_constant S ) :=
+       match Ha with
+       | Certify_Ltr_Exists_Id l    => Certify_Ltr_Exists_Id l
+       | Certify_Ltr_Not_Exists_Id => Certify_Ltr_Not_Exists_Id
+       end.
+                                    
 
 (*   
   Print ltr_add_ann_exists_id_certs. 
@@ -403,18 +383,14 @@ let ltr_add_ann_exists_id_certs ha =
 
 *)     
 
-  Lemma ltr_add_ann_left_cancellative_certs :
-    @check_ltr_left_cancellative L S ->
-    @check_ltr_left_cancellative L (with_constant S).
-  Proof.
-    intros Ha.
-    case_eq Ha.
-    + intros Hb.
-      apply Certify_Ltr_Left_Cancellative.
-    + intros (l, (s₁, s₂)) Hb.
-      apply Certify_Ltr_Not_Left_Cancellative.
-      exact (l, (inr s₁, inr s₂)).
-  Defined.
+Definition ltr_add_ann_left_cancellative_certs 
+    (Ha : @check_ltr_left_cancellative L S) : 
+  @check_ltr_left_cancellative L (with_constant S) :=
+  match Ha with
+  | Certify_Ltr_Left_Cancellative => Certify_Ltr_Left_Cancellative
+  | Certify_Ltr_Not_Left_Cancellative (l, (s1, s2)) =>
+      Certify_Ltr_Not_Left_Cancellative (l, (inr s1, inr s2))
+  end. 
 
 End Certificate.
 
@@ -427,12 +403,9 @@ Section CAS.
     {L S : Type} 
     (c : cas_constant)
     (wS : S)
-    (wL : L) :
-    @left_transform_certificates L S -> 
-    @left_transform_certificates L (with_constant S).
-  Proof.
-    intros Ha.
-    refine
+    (wL : L) 
+    (Ha : @left_transform_certificates L S) :  
+    @left_transform_certificates L (with_constant S) := 
     {|
       left_transform_congruence  := ltr_add_ann_congruence_cert 
         (left_transform_congruence Ha)
@@ -442,15 +415,12 @@ Section CAS.
     ; left_transform_left_cancellative_d := ltr_add_ann_left_cancellative_certs 
         (left_transform_left_cancellative_d Ha) 
     |}.
-  Defined.
 
-  Lemma ltr_add_ann 
+Definition ltr_add_ann 
     {L S : Type}
     (c : cas_constant)
     (Hl : left_transform L S) : 
-    left_transform L (with_constant S).
-  Proof.
-    refine
+    left_transform L (with_constant S) := 
     {|
         left_transform_carrier  := eqv_add_constant (left_transform_carrier _ _ Hl) c 
       ; left_transform_label  := left_transform_label _ _ Hl                                                 
@@ -465,7 +435,6 @@ Section CAS.
       ; left_transform_ast := Cas_ast ("A_left_transform_with_constant", 
         [left_transform_ast _ _ Hl])
     |}.
-  Defined.
 
 
 End CAS. 

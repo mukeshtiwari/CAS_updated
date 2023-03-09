@@ -10,6 +10,8 @@ Require Import CAS.coq.eqv.bool.
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
+Require Import CAS.coq.sg.classify.
+
 
 Section Computation.
 
@@ -116,14 +118,14 @@ Definition sg_CS_proofs_or : sg_CS_proofs bool brel_eq_bool bop_or :=
 |}. 
 
 
-Definition A_sg_or : A_sg_BCS bool
+Definition A_sg_or : A_sg_CS bool
 := {| 
-     A_sg_BCS_eqv          := A_eqv_bool
-   ; A_sg_BCS_bop          := bop_or
-   ; A_sg_BCS_proofs       := sg_CS_proofs_or
-   ; A_sg_BCS_exists_id    := bop_or_exists_id 
-   ; A_sg_BCS_exists_ann   := bop_or_exists_ann
-   ; A_sg_BCS_ast          := Ast_sg_or 
+     A_sg_CS_eqv          := A_eqv_bool
+   ; A_sg_CS_bop          := bop_or
+   ; A_sg_CS_proofs       := sg_CS_proofs_or
+   ; A_sg_CS_exists_id_d  := inl bop_or_exists_id 
+   ; A_sg_CS_exists_ann_d := inl bop_or_exists_ann
+   ; A_sg_CS_ast          := Ast_sg_or 
    |}. 
 
 
@@ -132,7 +134,14 @@ End ACAS.
 
 Section AMCAS.
 
-Definition A_mcas_sg_or := A_MCAS_sg_BCS bool A_sg_or. 
+  Definition A_sg_or_below_sg_CS : @A_below_sg_CS bool :=
+    A_classify_sg_CS A_sg_or. 
+
+  Definition A_mcas_or : @A_sg_mcas bool := 
+    A_MCAS_sg
+      (A_Below_sg_sg_C
+         (A_Below_sg_C_sg_CS A_sg_or_below_sg_CS)).
+
 
 End AMCAS.  
 
@@ -152,14 +161,14 @@ Definition sg_CS_certs_or : sg_CS_certificates (S := bool)
 
 
 
-Definition sg_or : @sg_BCS bool
+Definition sg_or : @sg_CS bool
 := {| 
-     sg_BCS_eqv          := eqv_bool
-   ; sg_BCS_bop          := bop_or
-   ; sg_BCS_exists_id    := Assert_Exists_Id  false 
-   ; sg_BCS_exists_ann   := Assert_Exists_Ann  true
-   ; sg_BCS_certs        := sg_CS_certs_or
-   ; sg_BCS_ast          := Ast_sg_or 
+     sg_CS_eqv          := eqv_bool
+   ; sg_CS_bop          := bop_or
+   ; sg_CS_exists_id_d  := Certify_Exists_Id  false 
+   ; sg_CS_exists_ann_d := Certify_Exists_Ann  true
+   ; sg_CS_certs        := sg_CS_certs_or
+   ; sg_CS_ast          := Ast_sg_or 
    |}. 
   
 
@@ -167,17 +176,24 @@ End CAS.
 
 Section MCAS.
 
-Definition mcas_sg_or := MCAS_sg_BCS sg_or. 
+  Definition sg_or_below_sg_CS : @below_sg_CS bool :=
+    classify_sg_CS sg_or. 
+
+  Definition mcas_or : @sg_mcas bool := 
+    MCAS_sg
+      (Below_sg_sg_C
+         (Below_sg_C_sg_CS sg_or_below_sg_CS)).
 
 End MCAS.  
 
 
 Section Verify.
 
-Theorem correct_sg_CS_or : sg_or = A2C_sg_BCS bool (A_sg_or). 
+Theorem correct_sg_CS_or : sg_or = A2C_sg_CS (A_sg_or). 
 Proof. compute. reflexivity. Qed.
 
-Theorem correct_mcas_sg_CS_or : mcas_sg_or = A2C_mcas_sg bool A_mcas_sg_or.
+Theorem correct_mcas_sg_CS_or :
+  mcas_or = A2C_sg_mcas A_mcas_or.
 Proof. compute. reflexivity. Qed. 
 
 End Verify.   

@@ -108,10 +108,10 @@ End ACAS.
 
 Section AMCAS.
 
-Definition A_mcas_sg_left (S : Type) (A : @A_mcas_eqv S) : A_sg_mcas S :=
+Definition A_mcas_sg_left (S : Type) (A : @A_mcas_eqv S) : @A_sg_mcas S :=
 match A with
-| A_EQV_eqv B    => A_MCAS_sg S (A_sg_left S B)  (* classify? *) 
-| A_EQV_Error sl => A_MCAS_sg_Error _ sl 
+| A_EQV_eqv B    => A_MCAS_sg (A_Below_sg_top (A_sg_left S B))
+| A_EQV_Error sl => A_MCAS_sg_Error sl 
 end.
 
 End AMCAS.   
@@ -162,7 +162,7 @@ Section MCAS.
 
 Definition mcas_sg_left {S : Type} (A : @mcas_eqv S) : @sg_mcas S :=
 match A with
-| EQV_eqv B    => MCAS_sg (sg_left B)  (* classify? *) 
+| EQV_eqv B    => MCAS_sg (Below_sg_top (sg_left B))  (* classify? *) 
 | EQV_Error sl => MCAS_sg_Error sl 
 end.
 
@@ -174,7 +174,7 @@ Section Verify.
 Lemma correct_sg_certs_left :  ∀ (S : Type) (eS : A_eqv S),  
        sg_certs_left (A2C_eqv S eS) 
        = 
-       P2C_sg S (A_eqv_eq S eS) (@bop_left S) (sg_proofs_left S eS). 
+       P2C_sg (A_eqv_eq S eS) (@bop_left S) (sg_proofs_left S eS). 
 Proof. intros S eS. compute. reflexivity. Defined. 
   
 
@@ -183,7 +183,7 @@ Proof. intros S eS. compute. reflexivity. Defined.
 Theorem correct_sg_left (S : Type) (eS : A_eqv S) : 
          sg_left (A2C_eqv S eS) 
          = 
-         A2C_sg S (A_sg_left S eS). 
+         A2C_sg  (A_sg_left S eS). 
 Proof. unfold sg_left, A2C_sg; simpl. 
        rewrite <- correct_sg_certs_left.  
        reflexivity. 
@@ -192,7 +192,7 @@ Qed.
 Theorem correct_mcas_sg_left (S : Type) (eS : @A_mcas_eqv S) : 
          mcas_sg_left (A2C_mcas_eqv S eS) 
          = 
-         A2C_mcas_sg S (A_mcas_sg_left S eS). 
+         A2C_sg_mcas  (A_mcas_sg_left S eS). 
 Proof.  destruct eS; compute; reflexivity. Qed. 
   
  

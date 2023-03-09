@@ -12,7 +12,8 @@ Require Import CAS.coq.eqv.set.
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
 Require Import CAS.coq.sg.theory.
-Require Import CAS.coq.sg.cast_up. 
+Require Import CAS.coq.sg.cast_up.
+Require Import CAS.coq.sg.classify. 
 Require Import CAS.coq.sg.and. 
 Require Import CAS.coq.sg.union. (* just for in_set_uop_duplicate_elim_elim ? *)
 
@@ -474,32 +475,34 @@ Proof. intros a b X Y.
 Qed. 
 
 
-Lemma bop_lift_not_exists_id (s : S) : bop_not_exists_id S rS bS  -> bop_not_exists_id (finite_set S) (brel_set rS) (bop_lift rS bS). 
-Proof. unfold bop_not_exists_id. unfold bop_not_is_id. 
-       intros H X.
+Lemma bop_lift_not_exists_id (s : S) (H : bop_not_exists_id S rS bS) :
+  bop_not_exists_id (finite_set S) (brel_set rS) (bop_lift rS bS). 
+Proof. intro X.
        destruct X.
-       exists (s :: nil). compute; auto.
-       destruct (H s0) as [u [G | G]].
-       exists (u :: nil). 
-       left.  case_eq(brel_set rS (bop_lift rS bS (s0 :: X) (u :: nil)) (u :: nil) ); intro K; auto. 
-       apply brel_set_elim in K. destruct K as [K1 K2].
-       assert (J2 := brel_subset_elim _ _ symS tranS _ _ K1 (bS s0 u)).
-       assert (K3 : in_set rS (u :: nil) (bS s0 u) = true). apply J2. 
-       apply bop_lift_contains_product.
-       apply in_set_cons_elim in K3; auto.
-       destruct K3 as [K3 | K3]. apply symS in K3. rewrite K3 in G. discriminate G. 
-       compute in K3.  discriminate K3.
-
-       exists (u :: nil).
-       right.
-       case_eq(brel_set rS (bop_lift rS bS (u :: nil) (s0 :: X)) (u :: nil)); intro K; auto. 
-       apply brel_set_elim in K. destruct K as [K1 K2].
-       assert (J2 := brel_subset_elim _ _ symS tranS _ _ K1 (bS u s0)).
-       assert (K3 : in_set rS (u :: nil) (bS u s0) = true). apply J2. 
-       apply bop_lift_contains_product.
-       apply in_set_cons_elim in K3; auto.
-       destruct K3 as [K3 | K3]. apply symS in K3. rewrite K3 in G. discriminate G. 
-       compute in K3.  discriminate K3.
+       - exists (s :: nil). compute; auto.
+       - destruct (H s0) as [u [G | G]].
+         + exists (u :: nil). left.  
+           case_eq(brel_set rS (bop_lift rS bS (s0 :: X) (u :: nil)) (u :: nil) ); intro K; auto.
+           apply brel_set_elim_prop in K; auto. destruct K as [J1 J2]. 
+           assert (K3 : in_set rS (u :: nil) (bS s0 u) = true).
+           {
+             apply J1. 
+             apply bop_lift_contains_product.
+           }
+           apply in_set_singleton_elim in K3; auto. 
+           apply symS in K3. 
+           rewrite K3 in G. discriminate G. 
+         + exists (u :: nil). right.
+           case_eq(brel_set rS (bop_lift rS bS (u :: nil) (s0 :: X)) (u :: nil)); intro K; auto.
+           apply brel_set_elim_prop in K; auto. destruct K as [J1 J2]. 
+           assert (K3 : in_set rS (u :: nil) (bS u s0) = true).
+           {
+             apply J1. 
+             apply bop_lift_contains_product.
+           } 
+           apply in_set_singleton_elim in K3; auto. 
+           apply symS in K3. 
+           rewrite K3 in G. discriminate G. 
 Defined.        
 
 Lemma bop_lift_not_idempotent : 
@@ -1554,34 +1557,24 @@ simplify to
             if 
             then {c}*{b, d} = {cb, cd} = {cb, c}
             
-
-
-
 *) 
+
 Definition lift_not_selective (a b c d : S) (nex2 : S -> (S -> S)) : (finite_set S) * (finite_set S) :=
   if rS (bS a b) b      (* J1 *) 
   then if rS (bS c d) c (* J2 *) 
        then if rS (nex2 a b) (bS (nex2 a b) b) (* J5 *)
-            then if rS b (bS (nex2 a b) b)     (* J6 *)
-                 then (nil, nil) (* ABORT *) 
-                 else ((nex2 a b) :: a :: nil, b :: nil)
+            then ((nex2 a b) :: a :: nil, b :: nil)
             else if rS b (bS (nex2 a b) b)     (* J6 *)
                  then if rS (nex2 c d) (bS c (nex2 c d))  (* J9 *) 
-                      then if rS c (bS c (nex2 c d))      (* J10 *) 
-                           then (nil, nil) (* ABORT *) 
-                           else (c :: nil, (nex2 c d) :: d :: nil)
+                      then (c :: nil, (nex2 c d) :: d :: nil)
                       else if rS c (bS c (nex2 c d))      (* J10 *) 
                            then if rS (nex2 a b) (bS (nex2 a b) (nex2 c d)) (* J11 *) 
                                 then if rS (nex2 c d) (bS (nex2 a b) (nex2 c d)) (* J12 *)
                                      then if rS (nex2 a b) (bS (nex2 a b) a) (* J14 *)
-                                          then if rS a (bS (nex2 a b) a) (* J15 *)
-                                               then (nil, nil) (* ABORT *) 
-                                               else ((nex2 a b) :: nil, a :: b :: nil)
+                                          then ((nex2 a b) :: nil, a :: b :: nil)
                                           else if rS a (bS (nex2 a b) a) (* J15 *)
                                                then if rS (nex2 c d) (bS d (nex2 c d))  (* J16 *)
-                                                    then if rS d (bS d (nex2 c d)) (* J 17 *)
-                                                         then (nil, nil) (* ABORT *) 
-                                                         else (c :: d :: nil, (nex2 c d) :: nil)
+                                                    then (c :: d :: nil, (nex2 c d) :: nil)
                                                     else if rS d (bS d (nex2 c d)) (* J 17 *)
                                                          then if rS a c (* J18 *)
                                                               then (a :: nil, (nex2 c d) :: b :: nil)
@@ -1597,6 +1590,60 @@ Definition lift_not_selective (a b c d : S) (nex2 : S -> (S -> S)) : (finite_set
        else (c :: nil, d :: nil)
   else (a :: nil, b :: nil).
 
+(* 
+Definition lift_not_selective_new (a b c d : S) (nex2 : S -> (S -> S)) : (finite_set S) * (finite_set S) :=
+  let d := nex2 a b in
+  let e := nex2 c d in 
+  if rS (bS a b) b      (* J1 *) 
+  then if rS (bS c d) c (* J2 *) 
+       then if rS d (bS d b) (* J5 *)
+            then (d :: a :: nil, b :: nil)
+            else if rS b (bS d b)     (* J6 *)
+                 then if rS e (bS c e)  (* J9 *) 
+                      then (c :: nil, e :: d :: nil)
+                      else if rS c (bS c e)      (* J10 *) 
+                           then if rS d (bS d e) (* J11 *) 
+                                then if rS e (bS d e) (* J12 *)
+                                     then if rS d (bS d a) (* J14 *)
+                                          then (d :: nil, a :: b :: nil)
+                                          else if rS a (bS d a) (* J15 *)
+                                               then if rS e (bS d e)  (* J16 *)
+                                                    then (c :: d :: nil, e :: nil)
+                                                    else if rS d (bS d e) (* J 17 *)
+                                                         then if rS a c (* J18 *)
+                                                              then (a :: nil, e :: b :: nil)
+                                                              else (d :: c :: nil, e :: a :: nil)
+                                                         else (d:: nil, e :: nil)
+                                               else (d :: nil, a :: nil)
+                                     else (d :: nil, e :: b :: nil)
+                                else if rS e (bS d e) (* J12 *)
+                                     then (d :: c :: nil, e :: nil)
+                                     else (d :: nil, e :: nil)
+                           else (c :: nil, e :: nil)
+                 else (d :: nil, b :: nil)
+       else (c :: nil, d :: nil)
+  else (a :: nil, b :: nil).
+
+Note that there are 14 distinct sulutions here: 
+(d :: a :: nil, b :: nil)
+(c :: nil, e :: d :: nil)
+(d :: nil, a :: b :: nil)
+(c :: d :: nil, e :: nil)
+(a :: nil, e :: b :: nil)
+(d :: c :: nil, e :: a :: nil)
+(d :: nil, e :: nil)       <<< duplicated
+(d :: nil, a :: nil)
+(d :: nil, e :: b :: nil)
+(d :: c :: nil, e :: nil)
+(d :: nil, e :: nil)        <<< duplicated
+(c :: nil, e :: nil)
+(d :: nil, b :: nil)
+(c :: nil, d :: nil)
+(a :: nil, b :: nil).
+
+Could this be simplified somehow? 
+
+*) 
 
 Lemma bop_lift_not_selective :
   bop_not_is_left S rS bS -> 
@@ -1899,7 +1946,7 @@ Proof. intros bnil bnir idem bnext.
        compute.  rewrite NL. rewrite J1. auto. 
 Defined.
 
-                                     
+
 (* end selectivity *)
 
 
@@ -2041,13 +2088,14 @@ Definition A_sg_lift : ∀ (S : Type),  A_sg S -> A_sg (finite_set S)
 End ACAS.
 
 Section AMCAS. 
-Open Scope string_scope.
 
-Definition A_mcas_sg_lift (S : Type) (A : A_sg_mcas S) : A_sg_mcas (finite_set S) :=
-match A_sg_mcas_cast_up _ A with
-| A_MCAS_sg _ A'         => A_sg_classify _ (A_MCAS_sg _ (A_sg_lift _ A'))
-| A_MCAS_sg_Error _ sl1  => A_MCAS_sg_Error _ sl1
-| _                      => A_MCAS_sg_Error _ ("Internal Error : mcas_lift" :: nil)
+Definition A_sg_lift_below_sg {S : Type} (A : @A_below_sg S) : @A_below_sg (finite_set S) :=
+  A_classify_sg (A_sg_lift _ (A_cast_up_sg A)). 
+  
+Definition A_mcas_sg_lift (S : Type) (A : @A_sg_mcas S) : @A_sg_mcas (finite_set S) :=
+match A with
+| A_MCAS_sg B          => A_MCAS_sg (A_sg_lift_below_sg B)
+| A_MCAS_sg_Error sl1  => A_MCAS_sg_Error sl1
 end.
 
 End AMCAS.
@@ -2147,14 +2195,15 @@ Definition sg_lift : ∀ {S : Type},  @sg S -> @sg (finite_set S)
   
 End CAS.
 
-Section MCAS. 
-Open Scope string_scope.
+Section MCAS.
 
+Definition sg_lift_below_sg {S : Type} (A : @below_sg S) : @below_sg (finite_set S) :=
+  classify_sg (sg_lift (cast_up_sg A)). 
+  
 Definition mcas_sg_lift (S : Type) (A : @sg_mcas S) : @sg_mcas (finite_set S) :=
-match sg_mcas_cast_up _ A with
-| MCAS_sg A'         => sg_classify _ (MCAS_sg (sg_lift A'))
+match A with
+| MCAS_sg B          => MCAS_sg (sg_lift_below_sg B)
 | MCAS_sg_Error sl1  => MCAS_sg_Error sl1
-| _                  => MCAS_sg_Error ("Internal Error : mcas_lift" :: nil)
 end.
 
 End MCAS.
@@ -2257,12 +2306,11 @@ Lemma correct_sg_lift_certs
   (ex2_d : brel_exactly_two_decidable S eq)
   (eqvP : eqv_proofs S eq)   
   (sgP : sg_proofs S eq bS) :
-  P2C_sg (finite_set S)
-         (brel_set eq)
+  P2C_sg (brel_set eq)
          (bop_lift eq bS)
          (sg_lift_proofs S eq bS eqvP wS f nt ex2_d  sgP) 
   =  
-  sg_lift_certs S eq wS f (p2c_exactly_two_check S eq ex2_d) bS (P2C_sg S eq bS sgP).
+  sg_lift_certs S eq wS f (p2c_exactly_two_check S eq ex2_d) bS (P2C_sg eq bS sgP).
 Proof. unfold sg_lift_proofs, sg_lift_certs, P2C_sg. simpl. 
        rewrite correct_bop_lift_idempotent_check; auto.
        rewrite correct_bop_lift_selective_check; auto. 
@@ -2270,9 +2318,9 @@ Proof. unfold sg_lift_proofs, sg_lift_certs, P2C_sg. simpl.
 Qed.   
   
 Theorem correct_sg_lift  (S : Type) (sgS : A_sg S) : 
-         sg_lift (A2C_sg S sgS) 
+         sg_lift (A2C_sg sgS) 
          = 
-         A2C_sg (finite_set S) (A_sg_lift S sgS). 
+         A2C_sg (A_sg_lift S sgS). 
 Proof. 
        unfold A2C_sg, sg_lift, A_sg_lift. simpl.
        rewrite correct_eqv_set.
@@ -2281,22 +2329,30 @@ Proof.
        reflexivity. 
 Qed.
 
+Theorem correct_sg_lift_below_sg (S: Type) (A : @A_below_sg S) : 
+  sg_lift_below_sg (A2C_below_sg A)
+  =
+  A2C_below_sg (A_sg_lift_below_sg A).
+Proof. destruct A; unfold sg_lift_below_sg, A_sg_lift_below_sg. 
+       - simpl. rewrite correct_sg_lift. 
+         rewrite correct_classify_sg.
+         reflexivity.
+       - rewrite <- correct_classify_sg.
+         rewrite correct_cast_up_sg.
+         rewrite correct_sg_lift.
+         reflexivity.
+Qed.
 
-Theorem correct_mcas_sg_lift (S : Type) (sgS : A_sg_mcas S) :
-         mcas_sg_lift _ (A2C_mcas_sg S sgS) 
+Theorem correct_mcas_sg_lift (S : Type) (A : @A_sg_mcas S) :
+         mcas_sg_lift _ (A2C_sg_mcas A) 
          = 
-         A2C_mcas_sg _ (A_mcas_sg_lift S sgS).
-Proof. unfold mcas_sg_lift, A_mcas_sg_lift. 
-       rewrite correct_sg_mcas_cast_up.       
-       destruct (A_sg_cas_up_is_error_or_sg S sgS) as [[l1 A] | [s1 A]]. 
-       + rewrite A; simpl. reflexivity. 
-       + rewrite A; simpl. rewrite correct_sg_lift. 
-         apply correct_sg_classify_sg. 
+         A2C_sg_mcas (A_mcas_sg_lift S A).
+Proof. unfold mcas_sg_lift, A_mcas_sg_lift.
+       destruct A; simpl.
+       - reflexivity.
+       - rewrite correct_sg_lift_below_sg.
+         reflexivity.
 Qed. 
 
-
 End Verify.
-
-(*
-*) 
 

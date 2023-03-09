@@ -19,6 +19,7 @@ Require Import CAS.coq.sg.reduce.
    \/                     \/
   ((S_r1)_r2, =, ((x)_r1)_r2) 
 
+ 
 
   Two steps: 
 
@@ -29,29 +30,65 @@ Require Import CAS.coq.sg.reduce.
               = {a in {a in S | r1(a) = a} | r2(a) = a} 
               = {a in S | r1(a) = a and r2(a) = a} 
 
-        So, r1(r2(a)) = r2(r1(a))
 
    Equality in "OCaml"? 
 
-        a (=_r1)_r2 b <-> r2(a) =_r1 r2(b) 
-                      <-> r1(r2(a)) = r1(r2(b)) 
-        Note: r1(r2(a)) seemas "backwards"
-    
+        a =_{r1 o r2} b <-> (r1(a) =_r1(b)) and (r2(a) =_r2(b)) 
 
-  One step: 
-
-      a (x)_(r2 o r1) b = (r2 o r1)(a (x) b). 
+ 
+      a (x)_{r2 o r1} b = (r2 o r1)(a (x) b). 
                         = r2(r1(a (x) b)). 
 
-      S_(r2 o r1) = {a in S | (r2 o r1)(a) = a}
-                  = {a in S | r2(r1(a)) = a}
 
-   Equality in "OCaml"? 
+"r2 o r1" as a reduction over (S, =, (x))
+          
+ left1 : (r2 o r1)(((r2 o r1) x) + y) = (r2 o r1)(x + y)
+       = r2(r1( (r2 (r1 x)) + y) ) = r2 (r1 (x + y))
 
-        a =_(r2 o r1) b <-> r2(r1(a)) = r2(r1(b)) 
+right1 : (r2 o r1)(x + ((r2 o r1) y)) = (r2 o r1)(x + y)
+       = r2(r1( x + (r2 (r1 y))) ) = r2 (r1 (x + y))
 
-   So, require r1(r2(a)) = r2(r1(a)). 
+Note, if "r2 o r1 = r1 o r2" and both are reductions 
+then 
 
+ left : r2(r1( (r2 (r1 x)) + y) ) 
+      = r2(r1( (r1 (r2 x)) + y) ) 
+      = r2(r1((r2 x)) + y)
+      = r1(r2((r2 x)) + y)
+      = r1(r2(x + y)
+      = r2(r1(x + y).
+And the same with right. 
+
+What if r1 and r2 don't commute? 
+
+Suppose r1 is a reduction 
+  left : r1 ((r1 x) + y) = r1 (x + y) 
+ right : r1 (x + (r1 y)) = r1 (x + y) 
+
+Should we insist that r2 be a reduction over that? 
+This makes sense if we want to read the diagram as 
+a composition of two reductions. 
+That is, 
+
+   left2 : r2 ((r2 x) +_r1 y) = r2 (x +_r1 y) 
+         = r2 (r1((r2 x) + y)) = r2 (r1 (x + y))
+         = (r2 o r1)((r2 x) + y) = (r2 o r1)(x + y)
+
+This is stronger than left1: 
+
+left2 -> left1 : 
+     r2(r1( (r2 (r1 x)) + y) )
+   = r2(r1( (r1 x) + y) )
+   = r2(r1(x + y) )
+
+Note that to go the other way we need something stronger still, like 
+
+    r1((r2 (r1 x)) + y) = r1(x + y) 
+
+but then r2 is not required to be a reduction and this might not 
+make sense.... 
+
+Look at "bottleneck semiring" for an example? 
 
 *) 
 Section Computation.

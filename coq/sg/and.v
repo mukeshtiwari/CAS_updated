@@ -9,6 +9,7 @@ Require Import CAS.coq.eqv.bool.
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
+Require Import CAS.coq.sg.classify. 
 
 Section Computation.
 
@@ -114,21 +115,27 @@ Definition sg_CS_proofs_and : sg_CS_proofs bool brel_eq_bool bop_and :=
 ; A_sg_CS_selective    := bop_and_selective
 |}. 
 
-Definition A_sg_and : A_sg_BCS bool
+Definition A_sg_and : A_sg_CS bool
 := {| 
-     A_sg_BCS_eqv          := A_eqv_bool
-   ; A_sg_BCS_bop          := bop_and
-   ; A_sg_BCS_exists_id    := bop_and_exists_id 
-   ; A_sg_BCS_exists_ann   := bop_and_exists_ann 
-   ; A_sg_BCS_proofs       := sg_CS_proofs_and
-   ; A_sg_BCS_ast          := Ast_sg_and 
+     A_sg_CS_eqv          := A_eqv_bool
+   ; A_sg_CS_bop          := bop_and
+   ; A_sg_CS_exists_id_d  := inl bop_and_exists_id 
+   ; A_sg_CS_exists_ann_d := inl bop_and_exists_ann 
+   ; A_sg_CS_proofs       := sg_CS_proofs_and
+   ; A_sg_CS_ast          := Ast_sg_and 
    |}. 
 
 End ACAS.
 
 Section AMCAS.
 
-Definition A_mcas_sg_and := A_MCAS_sg_BCS bool A_sg_and. 
+  Definition A_sg_and_below_sg_CS : @A_below_sg_CS bool :=
+    A_classify_sg_CS A_sg_and. 
+
+  Definition A_mcas_and : @A_sg_mcas bool := 
+    A_MCAS_sg
+      (A_Below_sg_sg_C
+         (A_Below_sg_C_sg_CS A_sg_and_below_sg_CS)).
 
 End AMCAS.  
 
@@ -144,22 +151,28 @@ Definition sg_CS_certs_and : @sg_CS_certificates bool
    |}. 
 
 
-Definition sg_and : @sg_BCS bool
+Definition sg_and : @sg_CS bool
 := {| 
-     sg_BCS_eqv          := eqv_bool
-   ; sg_BCS_bop          := bop_and
-   ; sg_BCS_exists_id    := Assert_Exists_Id  true 
-   ; sg_BCS_exists_ann   := Assert_Exists_Ann  false 
-   ; sg_BCS_certs        := sg_CS_certs_and
-   ; sg_BCS_ast          := Ast_sg_and 
+     sg_CS_eqv          := eqv_bool
+   ; sg_CS_bop          := bop_and
+   ; sg_CS_exists_id_d  := Certify_Exists_Id  true 
+   ; sg_CS_exists_ann_d := Certify_Exists_Ann  false 
+   ; sg_CS_certs        := sg_CS_certs_and
+   ; sg_CS_ast          := Ast_sg_and 
    |}. 
   
-
 End CAS.
 
 Section MCAS.
 
-Definition mcas_sg_and := MCAS_sg_BCS sg_and. 
+  Definition sg_and_below_sg_CS : @below_sg_CS bool :=
+    classify_sg_CS sg_and. 
+
+  Definition mcas_and : @sg_mcas bool := 
+    MCAS_sg
+      (Below_sg_sg_C
+         (Below_sg_C_sg_CS sg_and_below_sg_CS)).
+
 
 End MCAS.  
 
@@ -167,13 +180,13 @@ End MCAS.
 Section Verify.
 
 
-Theorem correct_sg_CS_and : sg_and = A2C_sg_BCS bool A_sg_and. 
+Theorem correct_sg_CS_and : sg_and = A2C_sg_CS A_sg_and. 
 Proof. compute. reflexivity. Qed. 
 
 
-Theorem correct_mcas_sg_CS_and : mcas_sg_and = A2C_mcas_sg bool A_mcas_sg_and. 
+Theorem correct_mcas_sg_CS_and :
+  mcas_and = A2C_sg_mcas A_mcas_and. 
 Proof. compute. reflexivity. Qed. 
-
  
 End Verify.   
 

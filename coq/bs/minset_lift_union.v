@@ -700,8 +700,7 @@ Qed.
 
 (* BEWARE of badly named lift_union_left_distributive *) 
 Lemma bops_lift_union_left_distributive : 
-  bop_left_distributive (finite_set S)
-                         (brel_set rS)
+  A_bs_left_distributive (brel_set rS)
                          (bop_lift rS bS)
                          (bop_union rS). 
 Proof. intros X Y Z. 
@@ -715,8 +714,7 @@ Admitted.
 
 
 Lemma bops_lift_union_right_distributive : 
-  bop_right_distributive (finite_set S)
-                         (brel_set rS)
+  A_bs_right_distributive (brel_set rS)
                          (bop_lift rS bS)
                          (bop_union rS). 
 Proof. 
@@ -729,8 +727,7 @@ Lemma minset_lift_union_left_distributive
       (RM : os_right_monotone lteS bS) 
       (LI : os_left_increasing lteS bS)
       (RI : os_right_increasing lteS bS): 
-  bop_left_distributive (finite_set S)
-                         (brel_minset rS lteS)
+  A_bs_left_distributive (brel_minset rS lteS)
                          (bop_minset_lift S rS lteS bS)
                          (bop_minset_union rS lteS). 
 Proof. apply bop_reduce_left_distributive. 
@@ -756,8 +753,7 @@ Lemma minset_lift_union_right_distributive
       (RM : os_right_monotone lteS bS) 
       (LI : os_left_increasing lteS bS)
       (RI : os_right_increasing lteS bS): 
-  bop_right_distributive (finite_set S)
-                         (brel_minset rS lteS)
+  A_bs_right_distributive (brel_minset rS lteS)
                          (bop_minset_lift S rS lteS bS)
                          (bop_minset_union rS lteS). 
 Proof. apply bop_reduce_right_distributive. 
@@ -905,16 +901,15 @@ Proof. unfold bop_minset_union.
        exact J. 
 Qed. 
 *)       
-Lemma minset_lift_union_left_left_absorptive
+Lemma minset_lift_union_left_absorptive
       (anti : brel_antisymmetric S rS lteS)      
       (LM : os_left_monotone lteS bS) 
       (RM : os_right_monotone lteS bS)      
       (idem : bop_idempotent S rS bS)
       (LI : os_left_increasing lteS bS) : 
-  bops_left_left_absorptive (finite_set S)
-                            (brel_minset rS lteS)
-                            (bop_minset_lift S rS lteS bS)
-                            (bop_minset_union rS lteS). 
+  A_bs_left_absorptive (brel_minset rS lteS)
+                       (bop_minset_lift S rS lteS bS)
+                       (bop_minset_union rS lteS). 
 Proof. intros X Y.
        assert (A := minset_lift_union_left_left_absorption_weak anti idem LI X Y).
        unfold brel_minset.
@@ -923,7 +918,7 @@ Proof. intros X Y.
 Qed. 
 
   
-Lemma minset_lift_union_left_right_absorptive
+Lemma minset_lift_union_right_absorptive
       (anti : brel_antisymmetric S rS lteS)      
       (idem : bop_idempotent S rS bS)
       (LM : os_left_monotone lteS bS) 
@@ -933,12 +928,11 @@ Lemma minset_lift_union_left_right_absorptive
                 *
                (os_right_strictly_monotone lteS bS)))
       (LI : os_left_increasing lteS bS) :                                            
-  bops_left_right_absorptive (finite_set S)
-                            (brel_minset rS lteS)
-                            (bop_minset_lift S rS lteS bS)
-                            (bop_minset_union rS lteS). 
+  A_bs_right_absorptive (brel_minset rS lteS)
+                        (bop_minset_lift S rS lteS bS)
+                        (bop_minset_union rS lteS). 
 Proof. intros X Y.
-       assert (A := minset_lift_union_left_left_absorptive anti LM RM idem LI X Y).
+       assert (A := minset_lift_union_left_absorptive anti LM RM idem LI X Y).
        assert (B := bop_minset_union_commutative _ _ refS symS tranS lteS lteCong lteRefl lteTrans).       
        assert (C := bop_minset_lift_congruence _ _ refS symS tranS lteS lteCong lteRefl lteTrans bS bCong LM RM DDD).       
        assert (D := B X Y). 
@@ -948,7 +942,7 @@ Proof. intros X Y.
 Qed. 
 
 
-(* strict absorption *)
+(* strict absorption 
 Lemma minset_lift_union_bops_not_left_strictly_absorptive :
    bops_not_left_strictly_absorptive 
     (finite_set S)
@@ -973,6 +967,8 @@ Proof.
    exists (nil, nil); compute.
    right; reflexivity.
 Qed.
+*)
+
 
 (***************** ID, ANN ********************************) 
 

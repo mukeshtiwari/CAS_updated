@@ -219,10 +219,10 @@ End ACAS.
 
 Section AMCAS.
 
-Definition A_mcas_sg_concat (S : Type) (A : @A_mcas_eqv S) : A_sg_mcas (list S) :=
+Definition A_mcas_sg_concat (S : Type) (A : @A_mcas_eqv S) : @A_sg_mcas (list S) :=
 match A with
-| A_EQV_eqv B    => A_MCAS_sg (list S) (A_sg_concat S B)
-| A_EQV_Error sl => A_MCAS_sg_Error _ sl 
+| A_EQV_eqv B    => A_MCAS_sg (A_Below_sg_top (A_sg_concat S B))
+| A_EQV_Error sl => A_MCAS_sg_Error sl 
 end.
 
 End AMCAS.   
@@ -268,7 +268,7 @@ Section MCAS.
 
 Definition mcas_sg_concat {S : Type} (A : @mcas_eqv S) : @sg_mcas (list S) :=
 match A with
-| EQV_eqv B    => MCAS_sg (sg_concat B)
+| EQV_eqv B    => MCAS_sg (Below_sg_top (sg_concat B))
 | EQV_Error sl => MCAS_sg_Error sl 
 end.
 
@@ -282,14 +282,14 @@ Lemma correct_sg_certs_concat :
       ∀ (S : Type) (eS : A_eqv S), 
        sg_certs_concat (A2C_eqv S eS) 
        = 
-       P2C_sg (list S) (brel_list (A_eqv_eq S eS)) (@bop_concat S) (sg_proofs_concat S eS). 
+       P2C_sg (brel_list (A_eqv_eq S eS)) (@bop_concat S) (sg_proofs_concat S eS). 
 Proof. intros S eS. compute. reflexivity. Defined. 
 
 
 Theorem correct_sg_concat : ∀ (S : Type) (eS : A_eqv S), 
          sg_concat (A2C_eqv S eS) 
          = 
-         A2C_sg (list S) (A_sg_concat S eS). 
+         A2C_sg (A_sg_concat S eS). 
 Proof. intros S eS. unfold sg_concat, A2C_sg. simpl. 
        rewrite correct_eqv_list. 
        rewrite <- correct_sg_certs_concat. 
@@ -297,9 +297,9 @@ Proof. intros S eS. unfold sg_concat, A2C_sg. simpl.
 Qed. 
   
 Theorem correct_mcas_sg_left (S : Type) (eS : @A_mcas_eqv S) : 
-         mcas_sg_concat (A2C_mcas_eqv S eS) 
+         mcas_sg_concat (A2C_mcas_eqv _ eS) 
          = 
-         A2C_mcas_sg _ (A_mcas_sg_concat _ eS). 
+         A2C_sg_mcas (A_mcas_sg_concat _ eS). 
 Proof.  destruct eS; compute; reflexivity. Qed. 
  
 End Verify.   

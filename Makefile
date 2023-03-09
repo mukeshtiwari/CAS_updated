@@ -42,6 +42,7 @@ CAS=\
    coq/sg/properties.v \
    coq/sg/theory.v \
    coq/sg/structures.v \
+   coq/sg/classify.v \
    coq/sg/cast_up.v \
    coq/sg/plus.v \
    coq/sg/times.v \
@@ -68,8 +69,9 @@ CAS=\
    coq/sg/manger_llex.v \
    coq/sg/manger_product.v \
    coq/po/properties.v \
-   coq/po/structures.v \
    coq/po/theory.v \
+   coq/po/structures.v \
+   coq/po/classify.v \
    coq/po/cast_up.v \
    coq/po/trivial.v \
    coq/po/add_bottom.v \
@@ -95,7 +97,8 @@ CAS=\
    coq/bs/properties.v \
    coq/bs/structures.v \
    coq/bs/theory.v \
-   coq/bs/cast_up.v \
+   coq/bs/cast.v \
+   coq/bs/classify.v \
    coq/bs/plus_times.v \
    coq/bs/min_plus.v \
    coq/bs/max_plus.v \
@@ -127,19 +130,6 @@ CAS=\
    coq/os/from_bs_left.v \
    coq/os/trivial.v \
    coq/os/lex_product.v \
-   coq/st/properties.v \
-   coq/st/structures.v \
-   coq/st/cast_up.v \
-   coq/st/left/min_plus_one.v \
-   coq/st/left/from_bs.v \
-   coq/st/left/llex_product.v \
-   coq/st/left/union_insert.v \
-   coq/st/left/add_zero.v  \
-   coq/st/left/plus_times.v  \
-   coq/ot/properties.v \
-   coq/ot/structures.v \
-   coq/ot/left/length_cons.v \
-   coq/ot/left/product_product.v \
    coq/uop/properties.v \
    coq/uop/product.v \
    coq/uop/left_sum.v \
@@ -204,7 +194,9 @@ html: $(FILES:.v=.glob)
 clean:
 	rm -f casml
 	rm -f  */*.glob  */*/*.glob */*/*/*.glob 
-	rm -f  */*.vo  */*/*.vo */*/*/*.vo 
+	rm -f  */*.vo  */*/*.vo */*/*/*.vo
+	rm -f  */*.vok  */*/*.vok */*/*/*.vok
+	rm -f  */*.vos  */*/*.vos */*/*/*.vos 
 	rm -f  */*.d  */*/*.d */*/*/*.d 
 	rm -f  */.*.aux  */*/.*.aux */*/*/.*.aux 
 	rm -rf _build

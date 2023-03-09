@@ -147,7 +147,7 @@ Defined.
 
 
 Lemma os_from_bs_left_left_monotone
-      (LD : bop_left_distributive S eq plus times) : os_left_monotone left_lte times.
+      (LD : A_bs_left_distributive eq plus times) : os_left_monotone left_lte times.
 Proof. intros a b c. compute.
        (* b [=] (b [+] c) → (a [*] b) [=] ((a [*] b) [+] (a [*] c)) *) 
        intro A. 
@@ -159,14 +159,14 @@ Proof. intros a b c. compute.
 Qed.        
 
 Lemma os_from_bs_left_not_left_monotone
-      (LD : bop_not_left_distributive S eq plus times) : os_not_left_monotone left_lte times.
+      (LD : A_bs_not_left_distributive eq plus times) : os_not_left_monotone left_lte times.
 Proof. destruct LD as [[a [b c]] A]. 
        exists (a, (b, c)). compute.
 (*  b [=] (b [+] c) * (eq (a [*] b) ((a [*] b) [+] (a [*] c)) = false) *)       
 Admitted.
 
 Lemma os_from_bs_right_left_monotone
-      (LD : bop_left_distributive S eq plus times) : os_left_monotone right_lte times.
+      (LD : A_bs_left_distributive eq plus times) : os_left_monotone right_lte times.
 Proof. intros a b c. compute.
        (* c [=] (b [+] c) → (a [*] c) [=] ((a [*] b) [+] (a [*] c)) *)
        intro A. 
@@ -178,7 +178,7 @@ Proof. intros a b c. compute.
 Qed.        
 
 Lemma os_from_bs_left_right_monotone
-      (RD : bop_right_distributive S eq plus times) : os_right_monotone left_lte times.
+      (RD : A_bs_right_distributive eq plus times) : os_right_monotone left_lte times.
 Proof. intros a b c. compute.
        (* b [=] (b [+] c) → (b [*] a) [=] ((b [*] a) [+] (c [*] a)) *) 
        intro A.
@@ -190,7 +190,7 @@ Proof. intros a b c. compute.
 Qed.        
 
 Lemma os_from_bs_left_not_right_monotone
-      (RD : bop_not_right_distributive S eq plus times) : os_not_right_monotone left_lte times.
+      (RD : A_bs_not_right_distributive eq plus times) : os_not_right_monotone left_lte times.
 Proof. destruct RD as [[a [b c]] A]. 
        exists (a, (b, c)). compute.
 (*
@@ -200,7 +200,7 @@ Admitted.
 
 
 Lemma os_from_bs_right_right_monotone
-      (RD : bop_right_distributive S eq plus times) : os_right_monotone right_lte times.
+      (RD : A_bs_right_distributive eq plus times) : os_right_monotone right_lte times.
 Proof. intros a b c. compute.
        (* c [=] (b [+] c) → (c [*] a) [=] ((b [*] a) [+] (c [*] a)) *) 
        intro A.
@@ -212,20 +212,20 @@ Proof. intros a b c. compute.
 Qed.        
 
 
-Lemma os_from_bs_left_left_increasing : 
-   bops_left_left_absorptive S eq plus times -> os_left_increasing left_lte times.
+Lemma os_from_bs_left_increasing : 
+   A_bs_left_absorptive eq plus times -> os_left_increasing left_lte times.
 Proof. intros A s t. compute. auto. Qed.
 
-Lemma os_from_bs_left_not_left_increasing : 
-   bops_not_left_left_absorptive S eq plus times -> os_not_left_increasing left_lte times.
+Lemma os_from_bs_not_left_increasing : 
+   A_bs_not_left_absorptive eq plus times -> os_not_left_increasing left_lte times.
 Proof. intros [[s t] A]. exists (s, t). compute. auto. Qed. 
 
-Lemma os_from_bs_left_right_increasing : 
-   bops_left_right_absorptive S eq plus times -> os_right_increasing left_lte times.
+Lemma os_from_bs_right_increasing : 
+   A_bs_right_absorptive eq plus times -> os_right_increasing left_lte times.
 Proof. intros A s t. compute. auto. Qed.
 
-Lemma os_from_bs_left_not_right_increasing : 
-   bops_not_left_right_absorptive S eq plus times -> os_not_right_increasing left_lte times.
+Lemma os_from_bs_not_right_increasing : 
+   A_bs_not_right_absorptive eq plus times -> os_not_right_increasing left_lte times.
 Proof. intros [[s t] A]. exists (s, t). compute. auto. Qed.
 
 
@@ -247,8 +247,8 @@ Admitted.
 
 
 
-Lemma os_from_bs_left_left_structly_increasing : 
-   bops_left_left_absorptive S eq plus times -> os_left_strictly_increasing left_lte times.
+Lemma os_from_bs_left_structly_increasing : 
+   A_bs_left_absorptive eq plus times -> os_left_strictly_increasing left_lte times.
 Proof. intros A s t. compute. split.
        (* need s [=] (s [+] (s [*] t))  *) 
        auto. 
@@ -260,7 +260,7 @@ Admitted.
 
 
 Lemma os_from_bs_left_exists_top_ann_equal
-      (P : bops_exists_id_ann_equal S eq plus times) :
+      (P : A_bs_exists_id_ann_equal  eq plus times) :
            A_os_exists_top_ann_equal eq left_lte times.
 Proof. destruct P as [a [A B]].
        exists a; split; auto.
@@ -268,7 +268,7 @@ Proof. destruct P as [a [A B]].
 Defined.
 
 Lemma os_from_bs_left_exists_top_ann_not_equal
-      (P : bops_exists_id_ann_not_equal S eq plus times) :
+      (P : A_bs_exists_id_ann_not_equal eq plus times) :
            A_os_exists_top_ann_not_equal eq left_lte times.
 Proof. destruct P as [[a b] [[A B] C]].
        exists (a, b). split; auto. split; auto. 
@@ -276,7 +276,7 @@ Proof. destruct P as [[a b] [[A B] C]].
 Defined. 
 
 Lemma os_from_bs_left_exists_bottom_id_equal
-      (P : bops_exists_id_ann_equal S eq times plus) :
+      (P : A_bs_exists_id_ann_equal eq times plus) :
            A_os_exists_bottom_id_equal eq left_lte times.
 Proof. destruct P as [a [A B]].
        exists a; split; auto.
@@ -284,7 +284,7 @@ Proof. destruct P as [a [A B]].
 Defined. 
 
 Lemma os_from_bs_left_exists_bottom_id_not_equal
-      (P : bops_exists_id_ann_not_equal S eq times plus) :
+      (P : A_bs_exists_id_ann_not_equal eq times plus) :
            A_os_exists_bottom_id_not_equal eq left_lte times.
 Proof. destruct P as [[a b] [[A B] C]].
        exists (b, a); split; auto. split; auto. 
@@ -295,6 +295,9 @@ Defined.
 
 
 End Theory.
+
+
+(*
 
 Section ACAS.
 
@@ -643,3 +646,4 @@ Section Verify.
  
 End Verify.   
   
+*) 

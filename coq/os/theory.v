@@ -15,6 +15,37 @@ Require Import CAS.coq.os.properties.
 
 
 
+Lemma os_left_strictly_monotone_implies_left_monotone (S : Type) (lte : brel S) (b : binary_op S):
+  brel_reflexive S lte -> 
+  os_left_strictly_monotone lte b ->
+  bop_congruence S (equiv lte) b ->
+     os_left_monotone lte b. 
+Proof. intros refl LSM Cong s t u A.
+       assert (lteRefl := equiv_reflexive S lte refl). 
+       case_eq(lte u t); intro B.
+          assert (C : equiv lte t u = true). apply equiv_intro; auto.       
+          assert (D := Cong _ _ _ _ (lteRefl s) C).
+          apply equiv_elim in D; auto.  destruct D as [D E]. exact E. 
+          destruct (LSM s t u A B) as [C D]. exact C. 
+Qed.
+
+
+Lemma os_right_strictly_monotone_implies_right_monotone (S : Type) (lte : brel S) (b : binary_op S):
+  brel_reflexive S lte -> 
+  os_right_strictly_monotone lte b ->
+  bop_congruence S (equiv lte) b ->
+     os_right_monotone lte b. 
+Proof. intros refl RSM Cong s t u A.
+       assert (lteRefl := equiv_reflexive S lte refl). 
+       case_eq(lte u t); intro B.
+          assert (C : equiv lte t u = true). apply equiv_intro; auto.       
+          assert (D := Cong _ _ _ _ C (lteRefl s)).
+          apply equiv_elim in D; auto.  destruct D as [D E]. exact E. 
+          destruct (RSM s t u A B) as [C D]. exact C. 
+Qed.
+
+
+
 (*********************** OS properties ************************************)
 
 Section GLB_LUB_DUALITY. 
@@ -80,7 +111,7 @@ Notation "a == b"    := (eq a b = true) (at level 30).
 Notation "a != b"    := (eq a b = false) (at level 30).
 Notation "a (+) b"   := (bS a b) (at level 15).
 
-
+(* b == b (+) c → a (+) b == (a (+) b) (+) (a (+) c) *) 
 Lemma lte_left_is_left_monotone : os_left_monotone (brel_lte_left eq bS) bS.
 Proof. intros a b c. compute.   intro A.
        assert (B := idemS (a (+) b)). apply symS in B.
@@ -103,6 +134,7 @@ Proof. intros a b c. compute.   intro A.
        exact R. 
 Qed. 
 
+(* b == b (+) c → b (+) a == (b (+) a) (+) (c (+) a) *) 
 Lemma lte_left_is_right_monotone : os_right_monotone (brel_lte_left eq bS) bS.
 Proof. intros a b c. compute.   intro A.
        assert (B := lte_left_is_left_monotone a b c A). compute in B.
@@ -113,8 +145,9 @@ Proof. intros a b c. compute.   intro A.
        exact F.
 Qed. 
 
+(* c == b (+) c → a (+) c == (a (+) b) (+) (a (+) c) *) 
 Lemma lte_right_is_left_monotone : os_left_monotone (brel_lte_right eq bS) bS.
-Proof. intros a b c. compute.   intro A.
+Proof. intros a b c. unfold brel_lte_right. compute.   intro A.
        assert (B := commS b c).
        assert (C := trnS _ _ _ A B). 
        assert (D := lte_left_is_left_monotone a c b C). compute in D. 
@@ -134,7 +167,7 @@ Proof. intros a b c. compute.   intro A.
 Qed. 
             
 
-Lemma lte_left_is_not_left_decreasing : os_not_left_increasing (brel_lte_left eq bS) bS.
+Lemma lte_left_is_not_left_increasing : os_not_left_increasing (brel_lte_left eq bS) bS.
 Proof. compute.
        destruct (bop_commutative_implies_not_is_left S eq bS s f nt symS trnS commS) as [[a b] A]. 
        exists (a, b).
@@ -146,8 +179,8 @@ Proof. compute.
        rewrite F in A.  discriminate A. 
 Qed. 
 
-Lemma lte_left_is_not_right_decreasing : os_not_right_increasing (brel_lte_left eq bS) bS.
-Proof. compute. destruct lte_left_is_not_left_decreasing as [[a b] A]. compute in A.
+Lemma lte_left_is_not_right_increasing : os_not_right_increasing (brel_lte_left eq bS) bS.
+Proof. compute. destruct lte_left_is_not_left_increasing as [[a b] A]. compute in A.
        exists (a, b).
        case_eq(eq a (a (+) (b (+) a))); intro B; auto.       
        assert (C := congS _ _ _ _ (refS a) (commS b a)).
@@ -207,7 +240,7 @@ Proof. compute.
 Qed. 
 
 Lemma lte_right_is_not_left_decreasing : os_not_left_decreasing (brel_lte_right eq bS) bS.
-Proof. compute. destruct lte_left_is_not_left_decreasing as [[a b] A]. compute in A.
+Proof. compute. destruct lte_left_is_not_left_increasing as [[a b] A]. compute in A.
        exists (a, b).
        case_eq(eq a ((a (+) b) (+) a)); intro B; auto.
        assert (C := commS (a (+) b) a).       

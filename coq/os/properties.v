@@ -7,6 +7,7 @@ Close Scope nat.
 
 Section ACAS. 
 
+(* t <= u -> (s x t) <= (s X u) *)   
 Definition os_left_monotone {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t u : S, lte t u = true -> lte (b s t) (b s u) = true. 
 
@@ -16,7 +17,7 @@ Definition os_not_left_monotone {S : Type} (lte : brel S) (b : binary_op S)
 Definition os_left_monotone_decidable {S : Type} (lte : brel S) (b : binary_op S)  
    := (os_left_monotone lte b) + (os_not_left_monotone lte b). 
 
-
+(* t <= u -> (t x s) <= (u X s) *)   
 Definition os_right_monotone {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t u : S, lte t u = true -> lte (b t s) (b u s) = true. 
 
@@ -27,6 +28,7 @@ Definition os_right_monotone_decidable {S : Type} (lte : brel S) (b : binary_op 
    := (os_right_monotone lte b) + (os_not_right_monotone lte b). 
 
 
+(* s <= (s x t) *)   
 Definition os_left_increasing {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t : S, lte s (b s t) = true. 
 
@@ -36,7 +38,7 @@ Definition os_not_left_increasing {S : Type} (lte : brel S) (b : binary_op S)
 Definition os_left_increasing_decidable {S : Type} (lte : brel S) (b : binary_op S)  
    := (os_left_increasing lte b) + (os_not_left_increasing lte b). 
 
-
+(* s <= (t x s) *)   
 Definition os_right_increasing {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t : S, lte s (b t s) = true. 
 
@@ -49,6 +51,7 @@ Definition os_right_increasing_decidable {S : Type} (lte : brel S) (b : binary_o
 
 (* decreasing *)
 
+(* (s x t) <= s *)   
 Definition os_left_decreasing {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t : S, lte (b s t) s = true. 
 
@@ -58,6 +61,8 @@ Definition os_not_left_decreasing {S : Type} (lte : brel S) (b : binary_op S)
 Definition os_left_decreasing_decidable {S : Type} (lte : brel S) (b : binary_op S)  
    := (os_left_decreasing lte b) + (os_not_left_decreasing lte b). 
 
+
+(* (t x s) <= s *)   
 Definition os_right_decreasing {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t : S, lte (b t s) s = true. 
 
@@ -69,8 +74,9 @@ Definition os_right_decreasing_decidable {S : Type} (lte : brel S) (b : binary_o
 
 
 
+(***** strict versions ******)
 
-(* strict *) 
+(* s < (s x t) *)   
 Definition os_left_strictly_increasing {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t : S, (lte s (b s t) = true) * (lte (b s t) s = false). 
 
@@ -80,7 +86,7 @@ Definition os_not_left_strictly_increasing {S : Type} (lte : brel S) (b : binary
 Definition os_left_strictly_increasing_decidable {S : Type} (lte : brel S) (b : binary_op S)  
    := (os_left_strictly_increasing lte b) + (os_not_left_strictly_increasing lte b). 
 
-
+(* s < (t x s) *)   
 Definition os_right_strictly_increasing {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t : S, (lte s (b t s) = true) * (lte (b t s) s = false). 
 
@@ -90,7 +96,7 @@ Definition os_not_right_strictly_increasing {S : Type} (lte : brel S) (b : binar
 Definition os_right_strictly_increasing_decidable {S : Type} (lte : brel S) (b : binary_op S)  
   := (os_right_strictly_increasing lte b) + (os_not_right_strictly_increasing lte b).
 
-
+(* t < u -> (s x t) < (s x u)  *)
 Definition os_left_strictly_monotone {S : Type} (lte : brel S) (b : binary_op S)  
   := ∀ s t u : S, lte t u = true -> lte u t = false ->
                   (lte (b s t) (b s u) = true) * (lte (b s u) (b s t) = false). 
@@ -102,7 +108,7 @@ Definition os_not_left_strictly_monotone {S : Type} (lte : brel S) (b : binary_o
 Definition os_left_strictly_monotone_decidable {S : Type} (lte : brel S) (b : binary_op S)  
    := (os_left_strictly_monotone lte b) + (os_not_left_strictly_monotone lte b). 
 
-
+(* t < u -> (t x s) < (u x s)  *)
 Definition os_right_strictly_monotone {S : Type} (lte : brel S) (b : binary_op S)  
    := ∀ s t u : S, lte t u = true -> lte u t = false -> (lte (b t s) (b u s) = true) * (lte (b u s) (b t s) = false). 
 

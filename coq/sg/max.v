@@ -3,12 +3,14 @@ Require Import Coq.Arith.Max.
 
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.common.ast.
+
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
+Require Import CAS.coq.eqv.nat.
+
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
-
-Require Import CAS.coq.eqv.nat. 
+Require Import CAS.coq.sg.classify. 
 
 Section Theory.
 
@@ -147,21 +149,24 @@ Definition sg_CS_proofs_max : sg_CS_proofs nat brel_eq_nat bop_max :=
 |}. 
 
 
-Definition A_sg_max : A_sg_CS_with_id nat 
+Definition A_sg_max : A_sg_CS nat 
 := {| 
-     A_sg_CS_wi_eqv         := A_eqv_nat 
-   ; A_sg_CS_wi_bop         := bop_max
-   ; A_sg_CS_wi_exists_id   := bop_max_exists_id
-   ; A_sg_CS_wi_not_exists_ann  := bop_max_not_exists_ann
-   ; A_sg_CS_wi_proofs      := sg_CS_proofs_max
-   ; A_sg_CS_wi_ast         := Ast_sg_max
+     A_sg_CS_eqv          := A_eqv_nat 
+   ; A_sg_CS_bop          := bop_max
+   ; A_sg_CS_exists_id_d  := inl bop_max_exists_id
+   ; A_sg_CS_exists_ann_d := inr bop_max_not_exists_ann
+   ; A_sg_CS_proofs       := sg_CS_proofs_max
+   ; A_sg_CS_ast          := Ast_sg_max
    |}. 
 
 End ACAS.
 
 Section AMCAS.
 
-Definition A_mcas_sg_max : A_sg_mcas nat := A_MCAS_sg_CS_with_id nat A_sg_max.  
+ Definition A_sg_max_below_sg_CS := A_classify_sg_CS A_sg_max.     
+
+ Definition A_mcas_sg_max : @A_sg_mcas nat :=
+   A_MCAS_sg (A_Below_sg_sg_C (A_Below_sg_C_sg_CS (A_sg_max_below_sg_CS))). 
 
 End AMCAS.  
 
@@ -178,14 +183,14 @@ Definition sg_CS_certs_max : @sg_CS_certificates nat
    |}. 
 
 
-Definition sg_max : @sg_CS_with_id nat 
+Definition sg_max : @sg_CS nat 
 := {| 
-     sg_CS_wi_eqv            := eqv_eq_nat 
-   ; sg_CS_wi_bop            := bop_max
-   ; sg_CS_wi_exists_id      := Assert_Exists_Id 0
-   ; sg_CS_wi_not_exists_ann := Assert_Not_Exists_Ann 
-   ; sg_CS_wi_certs          := sg_CS_certs_max
-   ; sg_CS_wi_ast            := Ast_sg_max
+     sg_CS_eqv          := eqv_eq_nat 
+   ; sg_CS_bop          := bop_max
+   ; sg_CS_exists_id_d  := Certify_Exists_Id 0
+   ; sg_CS_exists_ann_d := Certify_Not_Exists_Ann 
+   ; sg_CS_certs        := sg_CS_certs_max
+   ; sg_CS_ast          := Ast_sg_max
    |}. 
 
 
@@ -193,17 +198,20 @@ End CAS.
 
 Section MCAS.
 
-Definition mcas_sg_max : @sg_mcas nat := MCAS_sg_CS_with_id sg_max.  
+  Definition sg_max_below_sg_CS := classify_sg_CS sg_max.     
+
+ Definition mcas_sg_max : @sg_mcas nat :=
+   MCAS_sg (Below_sg_sg_C (Below_sg_C_sg_CS (sg_max_below_sg_CS))). 
 
 End MCAS.  
 
 
 Section Verify.
 
-Theorem correct_sg_CS_max : sg_max = A2C_sg_CS_with_id nat (A_sg_max). 
+Theorem correct_sg_CS_max : sg_max = A2C_sg_CS (A_sg_max). 
 Proof. compute. reflexivity. Qed. 
 
-Theorem correct_mcas_sg_max : mcas_sg_max = A2C_mcas_sg nat (A_mcas_sg_max). 
+Theorem correct_mcas_sg_max : mcas_sg_max = A2C_sg_mcas (A_mcas_sg_max). 
 Proof. compute. reflexivity. Qed. 
 
 End Verify.   

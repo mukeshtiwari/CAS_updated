@@ -616,6 +616,15 @@ Proof. intro b.
          discriminate C. 
 Defined.
 
+Definition brel_exists_bottom_decidable_from_brel_exists_qo_bottom_decidable 
+  (anti : brel_antisymmetric S eq lte) 
+  (D : brel_exists_qo_bottom_decidable S eq lte) : brel_exists_bottom_decidable S lte := 
+  match D with
+  | inl bot => inl (brel_exists_bottom_from_brel_exists_qo_bottom bot)
+  | inr nbot => inr (brel_not_exists_bottom_from_brel_not_exists_qo_bottom anti nbot)
+  end.
+
+
 Lemma brel_exists_top_from_brel_exists_qo_top
      (P : brel_exists_qo_top S eq lte) : brel_exists_top S lte.
 Proof. destruct P as [top [A B]]. exists top; auto. Defined. 
@@ -631,6 +640,15 @@ Proof. intro b.
          discriminate C. 
 Defined.
 
+Definition brel_exists_top_decidable_from_brel_exists_qo_top_decidable 
+  (anti : brel_antisymmetric S eq lte) 
+  (D : brel_exists_qo_top_decidable S eq lte) : brel_exists_top_decidable S lte := 
+  match D with
+  | inl top => inl (brel_exists_top_from_brel_exists_qo_top top)
+  | inr ntop => inr (brel_not_exists_top_from_brel_not_exists_qo_top anti ntop)
+  end.
+
+
 (* other direction for cast_up : *) 
 Lemma brel_exists_qo_bottom_from_brel_exists_bottom
       (anti : brel_antisymmetric S eq lte)       
@@ -641,7 +659,16 @@ Defined.
 
 Lemma brel_not_exists_qo_bottom_from_brel_not_exists_bottom
       (P : brel_not_exists_bottom S lte) : brel_not_exists_qo_bottom S eq lte.
-Proof. intro b. left. exact (P b).  Defined. 
+Proof. intro b. left. exact (P b).  Defined.
+
+Definition brel_exists_qo_bottom_decidable_from_brel_exists_bottom_decidable 
+  (anti : brel_antisymmetric S eq lte) 
+  (D : brel_exists_bottom_decidable S lte) : brel_exists_qo_bottom_decidable S eq lte := 
+  match D with
+  | inl bot => inl (brel_exists_qo_bottom_from_brel_exists_bottom anti bot)
+  | inr nbot => inr (brel_not_exists_qo_bottom_from_brel_not_exists_bottom nbot)
+  end.
+
 
 Lemma brel_exists_qo_top_from_brel_exists_top
       (anti : brel_antisymmetric S eq lte)       
@@ -653,7 +680,16 @@ Defined.
 
 Lemma brel_not_exists_qo_top_from_brel_not_exists_top
       (P : brel_not_exists_top S lte) : brel_not_exists_qo_top S eq lte.
-Proof. intro b. left. exact (P b).  Defined. 
+Proof. intro b. left. exact (P b).  Defined.
+
+Definition brel_exists_qo_top_decidable_from_brel_exists_top_decidable 
+  (anti : brel_antisymmetric S eq lte) 
+  (D : brel_exists_top_decidable S lte) : brel_exists_qo_top_decidable S eq lte := 
+  match D with
+  | inl top => inl (brel_exists_qo_top_from_brel_exists_top anti top)
+  | inr ntop => inr (brel_not_exists_qo_top_from_brel_not_exists_top ntop)
+  end.
+
 
 (* triviality *)
 

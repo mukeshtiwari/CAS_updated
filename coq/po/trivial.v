@@ -66,40 +66,40 @@ End Theory.
 
 Section ACAS.
 
-Definition or_proofs_trivial (S : Type) (eq : brel S) (wS : S) (f : S → S) (nt : brel_not_trivial S eq f) : 
-    wo_proofs S eq brel_trivial := 
+Definition qo_proofs_trivial (S : Type) (eq : brel S) (wS : S) (f : S → S) (nt : brel_not_trivial S eq f) : 
+    qo_proofs S eq brel_trivial := 
 {|
-  A_wo_congruence    := brel_trivial_congruence S eq
-; A_wo_reflexive     := brel_trivial_reflexive S 
-; A_wo_transitive    := brel_trivial_transitive S 
-; A_wo_not_antisymmetric := brel_trivial_not_antisymmetric S eq wS f nt
-; A_wo_total         := brel_trivial_total S
-; A_wo_trivial_d     := inl (brel_trivial_trivial S)                                           
+  A_qo_congruence      := brel_trivial_congruence S eq
+; A_qo_reflexive       := brel_trivial_reflexive S 
+; A_qo_transitive      := brel_trivial_transitive S 
+; A_qo_antisymmetric_d := inr (brel_trivial_not_antisymmetric S eq wS f nt)
+; A_qo_total_d         := inl (brel_trivial_total S)
+; A_qo_trivial_d       := inl (brel_trivial_trivial S)                                           
 |}. 
 
 
-Definition A_or_trivial {S : Type} (eqv : A_eqv S) : A_wo S := 
+Definition A_qo_trivial {S : Type} (eqv : A_eqv S) : @A_qo S := 
   let wS := A_eqv_witness S eqv in
   let f  := A_eqv_new S eqv in
   let nt := A_eqv_not_trivial S eqv in      
   let eq := A_eqv_eq S eqv in
   {| 
-     A_wo_eqv               := eqv 
-   ; A_wo_lte               := brel_trivial
-   ; A_wo_not_exists_top    := brel_trivial_not_exists_qo_top S eq f nt
-   ; A_wo_not_exists_bottom := brel_trivial_not_exists_qo_bottom S eq f nt
-   ; A_wo_proofs            := or_proofs_trivial S eq wS f nt
-   ; A_wo_ast               := Ast_or_trivial (A_eqv_ast S eqv)
+     A_qo_eqv                 := eqv 
+   ; A_qo_lte                 := brel_trivial
+   ; A_qo_exists_top_d    := inr (brel_trivial_not_exists_qo_top S eq f nt)
+   ; A_qo_exists_bottom_d := inr (brel_trivial_not_exists_qo_bottom S eq f nt)
+   ; A_qo_proofs              := qo_proofs_trivial S eq wS f nt
+   ; A_qo_ast                 := Ast_or_trivial (A_eqv_ast S eqv)
    |}. 
 
 End ACAS.
 
 Section AMCAS.
 
-  Definition A_mcas_or_trivial {S : Type} (meqv : @A_mcas_eqv S) :=
+  Definition A_mcas_qo_trivial {S : Type} (meqv : @A_mcas_eqv S) :=
     match meqv with
-    | A_EQV_Error sl => A_OR_Error sl
-    | A_EQV_eqv eqv => A_OR_wo (A_or_trivial eqv)
+    | A_EQV_Error sl => A_MCAS_qo_Error sl
+    | A_EQV_eqv eqv  => A_MCAS_qo (A_Below_qo_top (A_qo_trivial eqv))
     end.
   
 End AMCAS.   
@@ -107,37 +107,38 @@ End AMCAS.
 
 Section CAS.
 
-Definition or_certs_trivial {S : Type} (wS : S) (f : S -> S) : @wo_certificates S := 
+Definition qo_certs_trivial {S : Type} (wS : S) (f : S -> S) : @qo_certificates S := 
 {|
-  wo_congruence        := Assert_Brel_Congruence
-; wo_reflexive         := Assert_Reflexive 
-; wo_transitive        := Assert_Transitive 
-; wo_not_antisymmetric := Assert_Not_Antisymmetric (wS, f wS) 
-; wo_total             := Assert_Total
-; wo_trivial_d         := Certify_Order_Trivial 
+  qo_congruence      := Assert_Brel_Congruence
+; qo_reflexive       := Assert_Reflexive 
+; qo_transitive      := Assert_Transitive 
+; qo_antisymmetric_d := Certify_Not_Antisymmetric (wS, f wS) 
+; qo_total_d         := Certify_Total
+; qo_trivial_d       := Certify_Order_Trivial 
 |}. 
 
-Definition or_trivial {S : Type} :  @eqv S -> @wo S 
+Definition qo_trivial {S : Type} :  @eqv S -> @qo S 
 := λ eqv,
   let wS := eqv_witness eqv in
   let f := eqv_new eqv in           
   {| 
-     wo_eqv               := eqv
-   ; wo_lte               := brel_trivial
-   ; wo_not_exists_top    := Assert_Not_Exists_Qo_Top 
-   ; wo_not_exists_bottom := Assert_Not_Exists_Qo_Bottom 
-   ; wo_certs             := or_certs_trivial wS f 
-   ; wo_ast               := Ast_or_trivial (eqv_ast eqv)
+     qo_eqv             := eqv
+   ; qo_lte             := brel_trivial
+   ; qo_exists_top_d    := Certify_Not_Exists_Qo_Top 
+   ; qo_exists_bottom_d := Certify_Not_Exists_Qo_Bottom 
+   ; qo_certs           := qo_certs_trivial wS f 
+   ; qo_ast             := Ast_or_trivial (eqv_ast eqv)
    |}. 
  
 End CAS.
 
 Section MCAS.
 
-    Definition mcas_or_trivial {S : Type} (meqv : @mcas_eqv S) :=
+
+    Definition mcas_qo_trivial {S : Type} (meqv : @mcas_eqv S) :=
     match meqv with
-    | EQV_Error sl => OR_Error sl
-    | EQV_eqv eqv => OR_wo (or_trivial eqv)
+    | EQV_Error sl => MCAS_qo_Error sl
+    | EQV_eqv eqv  => MCAS_qo (Below_qo_top (qo_trivial eqv))
     end.
 
 End MCAS.   
@@ -145,22 +146,24 @@ End MCAS.
 
 Section Verify.
   
-Lemma correct_or_certs_trivial (S : Type) (eq : brel S) (wS : S) (f : S -> S) (nt : brel_not_trivial S eq f): 
-       or_certs_trivial wS f 
+Lemma correct_qo_certs_trivial (S : Type) (eq : brel S) (wS : S) (f : S -> S) (nt : brel_not_trivial S eq f): 
+       qo_certs_trivial wS f 
        = 
-       P2C_wo eq brel_trivial (or_proofs_trivial S eq wS f nt).
+       P2C_qo eq brel_trivial (qo_proofs_trivial S eq wS f nt).
 Proof. compute. reflexivity. Qed. 
 
 
 Theorem correct_or_trivial (S : Type) (E : A_eqv S):  
-         or_trivial (A2C_eqv S E)  = A2C_wo (A_or_trivial E). 
-Proof. unfold or_trivial, A_or_trivial, A2C_wo; simpl. 
-       rewrite <- correct_or_certs_trivial. reflexivity.        
+         qo_trivial (A2C_eqv S E)  = A2C_qo (A_qo_trivial E). 
+Proof. unfold qo_trivial, A_qo_trivial, A2C_qo; simpl. 
+       rewrite <- correct_qo_certs_trivial. reflexivity.        
 Qed.
 
 
 Theorem correct_mcas_or_trivial (S : Type) (E : @A_mcas_eqv S):  
-         mcas_or_trivial (A2C_mcas_eqv S E)  = A2C_mcas_or (A_mcas_or_trivial E). 
+  mcas_qo_trivial (A2C_mcas_eqv S E)
+  =
+  A2C_qo_mcas (A_mcas_qo_trivial E). 
 Proof. destruct E; simpl. 
        + reflexivity.
        + rewrite <- correct_or_trivial. reflexivity.        

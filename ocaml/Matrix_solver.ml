@@ -43,27 +43,17 @@ let rec massage_adj_list (l : (int * (int * 'a) list) list)
 (* end of utility function *)
 
 
-let fetch_zero_and_one_from_algebra (alg : 'a bs_mcas) = 
-  let b = bs_mcas_cast_up alg in
-  match b with
-  | BS_Error l -> errors (List.map char_list_to_string l)
-  | BS_bs a ->
-     (*     let bsP = a.bs_certs in *) 
-     let id_annP = a.bs_id_ann_certs in
-     (match id_annP.id_ann_plus_times_d with
-     | Id_Ann_Cert_Equal zero -> 
-        (match id_annP.id_ann_times_plus_d with
-          | Id_Ann_Cert_Equal one -> (zero, one)
-          | _ -> error "fetch_zero_and_one_from_algebra : expecting a one")
-     | _ -> error "fetch_zero_and_one_from_algebra : expecting a zero")
-  | _  -> error "fetch_zero_and_one_from_algebra : internal error"
+let fetch_zero_and_one_from_path_algebra (alg : 'a path_algebra) =
+    let id_annP = alg.pa_id_ann_props in
+    match id_annP.bounded_plus_id_is_times_ann, id_annP.bounded_times_id_is_plus_ann with
+     | BS_Exists_Id_Ann_Equal zero, BS_Exists_Id_Ann_Equal one -> (zero, one);; 
 
-let square_matrix_from_adj_list' (n : int) (l : (int * (int * 'a) list) list) (alg : 'a bs_mcas)
+let square_matrix_from_adj_list' (n : int) (l : (int * (int * 'a) list) list) (alg : 'a path_algebra)
   : 'a square_matrix =
   {
     sqm_size = n;
     sqm_functional_matrix = 
-      (let (zero, one) = fetch_zero_and_one_from_algebra alg in 
+      (let (zero, one) = fetch_zero_and_one_from_path_algebra alg in 
       List.fold_left 
         update_square_matrix 
         (fun c d -> if c = d then one else zero) 
@@ -73,9 +63,13 @@ let square_matrix_from_adj_list' (n : int) (l : (int * (int * 'a) list) list) (a
 type 'a adjacency_list = { adj_size : int; adj_list : (int * (int * 'a) list) list }  ;;     
 
 let square_matrix_from_adj_list algebra adjl =
-     square_matrix_from_adj_list' adjl.adj_size adjl.adj_list algebra;; 
+     square_matrix_from_adj_list' adjl.adj_size adjl.adj_list algebra;;
 					       
+let bs_adj_list_solver alg adjl =
+     let sqm = square_matrix_from_adj_list alg adjl in 
+     path_algebra_matrix_solver alg sqm ;; 
 
+(*
 type algorithm =  Matrix_power | Not_implemented_yet
 
 
@@ -83,25 +77,19 @@ let matrix_solver (algo : algorithm) (alge : 'a bs_mcas) :
       (int -> int -> 'a Cas.square_matrix -> 'a Cas.square_matrix,
        char list list) Cas.sum =
   match algo with
-  | Matrix_power -> bs_instantiate_matrix_exp_square_matrix alge 
+  | Matrix_power -> 
   | _ -> error "matrix_solver : algorithm not implemented yet"
 
 type 'a algorithm_instance =
- | Matrix_Power_Instance of ('a bs_mcas) * (int -> 'a square_matrix -> 'a square_matrix)
- | Another_Instance of ('a bs_mcas) * ('a square_matrix -> 'a square_matrix);;  
+ | Matrix_Power_Instance of ('a path_algebra) * (int -> 'a square_matrix -> 'a square_matrix)
+ | Another_Instance of ('a path_algebra) * ('a square_matrix -> 'a square_matrix);;  
   
 let instantiate_algorithm algebra algo = 
    match matrix_solver algo algebra with
    | Inl mf -> Matrix_Power_Instance (algebra, fun n -> mf n (n-1))  
    | Inr l -> errors ("Your algebra does not meet the requirements of this algorithm" :: (List.map char_list_to_string l));;
 
-let bs_adj_list_solver alg adjl =
-  match instantiate_algorithm alg Matrix_power with
-  | Matrix_Power_Instance(algebra, mf ) ->
-     let sqm = square_matrix_from_adj_list algebra adjl in 
-     mf sqm.sqm_size sqm 
-  | _ -> error ("mk_adj_list_solver : internal error");; 
-  
+*)   
 (* 
 In the future, we want 
 'a Cas.square_matrix -> 'a Cas.square_matrix to be an abstract data type 

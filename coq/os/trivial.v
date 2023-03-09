@@ -76,6 +76,7 @@ Definition os_trivial_from_sg_exists_qo_bottom_id_equal_decide
 
 End Theory.
 
+(*
 Section ACAS.
 
 Definition A_os_from_sg_trivial {S : Type} (A : A_sg S) :=
@@ -212,3 +213,4 @@ Qed.
     
 End Verify.   
 
+*) 

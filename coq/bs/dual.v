@@ -15,6 +15,7 @@ Section Theory.
   
 End Theory.   
 
+(*
 Section ACAS.
 
 
@@ -365,3 +366,4 @@ Qed.
  
 End Verify.   
 
+*) 

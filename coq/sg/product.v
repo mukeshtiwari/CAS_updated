@@ -12,7 +12,8 @@ Require Import CAS.coq.eqv.product.
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
-Require Import CAS.coq.sg.cast_up. 
+Require Import CAS.coq.sg.cast_up.
+Require Import CAS.coq.sg.classify. 
 Require Import CAS.coq.sg.theory. 
 Require Import CAS.coq.sg.and. 
 Require Import CAS.coq.sg.or.
@@ -1350,7 +1351,7 @@ let idemT := bop_selective_implies_idempotent _ _ _ (A_sg_CS_selective _ _ _ sgT
 ; A_sg_CI_not_selective := bop_product_selective_decide_commutative_case S T rS rT bS bT s f Pf symS transS t g Pg symT transT commS commT
 |}. 
 
-
+(*
 Definition sg_CK_proofs_product : 
    ∀ (S T : Type) (rS : brel S) (rT : brel T) (bS : binary_op S) (bT: binary_op T),
      eqv_proofs S rS -> eqv_proofs T rT -> sg_CK_proofs S rS bS -> sg_CK_proofs T rT bT -> 
@@ -1365,7 +1366,7 @@ Definition sg_CK_proofs_product :
 ; A_sg_CK_anti_left_d        := bop_product_anti_left_decide S T rS rT bS bT (A_sg_CK_anti_left_d _ _ _ sgS) (A_sg_CK_anti_left_d _ _ _ sgT) 
 ; A_sg_CK_anti_right_d       := bop_product_anti_right_decide S T rS rT bS bT (A_sg_CK_anti_right_d _ _ _ sgS) (A_sg_CK_anti_right_d _ _ _ sgT) 
 |}. 
-
+*) 
 
 (**************************************************************************************)
 
@@ -1481,6 +1482,7 @@ End ACAS.
 
 Section AMCAS.
 
+  (*
 Open Scope list_scope.
 Open Scope string_scope.
 
@@ -1507,16 +1509,19 @@ match A_sg_proofs_mcas_cast_up S eqS wS f ntS eqvPS bS id_dS PS,
 | _,  A_MCAS_Proof_sg_Error _ _ _ sl2 => A_MCAS_Proof_sg_Error _ _ _ sl2
 | _, _                                => A_MCAS_Proof_sg_Error _ _ _ ("Internal Error : mcas_sg_proofs_product" :: nil)
 end.
+*) 
+
+  Definition A_sg_product_below_sg {S T : Type} (A : @A_below_sg S)  (B : @A_below_sg T)  : @A_below_sg (S * T) :=
+    A_classify_sg (A_sg_product _ _ (A_cast_up_sg A) (A_cast_up_sg B)).
 
   
-Definition A_mcas_sg_product (S T : Type) (A : A_sg_mcas S)  (B : A_sg_mcas T)  : A_sg_mcas (S * T) :=
-match A_sg_mcas_cast_up _ A, A_sg_mcas_cast_up _ B with
-| A_MCAS_sg _ A', A_MCAS_sg _ B'               => A_sg_classify _ (A_MCAS_sg _ (A_sg_product _ _ A' B'))
-| A_MCAS_sg_Error _ sl1, A_MCAS_sg_Error _ sl2 => A_MCAS_sg_Error _ (sl1 ++ sl2)
-| A_MCAS_sg_Error _ sl1, _                     => A_MCAS_sg_Error _ sl1
-| _,  A_MCAS_sg_Error _ sl2                    => A_MCAS_sg_Error _ sl2
-| _, _                                         => A_MCAS_sg_Error _ ("Internal Error : A_mcas_product" :: nil)
-end.
+  Definition A_mcas_sg_product {S T : Type} (A : @A_sg_mcas S)  (B : @A_sg_mcas T)  : @A_sg_mcas (S * T) :=
+    match A, B with
+    | A_MCAS_sg A', A_MCAS_sg B'               => A_MCAS_sg (A_sg_product_below_sg A' B')
+    | A_MCAS_sg_Error sl1, A_MCAS_sg_Error sl2 => A_MCAS_sg_Error (sl1 ++ sl2)
+    | A_MCAS_sg_Error sl1, _                   => A_MCAS_sg_Error sl1
+    | _,  A_MCAS_sg_Error sl2                  => A_MCAS_sg_Error sl2
+    end.
 
 End AMCAS.
 
@@ -1882,6 +1887,23 @@ Definition sg_CK_certs_product : ∀ {S T : Type},  sg_CK_certificates (S := S) 
                          (sg_CK_anti_right_d cT)
 |}.
 
+
+Definition sg_CI_certs_product : ∀ {S T : Type},  (brel S) -> (brel T) -> (binary_op S) -> (binary_op T) ->
+                                                  S -> (S -> S) -> T -> (T -> T) -> 
+                                                  sg_CI_certificates (S := S) -> sg_CI_certificates (S := T) -> sg_CI_certificates (S := (S * T)) 
+:= λ {S T} rS rT bS bT s f t g cS cT,  
+{|
+  sg_CI_associative   := Assert_Associative   
+; sg_CI_congruence    := Assert_Bop_Congruence   
+; sg_CI_commutative   := Assert_Commutative   
+; sg_CI_idempotent    := Assert_Idempotent   
+(*; sg_CI_selective_d   := Certify_Not_Selective (cef_commutative_product S T rS rT bS bT s f t g)*)
+; sg_CI_not_selective  := Assert_Not_Selective (cef_commutative_product S T rS rT bS bT s f t g)
+|}.
+
+ *)
+
+
 Definition sg_C_certs_product : ∀ {S T : Type},  (brel S) -> (brel T) -> (binary_op S) -> (binary_op T) ->
                                                   S -> (S -> S) -> T ->(T -> T) -> 
                                                  sg_C_certificates (S := S) -> sg_C_certificates (S := T) -> sg_C_certificates (S := (S * T)) 
@@ -1908,20 +1930,6 @@ Definition sg_C_certs_product : ∀ {S T : Type},  (brel S) -> (brel T) -> (bina
                          (sg_C_anti_right_d cT)
 |}.
 
-Definition sg_CI_certs_product : ∀ {S T : Type},  (brel S) -> (brel T) -> (binary_op S) -> (binary_op T) ->
-                                                  S -> (S -> S) -> T -> (T -> T) -> 
-                                                  sg_CI_certificates (S := S) -> sg_CI_certificates (S := T) -> sg_CI_certificates (S := (S * T)) 
-:= λ {S T} rS rT bS bT s f t g cS cT,  
-{|
-  sg_CI_associative   := Assert_Associative   
-; sg_CI_congruence    := Assert_Bop_Congruence   
-; sg_CI_commutative   := Assert_Commutative   
-; sg_CI_idempotent    := Assert_Idempotent   
-(*; sg_CI_selective_d   := Certify_Not_Selective (cef_commutative_product S T rS rT bS bT s f t g)*)
-; sg_CI_not_selective  := Assert_Not_Selective (cef_commutative_product S T rS rT bS bT s f t g)
-|}.
-
-*) 
 
 Definition sg_product : ∀ {S T : Type},  @sg S -> @sg T -> @sg (S * T)
 := λ {S T} sgS sgT, 
@@ -1995,7 +2003,7 @@ Section MCAS.
 
 Open Scope list_scope.
 Open Scope string_scope.
-
+(*
 Definition mcas_sg_certs_product 
            {S T : Type} 
            (eqS : brel S) (eqT : brel T)
@@ -2015,16 +2023,18 @@ match sg_certs_mcas_cast_up S eqS wS f bS id_dS PS,
 | _,  MCAS_Cert_sg_Error sl2 => MCAS_Cert_sg_Error sl2
 | _, _                       => MCAS_Cert_sg_Error ("Internal Error : mcas_sg_certs_product" :: nil)
 end.
+ *)
 
+  Definition sg_product_below_sg {S T : Type} (A : @below_sg S)  (B : @below_sg T)  : @below_sg (S * T) :=
+     classify_sg (sg_product (cast_up_sg A) (cast_up_sg B)).
   
-Definition mcas_sg_product {S T : Type} (A : @sg_mcas S)  (B : @sg_mcas T)  : @sg_mcas (S * T) :=
-match sg_mcas_cast_up _ A, sg_mcas_cast_up _ B with
-| MCAS_sg A', MCAS_sg B'               => sg_classify _ (MCAS_sg (sg_product A' B'))
-| MCAS_sg_Error sl1, MCAS_sg_Error sl2 => MCAS_sg_Error (sl1 ++ sl2)
-| MCAS_sg_Error sl1, _                 => MCAS_sg_Error sl1
-| _,  MCAS_sg_Error sl2                => MCAS_sg_Error sl2
-| _, _                                 => MCAS_sg_Error ("Internal Error : mcas_product" :: nil)
-end.
+  Definition mcas_sg_product {S T : Type} (A : @sg_mcas S)  (B : @sg_mcas T)  : @sg_mcas (S * T) :=
+    match A, B with
+    | MCAS_sg A', MCAS_sg B'               => MCAS_sg (sg_product_below_sg A' B')
+    | MCAS_sg_Error sl1, MCAS_sg_Error sl2 => MCAS_sg_Error (sl1 ++ sl2)
+    | MCAS_sg_Error sl1, _                 => MCAS_sg_Error sl1
+    | _,  MCAS_sg_Error sl2                => MCAS_sg_Error sl2
+    end.
 
 End MCAS.
 
@@ -2275,31 +2285,8 @@ Section ProofsCorrect.
   Variable eS : eqv_proofs S rS.
   Variable eT : eqv_proofs T rT. 
 
-
-Lemma correct_sg_certs_product : 
-      ∀ (pS : sg_proofs S rS bS) (pT : sg_proofs T rT bT),
-        
-      sg_certs_product wS wT (P2C_sg S rS bS pS) (P2C_sg T rT bT pT) 
-      = 
-      P2C_sg (S * T) (brel_product rS rT) 
-                     (bop_product bS bT) 
-                     (sg_proofs_product S T rS rT bS bT wS f wT g Pf Pg eS eT pS pT). 
-Proof. intros pS pT. 
-       unfold sg_proofs_product, sg_certs_product, P2C_sg; simpl. 
-       rewrite correct_check_idempotent_product.
-       rewrite correct_check_selective_product.              
-       rewrite correct_check_is_right_product. 
-       rewrite correct_check_is_left_product. 
-       rewrite correct_check_commutative_product.
-       rewrite <- correct_check_anti_left_product. 
-       rewrite <- correct_check_anti_right_product.
-       rewrite <- correct_check_left_constant_product.       
-       rewrite <- correct_check_right_constant_product.        
-       rewrite correct_check_left_cancel_product. 
-       rewrite correct_check_right_cancel_product. 
-       reflexivity. 
-Defined.
-
+(*
+*) 
 (*
 Lemma correct_msg_certs_product : 
       ∀ (pS : msg_proofs S rS bS) (pT : msg_proofs T rT bT),
@@ -2339,24 +2326,6 @@ Defined.
 
 
 
-Lemma correct_sg_C_certs_product : 
-      ∀ (pS : sg_C_proofs S rS bS) (pT : sg_C_proofs T rT bT),
-        
-      sg_C_certs_product rS rT bS bT wS f wT g (P2C_sg_C S rS bS pS) (P2C_sg_C T rT bT pT) 
-      = 
-      P2C_sg_C (S * T) (brel_product rS rT) 
-                       (bop_product bS bT) 
-                       (sg_C_proofs_product S T rS rT bS bT wS f wT g Pf Pg eS eT pS pT). 
-Proof. intros pS pT. 
-       unfold sg_C_proofs_product, sg_C_certs_product, P2C_sg_C; simpl. 
-       rewrite correct_check_idempotent_product; auto.
-       rewrite <- correct_check_anti_left_product; auto. 
-       rewrite <- correct_check_anti_right_product; auto.
-       rewrite <- correct_check_left_constant_product; auto.       
-       rewrite correct_check_left_cancel_product; auto. 
-Defined. 
-
-
 
 
 
@@ -2392,37 +2361,84 @@ Proof. intros pS pT.
 Defined.
 *) 
 
+Lemma correct_sg_C_certs_product : 
+      ∀ (pS : sg_C_proofs S rS bS) (pT : sg_C_proofs T rT bT),
+        
+      sg_C_certs_product rS rT bS bT wS f wT g (P2C_sg_C rS bS pS) (P2C_sg_C rT bT pT) 
+      = 
+      P2C_sg_C(brel_product rS rT) 
+        (bop_product bS bT) 
+        (sg_C_proofs_product S T rS rT bS bT wS f wT g Pf Pg eS eT pS pT). 
+Proof. intros pS pT. 
+       unfold sg_C_proofs_product, sg_C_certs_product, P2C_sg_C; simpl. 
+       rewrite correct_check_idempotent_product; auto.
+       rewrite <- correct_check_anti_left_product; auto. 
+       rewrite <- correct_check_anti_right_product; auto.
+       rewrite <- correct_check_left_constant_product; auto.       
+       rewrite correct_check_left_cancel_product; auto. 
+Defined. 
+
+
+
+Lemma correct_sg_certs_product : 
+      ∀ (pS : sg_proofs S rS bS) (pT : sg_proofs T rT bT),
+        
+      sg_certs_product wS wT (P2C_sg rS bS pS) (P2C_sg rT bT pT) 
+      = 
+      P2C_sg (brel_product rS rT) 
+             (bop_product bS bT) 
+             (sg_proofs_product S T rS rT bS bT wS f wT g Pf Pg eS eT pS pT). 
+Proof. intros pS pT. 
+       unfold sg_proofs_product, sg_certs_product, P2C_sg; simpl. 
+       rewrite correct_check_idempotent_product.
+       rewrite correct_check_selective_product.              
+       rewrite correct_check_is_right_product. 
+       rewrite correct_check_is_left_product. 
+       rewrite correct_check_commutative_product.
+       rewrite <- correct_check_anti_left_product. 
+       rewrite <- correct_check_anti_right_product.
+       rewrite <- correct_check_left_constant_product.       
+       rewrite <- correct_check_right_constant_product.        
+       rewrite correct_check_left_cancel_product. 
+       rewrite correct_check_right_cancel_product. 
+       reflexivity. 
+Defined.
+
 End ProofsCorrect. 
 
-Theorem correct_sg_product :
-      ∀ (S T : Type) (sgS : A_sg S) (sgT : A_sg T), 
-         sg_product (A2C_sg S sgS) (A2C_sg T sgT) 
+Theorem correct_sg_product 
+         (S T : Type) (sgS : A_sg S) (sgT : A_sg T) : 
+         sg_product (A2C_sg sgS) (A2C_sg sgT) 
          = 
-         A2C_sg (S * T) (A_sg_product S T sgS sgT). 
-Proof. intros S T sgS sgT. 
-       unfold sg_product, A2C_sg; simpl. 
+         A2C_sg (A_sg_product S T sgS sgT). 
+Proof. unfold sg_product, A2C_sg; simpl. 
        rewrite correct_eqv_product. 
        rewrite <- correct_sg_certs_product.
        rewrite correct_check_exists_id_product.  
        rewrite correct_check_exists_ann_product.
        reflexivity. 
+Qed.
+
+Theorem correct_sg_product_below_sg (S T : Type) (A : @A_below_sg S) (B : @A_below_sg T) : 
+  sg_product_below_sg (A2C_below_sg A) (A2C_below_sg B)
+  =
+  A2C_below_sg (A_sg_product_below_sg A B). 
+Proof. unfold sg_product_below_sg, A_sg_product_below_sg.
+       rewrite cast_up_sg_A2C_commute.
+       rewrite cast_up_sg_A2C_commute.
+       rewrite correct_sg_product.
+       rewrite correct_classify_sg.
+       reflexivity. 
 Qed. 
 
-
-Theorem correct_mcas_sg_product (S T : Type) (sgS : A_sg_mcas S) (sgT : A_sg_mcas T): 
-         mcas_sg_product (A2C_mcas_sg S sgS) (A2C_mcas_sg T sgT) 
+Theorem correct_mcas_sg_product (S T : Type) (A : @A_sg_mcas S) (B : @A_sg_mcas T): 
+         mcas_sg_product (A2C_sg_mcas A) (A2C_sg_mcas B) 
          = 
-         A2C_mcas_sg (S * T) (A_mcas_sg_product S T sgS sgT).
-Proof. unfold mcas_sg_product, A_mcas_sg_product. 
-       Time rewrite correct_sg_mcas_cast_up.
-       Time rewrite correct_sg_mcas_cast_up.       
-       Time destruct (A_sg_cas_up_is_error_or_sg S sgS) as [[l1 A] | [s1 A]];
-       destruct (A_sg_cas_up_is_error_or_sg T sgT) as [[l2 B] | [s2 B]].
-       + rewrite A, B. simpl. reflexivity. 
-       + rewrite A, B. simpl. reflexivity.
-       + rewrite A, B. simpl. reflexivity.
-       + rewrite A, B. simpl. rewrite correct_sg_product.
-         apply correct_sg_classify_sg. 
+         A2C_sg_mcas (A_mcas_sg_product A B).
+Proof. destruct A, B; unfold mcas_sg_product, A_mcas_sg_product,
+         A2C_sg_mcas; try reflexivity. 
+       rewrite correct_sg_product_below_sg.
+       reflexivity. 
 Qed. 
 
 (*

@@ -6,6 +6,7 @@ Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
+Require Import CAS.coq.sg.classify. 
 
 Require Import CAS.coq.eqv.nat. 
 
@@ -158,25 +159,14 @@ Definition A_sg_C_proofs_plus : sg_C_proofs nat brel_eq_nat bop_plus :=
 |}. 
 
 
-Definition A_sg_CK_proofs_plus : sg_CK_proofs nat brel_eq_nat bop_plus := 
-{| 
-  A_sg_CK_associative        := bop_plus_associative
-; A_sg_CK_congruence         := bop_plus_congruence
-; A_sg_CK_commutative        := bop_plus_commutative
-; A_sg_CK_cancel             := bop_plus_left_cancellative 
-; A_sg_CK_anti_left_d        := inr _ bop_plus_not_anti_left
-; A_sg_CK_anti_right_d       := inr _ bop_plus_not_anti_right
-|}. 
-
-
-
-Definition A_sg_plus : A_sg_CK_with_id nat 
+Definition A_sg_plus : A_sg_C nat 
 := {| 
-       A_sg_CK_wi_eqv        := A_eqv_nat 
-     ; A_sg_CK_wi_bop        := bop_plus
-     ; A_sg_CK_wi_exists_id  := bop_plus_exists_id
-     ; A_sg_CK_wi_proofs     := A_sg_CK_proofs_plus
-     ; A_sg_CK_wi_ast        := Ast_sg_plus 
+       A_sg_C_eqv          := A_eqv_nat 
+     ; A_sg_C_bop          := bop_plus
+     ; A_sg_C_exists_id_d  := inl bop_plus_exists_id
+     ; A_sg_C_exists_ann_d := inr bop_plus_not_exists_ann
+     ; A_sg_C_proofs       := A_sg_C_proofs_plus
+     ; A_sg_C_ast          := Ast_sg_plus 
    |}. 
 
 
@@ -184,7 +174,10 @@ End ACAS.
 
 Section AMCAS.
 
-Definition A_mcas_sg_plus : A_sg_mcas nat := A_MCAS_sg_CK_with_id nat A_sg_plus.  
+Definition A_sg_plus_below_sg_C := A_classify_sg_C A_sg_plus.   
+
+Definition A_mcas_sg_plus : @A_sg_mcas nat :=
+  A_MCAS_sg (A_Below_sg_sg_C (A_sg_plus_below_sg_C)). 
 
 End AMCAS.  
 
@@ -222,50 +215,49 @@ Definition sg_C_certs_plus : @sg_C_certificates nat :=
 ; sg_C_anti_right_d     := Certify_Not_Anti_Right (0, 0) 
 |}. 
 
-Definition sg_CK_certs_plus : @sg_CK_certificates nat 
-:= {|
-     sg_CK_associative    := Assert_Associative 
-   ; sg_CK_congruence     := Assert_Bop_Congruence 
-   ; sg_CK_commutative    := Assert_Commutative 
-   ; sg_CK_anti_left_d    := Certify_Not_Anti_Left (0, 0) 
-   ; sg_CK_anti_right_d   := Certify_Not_Anti_Right (0, 0)
-   ; sg_CK_cancel    := Assert_Left_Cancellative
-   |}.
 
-
-Definition sg_plus : @sg_CK_with_id nat
+Definition sg_plus : @sg_C nat
 := {| 
-     sg_CK_wi_eqv         := eqv_eq_nat 
-   ; sg_CK_wi_bop         := bop_plus
-   ; sg_CK_wi_exists_id   := Assert_Exists_Id 0 
-   ; sg_CK_wi_certs       := sg_CK_certs_plus   
-   ; sg_CK_wi_ast         := Ast_sg_plus 
+     sg_C_eqv          := eqv_eq_nat 
+   ; sg_C_bop          := bop_plus
+   ; sg_C_exists_id_d  := Certify_Exists_Id 0 
+   ; sg_C_exists_ann_d := Certify_Not_Exists_Ann
+   ; sg_C_certs        := sg_C_certs_plus   
+   ; sg_C_ast          := Ast_sg_plus 
    |}. 
 
 End CAS.
 
 Section MCAS.
 
-Definition mcas_sg_plus : @sg_mcas nat := MCAS_sg_CK_with_id sg_plus.  
+Definition sg_plus_below_sg_C := classify_sg_C sg_plus.   
+
+Definition mcas_sg_plus : @sg_mcas nat :=
+  MCAS_sg (Below_sg_sg_C (sg_plus_below_sg_C)). 
+
 
 End MCAS.  
 
 Section Verify.
 
-Theorem correct_sg_certs_plus : sg_certs_plus = P2C_sg nat brel_eq_nat bop_plus (A_sg_proofs_plus). 
-Proof. compute. reflexivity. Qed. 
+  Theorem correct_sg_certs_plus :
+    sg_certs_plus
+    =
+    P2C_sg brel_eq_nat bop_plus (A_sg_proofs_plus). 
+  Proof. compute. reflexivity. Qed. 
 
-Theorem correct_sg_C_certs_plus : sg_C_certs_plus = P2C_sg_C nat brel_eq_nat bop_plus (A_sg_C_proofs_plus). 
-Proof. compute. reflexivity. Qed. 
+  Theorem correct_sg_C_certs_plus :
+    sg_C_certs_plus
+    =
+    P2C_sg_C brel_eq_nat bop_plus (A_sg_C_proofs_plus). 
+  Proof. compute. reflexivity. Qed. 
 
-Theorem correct_sg_CK_certs_plus : sg_CK_certs_plus = P2C_sg_CK nat brel_eq_nat bop_plus (A_sg_CK_proofs_plus). 
-Proof. compute. reflexivity. Qed. 
-
-Theorem correct_sg_CK_plus : sg_plus = A2C_sg_CK_with_id nat (A_sg_plus). 
-Proof. compute. reflexivity. Qed.
-
-Theorem correct_mcas_plus : mcas_sg_plus = A2C_mcas_sg nat A_mcas_sg_plus. 
-Proof. compute. reflexivity. Qed.
+  
+  Theorem correct_mcas_plus :
+    mcas_sg_plus
+    =
+    A2C_sg_mcas  A_mcas_sg_plus. 
+  Proof. compute. reflexivity. Qed.
 
 
 End Verify.   

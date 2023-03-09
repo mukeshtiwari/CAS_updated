@@ -12,7 +12,8 @@ Require Import CAS.coq.eqv.product.
 Require Import CAS.coq.po.properties.
 Require Import CAS.coq.po.structures.
 Require Import CAS.coq.po.theory.
-Require Import CAS.coq.po.cast_up. 
+Require Import CAS.coq.po.cast_up.
+Require Import CAS.coq.po.classify. 
 
 Require Import CAS.coq.sg.and.
 Require Import CAS.coq.sg.or. 
@@ -459,28 +460,28 @@ Variable lteS : brel S.
 Variable eqT  : brel T.
 Variable lteT : brel T. 
 
-Definition left_lex_or_proofs
-           (pS : or_proofs S eqS lteS)
-           (pT : or_proofs T eqT lteT) := 
-let congS   := A_or_congruence _ _ _ pS in
-let lteRefS := A_or_reflexive _ _ _ pS in
-let lteTrnS := A_or_transitive _ _ _ pS in
-let symS_d  := A_or_antisymmetric_d _ _ _ pS in
-let totS_d  := A_or_total_d _ _ _ pS in
-let trvS_d  := A_or_trivial_d _ _ _ pS in
-let congT   := A_or_congruence _ _ _ pT in
-let lteRefT := A_or_reflexive _ _ _ pT in
-let lteTrnT := A_or_transitive _ _ _ pT in
-let symT_d  := A_or_antisymmetric_d _ _ _ pT in
-let totT_d  := A_or_total_d _ _ _ pT in
-let trvT_d  := A_or_trivial_d _ _ _ pT in
+Definition left_lex_qo_proofs
+           (pS : qo_proofs S eqS lteS)
+           (pT : qo_proofs T eqT lteT) := 
+let congS   := A_qo_congruence _ _ _ pS in
+let lteRefS := A_qo_reflexive _ _ _ pS in
+let lteTrnS := A_qo_transitive _ _ _ pS in
+let symS_d  := A_qo_antisymmetric_d _ _ _ pS in
+let totS_d  := A_qo_total_d _ _ _ pS in
+let trvS_d  := A_qo_trivial_d _ _ _ pS in
+let congT   := A_qo_congruence _ _ _ pT in
+let lteRefT := A_qo_reflexive _ _ _ pT in
+let lteTrnT := A_qo_transitive _ _ _ pT in
+let symT_d  := A_qo_antisymmetric_d _ _ _ pT in
+let totT_d  := A_qo_total_d _ _ _ pT in
+let trvT_d  := A_qo_trivial_d _ _ _ pT in
 {|    
-  A_or_congruence      := brel_left_lex_congruence S T eqS eqT lteS congS lteT congT 
-; A_or_reflexive       := brel_left_lex_reflexive S T lteS lteT lteRefS lteRefT 
-; A_or_transitive      := brel_left_lex_transitive S T lteS lteT lteTrnS lteTrnT 
-; A_or_antisymmetric_d := brel_left_lex_antisymmetric_decide S T eqS eqT lteS lteT wS wT lteRefS lteRefT lteTrnS symS_d symT_d 
-; A_or_total_d         := brel_left_lex_total_decide S T lteS lteT wS wT lteRefS totS_d totT_d 
-; A_or_trivial_d       := brel_left_lex_trivial_decide S T lteS lteT wS wT lteRefS trvS_d trvT_d 
+  A_qo_congruence      := brel_left_lex_congruence S T eqS eqT lteS congS lteT congT 
+; A_qo_reflexive       := brel_left_lex_reflexive S T lteS lteT lteRefS lteRefT 
+; A_qo_transitive      := brel_left_lex_transitive S T lteS lteT lteTrnS lteTrnT 
+; A_qo_antisymmetric_d := brel_left_lex_antisymmetric_decide S T eqS eqT lteS lteT wS wT lteRefS lteRefT lteTrnS symS_d symT_d 
+; A_qo_total_d         := brel_left_lex_total_decide S T lteS lteT wS wT lteRefS totS_d totT_d 
+; A_qo_trivial_d       := brel_left_lex_trivial_decide S T lteS lteT wS wT lteRefS trvS_d trvT_d 
 |}.
   
 End Proofs.
@@ -490,31 +491,31 @@ Section Combinators.
 
 Open Scope string_scope.
 
-Definition A_or_left_lex {S T : Type} (A : A_or S) (B : A_or T) : A_or (S * T) :=
-let eqvS   := A_or_eqv _ A in
-let eqvT   := A_or_eqv _ B in
+Definition A_qo_left_lex {S T : Type} (A : A_qo S) (B : A_qo T) : A_qo (S * T) :=
+let eqvS   := A_qo_eqv _ A in
+let eqvT   := A_qo_eqv _ B in
 let refS   := A_eqv_reflexive _ _ (A_eqv_proofs _ eqvS)  in 
 let wS     := A_eqv_witness _ eqvS in 
 let wT     := A_eqv_witness _ eqvT in
 let eqS    := A_eqv_eq _ eqvS in 
 let eqT    := A_eqv_eq _ eqvT in
-let lteS   := A_or_lte _ A in 
-let lteT   := A_or_lte _ B in
-let topS_d := A_or_exists_top_d _ A in
-let topT_d := A_or_exists_top_d _ B in
-let botS_d := A_or_exists_bottom_d _ A in
-let botT_d := A_or_exists_bottom_d _ B in 
-let pS     := A_or_proofs _ A in
-let pT     := A_or_proofs _ B in
-let lteRefS := A_or_reflexive _ _ _ pS in
-let lteRefT := A_or_reflexive _ _ _ pT in 
+let lteS   := A_qo_lte _ A in 
+let lteT   := A_qo_lte _ B in
+let topS_d := A_qo_exists_top_d _ A in
+let topT_d := A_qo_exists_top_d _ B in
+let botS_d := A_qo_exists_bottom_d _ A in
+let botT_d := A_qo_exists_bottom_d _ B in 
+let pS     := A_qo_proofs _ A in
+let pT     := A_qo_proofs _ B in
+let lteRefS := A_qo_reflexive _ _ _ pS in
+let lteRefT := A_qo_reflexive _ _ _ pT in 
 {|
-  A_or_eqv             := A_eqv_product _ _ eqvS eqvT 
-; A_or_lte             := brel_left_lex lteS lteT 
-; A_or_exists_top_d    := brel_left_lex_exists_qo_top_decide S T eqS refS eqT lteS lteT lteRefS lteRefT topS_d topT_d 
-; A_or_exists_bottom_d := brel_left_lex_exists_qo_bottom_decide S T eqS refS eqT lteS lteT lteRefS lteRefT botS_d botT_d 
-; A_or_proofs          := left_lex_or_proofs S T wS wT eqS lteS eqT lteT pS pT
-; A_or_ast             := Ast_or_llex (A_or_ast _ A, A_or_ast  _ B)
+  A_qo_eqv             := A_eqv_product _ _ eqvS eqvT 
+; A_qo_lte             := brel_left_lex lteS lteT 
+; A_qo_exists_top_d    := brel_left_lex_exists_qo_top_decide S T eqS refS eqT lteS lteT lteRefS lteRefT topS_d topT_d 
+; A_qo_exists_bottom_d := brel_left_lex_exists_qo_bottom_decide S T eqS refS eqT lteS lteT lteRefS lteRefT botS_d botT_d 
+; A_qo_proofs          := left_lex_qo_proofs S T wS wT eqS lteS eqT lteT pS pT
+; A_qo_ast             := Ast_or_llex (A_qo_ast _ A, A_qo_ast  _ B)
 |}.
 End Combinators.   
 
@@ -522,17 +523,21 @@ End ACAS.
 
 Section AMCAS.
 
-  Open Scope string_scope. 
+    Definition A_qo_left_lex_below_qo {S T : Type}
+    (A : @A_below_qo S)
+    (B : @A_below_qo T)  : @A_below_qo (S * T) :=
+    A_classify_qo (A_qo_left_lex (A_cast_up_qo A) (A_cast_up_qo B)).
 
-  Definition A_mcas_or_left_lex  {S T : Type} (A : @A_or_mcas S) (B : @A_or_mcas T) : @A_or_mcas (S * T) :=
-    match A_or_mcas_cast_up A, A_or_mcas_cast_up B with
-    | A_OR_Error sl1, A_OR_Error sl2 => A_OR_Error (sl1 ++ sl2)
-    | A_OR_Error sl1, _ => A_OR_Error sl1
-    | _, A_OR_Error sl2 => A_OR_Error sl2                 
-    | A_OR_or A', A_OR_or B' => A_or_classify (A_OR_or (A_or_left_lex A' B'))
-    | _, _ => A_OR_Error ("mcas_or_left_lex: internal error" :: nil)
-    end. 
-
+  
+  Definition A_mcas_qo_left_lex {S T : Type}
+    (A : @A_qo_mcas S)
+    (B : @A_qo_mcas T)  : @A_qo_mcas (S * T) :=
+    match A, B with
+    | A_MCAS_qo A', A_MCAS_qo B'               => A_MCAS_qo (A_qo_left_lex_below_qo A' B')
+    | A_MCAS_qo_Error sl1, A_MCAS_qo_Error sl2 => A_MCAS_qo_Error (sl1 ++ sl2)
+    | A_MCAS_qo_Error sl1, _                   => A_MCAS_qo_Error sl1
+    | _,  A_MCAS_qo_Error sl2                  => A_MCAS_qo_Error sl2
+    end.
 End AMCAS.
 
 Section CAS.
@@ -594,22 +599,22 @@ Definition brel_left_lex_antisymmetric_certify
   | Certify_Not_Antisymmetric (s1, s2) => Certify_Not_Antisymmetric ((s1, wT), (s2, wT))
   end.
 
-Definition left_lex_or_certs
-           (pS : @or_certificates S)
-           (pT : @or_certificates T) := 
-let symS_d  := or_antisymmetric_d pS in
-let totS_d  := or_total_d pS in
-let trvS_d  := or_trivial_d pS in
-let symT_d  := or_antisymmetric_d pT in
-let totT_d  := or_total_d pT in
-let trvT_d  := or_trivial_d pT in
+Definition left_lex_qo_certs
+           (pS : @qo_certificates S)
+           (pT : @qo_certificates T) := 
+let symS_d  := qo_antisymmetric_d pS in
+let totS_d  := qo_total_d pS in
+let trvS_d  := qo_trivial_d pS in
+let symT_d  := qo_antisymmetric_d pT in
+let totT_d  := qo_total_d pT in
+let trvT_d  := qo_trivial_d pT in
 {|    
-  or_congruence      := Assert_Brel_Congruence 
-; or_reflexive       := Assert_Reflexive 
-; or_transitive      := Assert_Transitive
-; or_antisymmetric_d := brel_left_lex_antisymmetric_certify wS wT symS_d symT_d 
-; or_total_d         := brel_left_lex_total_certify wS wT totS_d totT_d 
-; or_trivial_d       := brel_left_lex_trivial_certify wS wT trvS_d trvT_d 
+  qo_congruence      := Assert_Brel_Congruence 
+; qo_reflexive       := Assert_Reflexive 
+; qo_transitive      := Assert_Transitive
+; qo_antisymmetric_d := brel_left_lex_antisymmetric_certify wS wT symS_d symT_d 
+; qo_total_d         := brel_left_lex_total_certify wS wT totS_d totT_d 
+; qo_trivial_d       := brel_left_lex_trivial_certify wS wT trvS_d trvT_d 
 |}.
 
 Definition brel_left_lex_exists_qo_bottom_certify
@@ -646,26 +651,26 @@ Section Combinators.
 
 Open Scope string_scope.
 
-Definition or_left_lex {S T : Type} (A : @or S) (B : @or T) : @or (S * T) :=
-let eqvS   := or_eqv A in
-let eqvT   := or_eqv B in
+Definition qo_left_lex {S T : Type} (A : @qo S) (B : @qo T) : @qo (S * T) :=
+let eqvS   := qo_eqv A in
+let eqvT   := qo_eqv B in
 let wS     := eqv_witness eqvS in 
 let wT     := eqv_witness eqvT in
-let lteS   := or_lte A in 
-let lteT   := or_lte B in
-let topS_d := or_exists_top_d A in
-let topT_d := or_exists_top_d B in
-let botS_d := or_exists_bottom_d A in
-let botT_d := or_exists_bottom_d B in
-let pS     := or_certs A in
-let pT     := or_certs B in
+let lteS   := qo_lte A in 
+let lteT   := qo_lte B in
+let topS_d := qo_exists_top_d A in
+let topT_d := qo_exists_top_d B in
+let botS_d := qo_exists_bottom_d A in
+let botT_d := qo_exists_bottom_d B in
+let pS     := qo_certs A in
+let pT     := qo_certs B in
 {|
-  or_eqv             := eqv_product eqvS eqvT 
-; or_lte             := brel_left_lex lteS lteT 
-; or_exists_top_d    := brel_left_lex_exists_qo_top_certify _ _ topS_d topT_d 
-; or_exists_bottom_d := brel_left_lex_exists_qo_bottom_certify _ _ botS_d botT_d 
-; or_certs          := left_lex_or_certs S T wS wT pS pT 
-; or_ast             := Ast_or_llex (or_ast A, or_ast  B)
+  qo_eqv             := eqv_product eqvS eqvT 
+; qo_lte             := brel_left_lex lteS lteT 
+; qo_exists_top_d    := brel_left_lex_exists_qo_top_certify _ _ topS_d topT_d 
+; qo_exists_bottom_d := brel_left_lex_exists_qo_bottom_certify _ _ botS_d botT_d 
+; qo_certs          := left_lex_qo_certs S T wS wT pS pT 
+; qo_ast             := Ast_or_llex (qo_ast A, qo_ast  B)
 |}.
 
 End Combinators.   
@@ -674,16 +679,22 @@ End CAS.
 
 Section MCAS.
 
-  Open Scope string_scope. 
+    Definition qo_left_lex_below_qo {S T : Type}
+    (A : @below_qo S)
+    (B : @below_qo T)  : @below_qo (S * T) :=
+    classify_qo (qo_left_lex (cast_up_qo A) (cast_up_qo B)).
 
-  Definition mcas_or_left_lex  {S T : Type} (A : @or_mcas S) (B : @or_mcas T) : @or_mcas (S * T) :=
-    match or_mcas_cast_up A, or_mcas_cast_up B with
-    | OR_Error sl1, OR_Error sl2 => OR_Error (sl1 ++ sl2)
-    | OR_Error sl1, _ => OR_Error sl1
-    | _, OR_Error sl2 => OR_Error sl2                 
-    | OR_or A', OR_or B' => or_classify (OR_or (or_left_lex A' B'))
-    | _, _ => OR_Error ("mcas_or_left_lex: internal error" :: nil)
+  
+  Definition mcas_qo_left_lex {S T : Type}
+    (A : @qo_mcas S)
+    (B : @qo_mcas T)  : @qo_mcas (S * T) :=
+    match A, B with
+    | MCAS_qo A', MCAS_qo B'               => MCAS_qo (qo_left_lex_below_qo A' B')
+    | MCAS_qo_Error sl1, MCAS_qo_Error sl2 => MCAS_qo_Error (sl1 ++ sl2)
+    | MCAS_qo_Error sl1, _                   => MCAS_qo_Error sl1
+    | _,  MCAS_qo_Error sl2                  => MCAS_qo_Error sl2
     end. 
+
 
 End MCAS.   
 
@@ -789,12 +800,12 @@ Proof. destruct trvS_d as [A | [[s1 s2] A]];
 Qed. 
 
 
-  Lemma correct_left_lex_or_certs (pS : or_proofs S eqS lteS) (pT : or_proofs T eqT lteT) : 
-        P2C_or (brel_product eqS eqT) (brel_left_lex lteS lteT)
-               (left_lex_or_proofs S T wS wT eqS lteS eqT lteT pS pT)
+  Lemma correct_left_lex_qo_certs (pS : qo_proofs S eqS lteS) (pT : qo_proofs T eqT lteT) : 
+        P2C_qo (brel_product eqS eqT) (brel_left_lex lteS lteT)
+               (left_lex_qo_proofs S T wS wT eqS lteS eqT lteT pS pT)
         = 
-        left_lex_or_certs S T wS wT (P2C_or eqS lteS pS) (P2C_or eqT lteT pT). 
-  Proof. destruct pS, pT; unfold P2C_or, left_lex_or_proofs, left_lex_or_certs; simpl.
+        left_lex_qo_certs S T wS wT (P2C_qo eqS lteS pS) (P2C_qo eqT lteT pT). 
+  Proof. destruct pS, pT; unfold P2C_qo, left_lex_qo_proofs, left_lex_qo_certs; simpl.
          rewrite correct_left_lex_antisymmetric_certify.
          rewrite correct_left_lex_total_certify. 
          rewrite correct_left_lex_trivial_certify.
@@ -805,29 +816,43 @@ Qed.
 
 Section Combinators.
   
-  Theorem correct_or_left_lex (S T : Type) (A : A_or S) (B : A_or T) :
-    or_left_lex (A2C_or A) (A2C_or B) = A2C_or (A_or_left_lex A B).
-  Proof. destruct A, B. unfold or_left_lex, A_or_left_lex, A2C_or; simpl.
+  Theorem correct_qo_left_lex (S T : Type) (A : @A_qo S) (B : @A_qo T) :
+    qo_left_lex (A2C_qo A) (A2C_qo B)
+    =
+    A2C_qo (A_qo_left_lex A B).
+  Proof. destruct A, B. unfold qo_left_lex, A_qo_left_lex, A2C_qo; simpl.
          rewrite correct_eqv_product.
-         rewrite correct_left_lex_or_certs. 
+         rewrite correct_left_lex_qo_certs. 
          rewrite correct_left_lex_exists_qo_bottom_certify.
          rewrite correct_left_lex_exists_qo_top_certify.          
          reflexivity. 
   Qed.
 
-  Theorem correct_mcas_or_left_lex (S T : Type) (A : @A_or_mcas S) (B : @A_or_mcas T) :
-    mcas_or_left_lex (A2C_mcas_or A) (A2C_mcas_or B) = A2C_mcas_or (A_mcas_or_left_lex A B).
-  Proof. unfold mcas_or_left_lex, A_mcas_or_left_lex.
-         rewrite correct_or_mcas_cast_up.
-         rewrite correct_or_mcas_cast_up.         
-         destruct (A_or_cast_up_is_error_or_or S A) as [[l1 A'] | [s1 A']];
-         destruct (A_or_cast_up_is_error_or_or T B) as [[l2 B'] | [s2 B']].
-         + rewrite A', B'. simpl. reflexivity.
-         + rewrite A', B'. simpl. reflexivity.
-         + rewrite A', B'. simpl. reflexivity.
-         + rewrite A', B'. simpl. 
-           rewrite correct_or_left_lex. 
-           apply correct_or_classify_or. 
+
+  Theorem correct_qo_left_lex_below_qo (S T : Type)
+    (A : @A_below_qo S)
+    (B : @A_below_qo T): 
+  qo_left_lex_below_qo (A2C_below_qo A) (A2C_below_qo B)
+  =
+ A2C_below_qo (A_qo_left_lex_below_qo A B).
+Proof. unfold A_qo_left_lex_below_qo, qo_left_lex_below_qo.
+       rewrite cast_up_qo_A2C_commute.
+       rewrite cast_up_qo_A2C_commute. 
+       rewrite correct_qo_left_lex.
+       rewrite correct_classify_qo.
+       reflexivity.
+Qed.
+
+
+  Theorem correct_mcas_qo_left_lex (S T : Type) (A : @A_qo_mcas S) (B : @A_qo_mcas T) :
+    mcas_qo_left_lex (A2C_qo_mcas A) (A2C_qo_mcas B)
+    =
+   A2C_qo_mcas (A_mcas_qo_left_lex A B).
+  Proof. unfold mcas_qo_left_lex, A_mcas_qo_left_lex.
+         destruct A; destruct B; simpl; try reflexivity. 
+         rewrite correct_qo_left_lex_below_qo.
+         reflexivity. 
+
   Qed.
   
 End Combinators.
