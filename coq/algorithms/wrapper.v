@@ -41,6 +41,17 @@ Definition A_path_algebra_matrix_solver {S : Type}
        square_matrix_exp m zero one (A_pa_plus P) (A_pa_times P)
   end.                                                            
 
+Definition A_selective_path_algebra_matrix_solver {S : Type}
+  (P : @A_selective_path_algebra S) 
+  (m : @square_matrix S) :=
+  let Q := A_spa_id_ann_props P in 
+  match A_bounded_plus_id_is_times_ann _ _ _ Q, A_bounded_times_id_is_plus_ann _ _ _ Q with
+  | existT _ zero _, existT _ one _  => 
+       square_matrix_exp m zero one (A_spa_plus P) (A_spa_times P)
+  end.                                                            
+
+
+
 Definition path_algebra_matrix_solver {S : Type}
   (P : @path_algebra S) 
   (m : @square_matrix S) :=
@@ -48,6 +59,16 @@ Definition path_algebra_matrix_solver {S : Type}
   match bounded_plus_id_is_times_ann Q, bounded_times_id_is_plus_ann Q with
   | BS_Exists_Id_Ann_Equal zero, BS_Exists_Id_Ann_Equal one => 
        square_matrix_exp m zero one (pa_plus P) (pa_times P)
+  end.                                                            
+
+
+Definition selective_path_algebra_matrix_solver {S : Type}
+  (P : @selective_path_algebra S) 
+  (m : @square_matrix S) :=
+  let Q := spa_id_ann_props P in 
+  match bounded_plus_id_is_times_ann Q, bounded_times_id_is_plus_ann Q with
+  | BS_Exists_Id_Ann_Equal zero, BS_Exists_Id_Ann_Equal one => 
+       square_matrix_exp m zero one (spa_plus P) (spa_times P)
   end.                                                            
 
 

@@ -7,7 +7,7 @@ Require Import CAS.coq.sg.reduce.
 (*
    Sequential composition of reductions 
 
-   (S, =, (x)) ------------
+   (S, =, (x)) -----------
    |                      |
    r1                     |
    |                      | 

@@ -221,14 +221,13 @@ Compute (nodes_0_to_finish_without_i 10 7).
       dijkstra_k_steps m n i (nat_pred n). 
 
   Definition visited_to_map (g : Node -> S) (l : list (S * Node)) : Node -> S := 
-    List.fold_left (λ f '(v, q) x, if brel_eq_nat x q then v else f q) l g. 
+    List.fold_left (λ f '(v, q) x, if brel_eq_nat x q then v else f x) l g.
 
   Definition dijkstra
              (m : Node -> Node -> L)
              (n : nat)
              (i : Node) : Node -> S := 
     visited_to_map (λ x, zero) (visited (dijkstra_raw m n i)).
-
   Close Scope nat_scope.     
 End Computation. 
   
@@ -371,6 +370,8 @@ Section Testing.
          estimated := []
        |}
    *)
+
+  
 
   Close Scope nat_scope.  
 End Testing.
@@ -799,6 +800,11 @@ Section Theory.
   Definition Invariant_estimated_node_unique (s : state S) :=
     pairs_have_nodes_all_unique (estimated _ s). 
 
+(*  This is only needed at the very end to show that
+    visited_to_map is correct *) 
+  Definition Invariant_visited_node_unique (s : state S) :=
+    pairs_have_nodes_all_unique (visited _ s). 
+  
   (* we reall should have a general version of in_list_map elim .... *) 
   Lemma in_map_elim : 
         ∀ l w q, (w, q) ∈ map (λ j : Node, (one <| m i j, j)) l -> q ∈' l. 
@@ -832,17 +838,28 @@ Section Theory.
              discriminate D. 
            + apply IHl; auto. 
   Qed. 
-  
+
+   (*********** Invariants hold for initial state IS **************************)
   Lemma Invariant_estimated_node_unique_IS :
      Invariant_estimated_node_unique IS.
   Proof. unfold IS, Invariant_estimated_node_unique, initial_state. unfold estimated.
          apply map_init_preserves_uniqueness.
          apply nodes_0_to_finish_without_i_unique. 
   Qed. 
-   
 
- (*********** Invariants hold for initial state IS **************************)
 
+  Lemma Invariant_visited_node_unique_IS :
+     Invariant_visited_node_unique IS.
+  Proof. unfold IS, Invariant_visited_node_unique, initial_state.
+         unfold visited.
+         unfold pairs_have_nodes_all_unique.
+         split; auto.
+         intros w q A. 
+         compute in A. discriminate A. 
+  Qed. 
+
+
+  
  Lemma Invariant_i_in_visited_IS : Invariant_i_in_visited IS. 
  Proof. unfold Invariant_i_in_visited.
         unfold IS. unfold initial_state.
@@ -1766,7 +1783,29 @@ Qed.
            assert (B := find_min_node_preserves_uniqueness _ _ _ _ _ _ _ A Eq2). 
            apply relax_edges_preserves_uniqueness; auto. 
   Qed.
-           
+
+  Lemma dijkstra_one_step_preserves_Invariant_visited_node_unique (s : state S) :
+    Invariant_visited_node_unique s -> Invariant_visited_node_unique (D1 s).
+  Proof. unfold Invariant_visited_node_unique, D1, dijkstra_one_step.
+         destruct s; simpl. intros vis_unique.
+         destruct visited0 as [ | [h j] vis] eqn:Eq1.
+         - simpl. destruct estimated0; simpl; auto.
+           + destruct p as (h, j);
+             destruct (find_min_node S eqS plus (h, j) [] estimated0) as [[w_min q_min] est'] eqn:Eq2.
+             simpl. split; auto. intros _ q A. discriminate A. 
+         - destruct estimated0. 
+           + unfold visited. exact vis_unique. 
+           + destruct p as [h' j']. 
+             destruct (find_min_node S eqS plus (h', j') [] estimated0) as [[w_min q_min] est'] eqn:Eq2.
+             simpl. split.
+             * intros w' q' A. apply bop_or_elim in A. destruct A as [A | A].
+               -- apply bop_and_elim in A.  destruct A as [A B].
+                  admit. 
+               -- admit. 
+             * admit. 
+Admitted.              
+
+  
   Lemma dijkstra_one_step_preserves_Invariant_visited_not_in_estimated (s : state S) :
     Invariant_estimated_node_unique s -> 
     Invariant_visited_not_in_estimated s -> Invariant_visited_not_in_estimated (D1 s).
@@ -2048,14 +2087,36 @@ Qed.
 
 
   Lemma tmp0 :
-    ∀ j, (j <? n) = true -> {w : S & ((w, j) ∈ (visited S DR))
-                                     *
-                                     (w =S= visited_to_map S (λ _ : Node, zero) (visited S DR) j)}.     
+    ∀ j, (j <? n) = true ->
+         {w : S & ((w, j) ∈ (visited S DR))
+                  *
+                  (w =S= visited_to_map S (λ _ : Node, zero) (visited S DR) j)}.     
   Proof. intros j A.
          exists (visited_to_map S (λ _ : Node, zero) (visited S DR) j). split.
-         - admit. 
+         - unfold visited_to_map.
+           destruct (visited S DR).
+           + admit. 
+           + simpl. admit. 
          - apply refS. 
   Admitted.
+
+
+  Lemma tmp00 :
+    ∀ l w j, (w, j) ∈ l -> 
+           (w =S= visited_to_map S (λ _ : Node, zero) l j).     
+  Proof. induction l; intros w j A.
+         - compute in A. discriminate . 
+         - destruct a as [w' j']; simpl.
+           apply in_list_cons_elim in A; auto.
+           destruct A as [A | A].
+           + apply brel_product_elim in A.
+             destruct A as [A B].
+             unfold visited_to_map.
+             unfold fold_left.
+             admit. 
+           + 
+  Admitted.
+
   
   Lemma tmp1 :   
     ∀ j, (j <? n) = true -> (D j, j) ∈ visited S DR.
@@ -2078,7 +2139,7 @@ Qed.
            =S= 
            (sum_fn zero plus (λ q, D q <| m q j) (list_enum n)).
   Proof. intro j.
-         unfold D. unfold dijkstra. unfold DR.
+         unfold D. unfold DR. unfold dijkstra. 
   (*
   (sum_fn zero plus (λ '(w', q), w' <| m q j) (visited S DR))
   =S=
@@ -2098,10 +2159,10 @@ Qed.
   Theorem dijkstra_solves_right_equation : 
   ∀ j, j <? n = true -> D j =S= (I i j ⊕ (sum_fn zero plus (λ q, D q <| m q j) (list_enum n))).
   Proof. intros j A. 
-         (* unfold D. unfold dijkstra. *)
          assert (B := Invariant_right_equation_visited_DR).
          unfold Invariant_right_equation_visited in B.
-         assert (C := B (D j) j (tmp1 j A)).
+         assert (C' := B (D j) j).
+         assert (C := C' (tmp1 j A)).
          assert (D := tmp2 j).
          assert (E := cong _ _ _ _ (refS (I i j)) D).
          exact (trnS _ _ _ C E).

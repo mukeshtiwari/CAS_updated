@@ -927,7 +927,6 @@ Qed.
   
   (***************************** equations *********************) 
 
-
   Lemma identity_is_weight_of_matrix_of_paths_of_length_zero
         (plusID : bop_is_id R eqR plus 0)
         (m : functional_matrix L) (n : nat) : 

@@ -83,7 +83,8 @@ Require Import CAS.coq.st.left.min_plus_one.
 Require Import CAS.coq.st.left.llex_product.
 Require Import CAS.coq.st.left.union_insert. 
 Require Import CAS.coq.st.left.add_zero.
-Require Import CAS.coq.st.left.plus_times.*) 
+Require Import CAS.coq.st.left.plus_times.*)
+Require Import CAS.coq.algorithms.dijkstra.general. 
 Require Import CAS.coq.algorithms.wrapper. 
 (* from coq/tr/left*)
 Require Import CAS.coq.tr.left.add_ann.
@@ -256,7 +257,12 @@ Extraction "Cas.ml"
     *)
    
    (* algorithms *)
-   path_algebra_matrix_solver. 
+   cast_below_bs_to_selective_path_algebra
+   cast_below_bs_to_path_algebra
+   path_algebra_matrix_solver
+   selective_path_algebra_matrix_solver
+   dijkstra
+. 
    (* semigroup left transform *)
 
 

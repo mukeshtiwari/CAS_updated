@@ -48,26 +48,64 @@ let fetch_zero_and_one_from_path_algebra (alg : 'a path_algebra) =
     match id_annP.bounded_plus_id_is_times_ann, id_annP.bounded_times_id_is_plus_ann with
      | BS_Exists_Id_Ann_Equal zero, BS_Exists_Id_Ann_Equal one -> (zero, one);; 
 
-let square_matrix_from_adj_list' (n : int) (l : (int * (int * 'a) list) list) (alg : 'a path_algebra)
+let fetch_zero_and_one_from_selective_path_algebra (alg : 'a selective_path_algebra) =
+    let id_annP = alg.spa_id_ann_props in
+    match id_annP.bounded_plus_id_is_times_ann, id_annP.bounded_times_id_is_plus_ann with
+     | BS_Exists_Id_Ann_Equal zero, BS_Exists_Id_Ann_Equal one -> (zero, one);; 
+
+let square_matrix_from_adj_list' (n : int) (l : (int * (int * 'a) list) list) (zero, one)
   : 'a square_matrix =
   {
     sqm_size = n;
     sqm_functional_matrix = 
-      (let (zero, one) = fetch_zero_and_one_from_path_algebra alg in 
       List.fold_left 
         update_square_matrix 
         (fun c d -> if c = d then one else zero) 
-        (massage_adj_list l))
+        (massage_adj_list l)
   }
 
 type 'a adjacency_list = { adj_size : int; adj_list : (int * (int * 'a) list) list }  ;;     
 
-let square_matrix_from_adj_list algebra adjl =
-     square_matrix_from_adj_list' adjl.adj_size adjl.adj_list algebra;;
+let square_matrix_from_adj_list (zero, one) adjl =
+     square_matrix_from_adj_list' adjl.adj_size adjl.adj_list (zero, one);;
 					       
-let bs_adj_list_solver alg adjl =
-     let sqm = square_matrix_from_adj_list alg adjl in 
+let path_algebra_adj_list_solver alg adjl =
+     let sqm = square_matrix_from_adj_list (fetch_zero_and_one_from_path_algebra alg) adjl in 
      path_algebra_matrix_solver alg sqm ;; 
+
+let selective_path_algebra_adj_list_solver alg adjl =
+     let sqm = square_matrix_from_adj_list (fetch_zero_and_one_from_selective_path_algebra alg) adjl in 
+     selective_path_algebra_matrix_solver alg sqm ;; 
+
+(* should return a row vector *) 
+let dijkstra_solver spa sqm i =
+    let (zero, one) =  fetch_zero_and_one_from_selective_path_algebra spa in
+    let eq = spa.spa_eqv.eqv_eq in
+    let plus = spa.spa_plus  in
+    let times = spa.spa_times in
+    let n = sqm.sqm_size in
+    let m = sqm.sqm_functional_matrix in 
+    let d = dijkstra eq zero one plus times m n i in
+    List.map (fun x -> (x, d x)) (list_enum n);;
+
+
+
+let cast_bs_mcas_to_path_algebra mbs =
+    match mbs with
+    | MCAS_bs_Error cll -> raise (Error (List.map char_list_to_string cll))
+    | MCAS_bs bbs ->
+    (match cast_below_bs_to_path_algebra bbs with
+     | Some pa -> pa
+     | None -> raise (Error ["Internal Error : cast_bs_mcas_to_path_algebra"]));;
+
+let cast_bs_mcas_to_selective_path_algebra mbs =
+    match mbs with
+    | MCAS_bs_Error cll -> raise (Error (List.map char_list_to_string cll))
+    | MCAS_bs bbs ->
+    (match cast_below_bs_to_selective_path_algebra bbs with
+     | Some pa -> pa
+     | None -> raise (Error ["Internal Error : cast_bs_mcas_to_selective_path_algebra"]));;
+
 
 (*
 type algorithm =  Matrix_power | Not_implemented_yet

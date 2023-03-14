@@ -9,6 +9,12 @@ let nl s = s ^ "\n"
 
 let char_list_to_string cl = String.concat "" (List.map (String.make 1) cl)
 
+let print_error_list cll =
+   let sl = List.map char_list_to_string cll in 
+   (print_string "**** Errors *****\n";
+    print_string (String.concat "\n" sl);
+    print_string "\n")
+
 let rec from_to start finish =
   if start > finish
   then []
@@ -980,5 +986,9 @@ let bs_describe_fully bs =
      bs_certs_describe_fully eq plus times data certs
     )
 
-					    
+let bs_mcas_describe_fully mbs =
+    match mbs with
+    | MCAS_bs_Error cll -> print_error_list cll 
+    | MCAS_bs bbs -> bs_describe_fully (cast_up_bs bbs) 
+
     
