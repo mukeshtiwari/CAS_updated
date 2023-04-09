@@ -136,13 +136,14 @@ CAS=\
    coq/uop/left_sum.v \
    coq/uop/right_sum.v \
    coq/uop/commutative_composition.v \
-   coq/algorithms/dijkstra/general.v \
+   coq/algorithms/big_plus.v \
    coq/algorithms/list_congruences.v \
    coq/algorithms/matrix_definition.v \
    coq/algorithms/matrix_algorithms.v \
    coq/algorithms/matrix_addition.v \
    coq/algorithms/matrix_multiplication.v \
    coq/algorithms/weighted_path.v \
+   coq/algorithms/dijkstra/general.v \
    coq/algorithms/wrapper.v 
 
 FILES=$(BASE) $(CAS)

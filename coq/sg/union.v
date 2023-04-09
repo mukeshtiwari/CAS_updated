@@ -226,6 +226,13 @@ Lemma uop_duplicate_elim_lemma_2 :
            (uop_duplicate_elim r (a :: X)) = a :: (uop_duplicate_elim r X).
 Proof. intros a X H. simpl. rewrite H. reflexivity. Defined. 
 
+Lemma uop_duplicate_elim_lemma_3 : 
+   ∀ (a : S), 
+     ∀ (X : finite_set S), 
+       in_set r X a = true → 
+           (uop_duplicate_elim r (a :: X)) = (uop_duplicate_elim r X).
+Proof. intros a X H. simpl. rewrite H. reflexivity. Defined. 
+
 
 Lemma in_set_uop_duplicate_elim_intro : 
        ∀ (X : finite_set S) (a : S), 
@@ -542,7 +549,8 @@ Proof. intros s f Pf.
           apply refS. 
 Defined.
 
-(**** some useful lemmas ************) 
+(**** some useful lemmas ************)
+
 Lemma bop_union_with_nil_left : ∀ (X : finite_set S), (nil [U] X) [=S] X. 
 Proof. intro X. 
        apply brel_set_intro. split. 

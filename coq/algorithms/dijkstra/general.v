@@ -19,7 +19,7 @@
 (*    which will be written as an infix operation, s <| l.  Here       *) 
 (*    L is the type of link labels and S is the type of path weights.  *)
 (*    Distributivity for such an algebra is the property               *)
-(*               (a + b) <| l = (a <| l) + (b <| l).                   *) 
+(*               (a + b) <| l = (a <| l) + (b <| l).              (1)  *) 
 (*                                                                     *)
 (*    Without distributivity, we do not get the best path              *)
 (*    weights over all possible paths, but rather we get one           *)
@@ -30,7 +30,7 @@
 (*    Here, A the n-by-n adjacency matrix and I is the multiplicative  *)
 (*    identity matrix. The R <| A represents the matrix over S:        *) 
 (*                                                                     *) 
-(*          R[i,j] = (D <| A)[i,j] + I[i, j]                      (1)  *) 
+(*          R[i,j] = (D <| A)[i,j] + I[i, j]                           *) 
 (*                 = (sum_q D[i,q] <| A[q,j]) + I[i, j].               *) 
 (*                                                                     *) 
 (*    For dijkstra's algorithm, we start at some node i (0<=i<n) and   *) 
@@ -43,19 +43,20 @@
 (*                                                                     *)
 (*    Note that 0 < n, and i in [0, 1, ..., n-1].                      *)
 (*                                                                     *)
-(* TODO : a) extend results to the case where (1) holds.               *)
-(*        b) extend to "classic" case where L = S and <| is a          *) 
+(* TODO : a) extend results to the "classic" case where (1) holds and  *)
+(*           to the case where L = S and <| is a                       *) 
 (*           semigroup and left- and right-distributivity hold.        *)
-(*        c) extend to case of the paper                               *)
+(*        b) extend to case of the paper                               *)
 (*             On the Forwarding Paths Produced by Internet            *) 
 (*             Routing Algorithms.                                     *) 
 (*             Seweryn Dynerowicz, Timothy G. Griffin. ICNP 2013.      *) 
 (*                                                                     *)
-(*    --- tim griffin, November 2022                                   *) 
+(*    --- tim griffin, March 2023                                      *) 
 (***********************************************************************)
 
 Require Import
   List
+  Sorting.Permutation
   Coq.Init.Datatypes
   Coq.Strings.String. (* just for Section Testing *) 
 Import ListNotations. 
@@ -76,8 +77,9 @@ From CAS Require Import
   coq.sg.min
   coq.sg.or
   coq.sg.and
+  coq.algorithms.big_plus
   coq.algorithms.matrix_definition     (* just for list_enum? *) 
-  coq.algorithms.matrix_algorithms     (* just for def of sum_fn ? *)   
+  coq.algorithms.matrix_algorithms     (* just for def of big_plus ? *)   
   coq.algorithms.matrix_multiplication (* just for def of I ? *)
   (* just for Section Testing *)
   coq.eqv.add_constant
@@ -621,9 +623,10 @@ Section Theory.
   Local Definition is_lte a b := brel_lte_left eqS plus a b = true.
                 
   Local Infix "≦" := is_lte (at level 70).   
-  Local Infix "⊕" := plus (at level 70). 
   Local Infix "<|" := rtr (at level 70). 
-  Local Infix "<?" := Nat.ltb (at level 70). 
+  Local Infix "<?" := Nat.ltb (at level 70).
+  Local Infix "⊕" := plus (at level 70). 
+  Local Notation "⨁" := (big_plus zero plus) (at level 70).
 
   Local Definition is_eqS a b := (eqS a b = true).
   Local Infix "=S=" := is_eqS (at level 70).       
@@ -654,9 +657,12 @@ Section Theory.
   (* abbreviations of functions *) 
   Local Definition I       := I S zero one.
   Local Definition D1      := dijkstra_one_step S L eqS plus rtr m.
+  Local Definition Dk      := dijkstra_k_steps S L eqS one plus rtr m n i.
+  Local Definition DR      := dijkstra_raw S L eqS one plus rtr m n i.
   Local Definition D       := dijkstra S L eqS zero one plus rtr m n i.
+  
   Local Definition IS      := initial_state S L one rtr m n i.
-  Local Definition FindMin := find_min_node S eqS plus.
+  Local Notation FindMin := (find_min_node S eqS plus).
 
   Local Definition eqS_N := (brel_product eqS brel_eq_nat).
   Local Definition is_eqS_N a b := (brel_product eqS brel_eq_nat a b = true).
@@ -768,581 +774,47 @@ Section Theory.
              * apply eqS_N_symmetric.
   Qed. 
            
-  
-  (******************* Invariantes for Dijkstra ***************************************)
 
+  (****************** uniqueness of nodes ********************************************)
 
-   Definition Invariant_i_in_visited (s  : state S) := 
-     (one, i) ∈ visited _ s.
-
-   Definition Invariant_visited_not_in_estimated (s : state S) := 
-      ∀ w w' q q',  (w, q) ∈ visited _ s → (w', q') ∈ estimated _ s → eqN q q' = false. 
-
-   Definition Invariant_visited_closer (s : state S) := 
-     ∀ w q,  (w, q) ∈ (visited _ s) → ∀ w' q', (w', q') ∈ (estimated _ s) → w ≦ w'. 
-
-   Definition Invariant_right_equation_visited (s : state S) := 
-     ∀ w j, (w, j) ∈ visited _ s →
-         w =S= (I i j ⊕ (sum_fn zero plus (λ '(w', q), w' <| m q j) (visited S s))).
-
-   Definition Invariant_right_equation_estimated (s : state S) := 
-     ∀ w j, (w, j) ∈ estimated _ s  →
-            w =S= (sum_fn zero plus (λ '(w', q), w' <| m q j) (visited S s)).
-
-  Fixpoint pairs_have_nodes_all_unique l :=
+ Definition node_not_in_value_node_list q tl := ∀ w' q', (w', q') ∈ tl -> eqN q q' = false. 
+   
+ Fixpoint pairs_have_nodes_all_unique l :=
     match l with 
       [] => True
-    | (w, q) :: tl => (∀ w' q', (w', q') ∈ tl -> eqN q q' = false)
+    | (w, q) :: tl => (* ∀ w' q', (w', q') ∈ tl -> eqN q q' = false *)
+                      (node_not_in_value_node_list q tl)
                       *
                       (pairs_have_nodes_all_unique tl) 
     end.
 
-  Definition Invariant_estimated_node_unique (s : state S) :=
-    pairs_have_nodes_all_unique (estimated _ s). 
-
-(*  This is only needed at the very end to show that
-    visited_to_map is correct *) 
-  Definition Invariant_visited_node_unique (s : state S) :=
-    pairs_have_nodes_all_unique (visited _ s). 
-  
-  (* we reall should have a general version of in_list_map elim .... *) 
-  Lemma in_map_elim : 
-        ∀ l w q, (w, q) ∈ map (λ j : Node, (one <| m i j, j)) l -> q ∈' l. 
-  Proof. induction l; simpl; intros w q A.
-         - exact A. 
-         - case_eq(q =?N a); intro B. 
-           + simpl. reflexivity.
-           + simpl. assert (C := IHl w q).
-             apply C.
-             apply bop_or_elim in A.
-             destruct A as [A | A].
-             * apply bop_and_elim in A.
-               destruct A as [_ A].
-               rewrite A in B. discriminate B. 
-             * exact A. 
-  Qed. 
-
-  Lemma map_init_preserves_uniqueness : 
-        ∀ l, nodes_all_unique l -> 
-             pairs_have_nodes_all_unique (map (λ j : Node, (one <| m i j, j)) l). 
-  Proof. induction l; intro A.
-         - simpl. auto. 
-         - simpl. simpl in A.
-           destruct A as [A B]. 
-           split.
-           + intros w q C.
-             apply in_map_elim in C.
-             assert (D := A _ C).
-             case_eq(eqN a q); intro E; auto.
-             apply symN in E. rewrite E in D.
-             discriminate D. 
-           + apply IHl; auto. 
-  Qed. 
-
-   (*********** Invariants hold for initial state IS **************************)
-  Lemma Invariant_estimated_node_unique_IS :
-     Invariant_estimated_node_unique IS.
-  Proof. unfold IS, Invariant_estimated_node_unique, initial_state. unfold estimated.
-         apply map_init_preserves_uniqueness.
-         apply nodes_0_to_finish_without_i_unique. 
-  Qed. 
-
-
-  Lemma Invariant_visited_node_unique_IS :
-     Invariant_visited_node_unique IS.
-  Proof. unfold IS, Invariant_visited_node_unique, initial_state.
-         unfold visited.
-         unfold pairs_have_nodes_all_unique.
-         split; auto.
-         intros w q A. 
-         compute in A. discriminate A. 
-  Qed. 
-
-
-  
- Lemma Invariant_i_in_visited_IS : Invariant_i_in_visited IS. 
- Proof. unfold Invariant_i_in_visited.
-        unfold IS. unfold initial_state.
-        apply in_list_cons_intro. 
-        - apply eqS_N_symmetric.
-        - left. apply eqS_N_reflexive. 
- Qed.
-            
- (* move this to eqv.list.v ? *)
- Lemma in_list_map_intro
-       (V U : Type)
-       (eqV : brel V)
-       (eqU : brel U)
-       (symV : brel_symmetric V eqV) 
-       (f : V -> U)
-       (cong_f : ∀ v v', eqV v v' = true -> eqU (f v) (f v') = true)
-       (v : V) :
-   ∀ l, in_list eqV l v = true -> in_list eqU (map f l) (f v) = true.
- Proof. induction l; intro A. 
-        - compute in A. discriminate A. 
-        - apply in_list_cons_elim in A; auto. simpl. 
-          apply bop_or_intro. 
-          + simpl. destruct A as [A | A].
-            * left. apply cong_f; auto. 
-            * right. apply IHl; auto. 
- Qed.
-
-   Lemma Invariant_visited_not_in_estimated_IS :
-     Invariant_visited_not_in_estimated IS.
-   Proof. intros w w' q q'.
-          unfold IS. unfold initial_state.
-          intros A B.
-          apply in_list_cons_elim in A.
-          - destruct A as [A | A].
-            + apply brel_product_elim in A.
-              destruct A as [A C].
-              apply initial_estimate_elim in B. destruct B as [B D].
-              apply in_nodes_0_to_finish_without_i_elim in D.
-              unfold eqN in *.
-              rewrite (conN _ _ _ _  (refN q') C) in D.
-              case_eq(q =?N q'); intro E; auto.
-              apply symN in E. rewrite E in D.
-              discriminate D. 
-            + compute in A. discriminate A. 
-          - apply eqS_N_symmetric. 
-   Qed. 
-   
-   Lemma Invariant_visited_closer_IS :
-     Invariant_visited_closer IS.
-   Proof. unfold IS. unfold initial_state; simpl.
-          intros w q A w' q' B. 
-          apply in_list_cons_elim in A.
-          - destruct A as [A | A].
-            + apply brel_product_elim in A.
-              destruct A as [A C].
-              assert (D := one_is_bottom w').
-              assert (E := lte_congruence _ _ _ _ A (refS w')).
-              rewrite E in D.  exact D. 
-            + compute in A. discriminate A. 
-          - apply eqS_N_symmetric.
-   Qed. 
-
- Lemma Invariant_right_equation_visited_IS :
-   Invariant_right_equation_visited IS.
- Proof. intros w j.
-        unfold IS. unfold initial_state. 
-        intro A. unfold sum_fn. simpl.
-        apply in_list_cons_elim in A.
-        - destruct A as [A | A].
-          ++ apply brel_product_elim in A.
-             destruct A as [A B].
-             assert (C := I_on_diagonal _  B).
-             assert (D := cong _ _ _ _ C (refS ((one <| m i j) ⊕ zero))).
-             destruct (oneAnn ((one <| m i j) ⊕ zero)) as [E F]. 
-             apply symS in A, D, E. 
-             exact (trnS _ _ _ (trnS _ _ _ A E) D). 
-          ++ compute in A. discriminate A. 
-        - apply eqS_N_symmetric. 
- Qed.
-
-
- Lemma Invariant_right_equation_estimated_IS :
-   Invariant_right_equation_estimated IS.
- Proof. intros w j.
-        unfold IS. unfold initial_state; simpl.
-        intro A.
-        apply initial_estimate_elim in A.
-        destruct A as [A B].
-        unfold sum_fn. simpl. 
-        destruct (zeroId (one <| m i j)) as [C D].
-        apply symS in D.
-        exact (trnS _ _ _ A D). 
- Qed. 
- 
-
- (*********** Invariantes are preserved by one step of dijkstra, D1 **************************)
-
- Lemma relax_edges_elim : 
-   ∀ est w w' q q', 
-      (w, q) ∈ relax_edges S L plus rtr m (w', q') est -> 
-                    {w'' & ((w'', q) ∈ est) * (w =S= (w'' ⊕ (w' <| (m q' q))))}.
- Proof. induction est; intros w w' q q' A.
-        - compute in A. discriminate A. 
-        - destruct a as [v j].
-          apply in_list_cons_elim in A.
-          + destruct A as [A | A].
-            * apply brel_product_elim in A.
-              destruct A as [A B].
-              exists v. split.
-              -- apply in_list_cons_intro; auto.
-                 ++ apply eqS_N_symmetric.
-                 ++ left.
-                    apply brel_product_intro; auto. 
-              -- apply symS in A.
-                 assert (C := cong_m _ _ _ _ (refN q') B).
-                 assert (D := cong_rtr _ _ _ _ C (refS w')).
-                 assert (E := cong _ _ _ _ (refS v) D). 
-                 exact (trnS _ _ _ A E). 
-            * destruct (IHest _ _ _ _ A) as [w'' [B C]].
-              exists w''. split.
-              -- apply in_list_cons_intro.
-                 ++ apply eqS_N_symmetric.
-                 ++  right. exact B. 
-              -- exact C. 
-          + apply eqS_N_symmetric.
- Qed.
-
- Lemma relax_edges_intro_simple : 
-   ∀ est w_min q_min w u,
-      (w, u) ∈ est -> 
-         (w ⊕ (w_min <| m q_min u), u) ∈ relax_edges S L plus rtr m (w_min, q_min) est. 
- Proof. induction est; intros w_min q_min w u A.
-        - compute in A. discriminate A.
-        - destruct a as [h j]. 
-          apply in_list_cons_elim in A.
-          + destruct A as [A | A].
-            * apply in_list_cons_intro.
-              -- apply eqS_N_symmetric.
-              -- left.
-                 apply brel_product_elim in A.
-                 destruct A as [A B].
-                 apply brel_product_intro; auto.
-                 assert (C := cong_m _ _ _ _ (refN q_min) B).
-                 assert (D := cong_rtr _ _ _ _ C (refS w_min)).
-                 exact(cong _ _ _ _ A D).
-            * apply in_list_cons_intro.
-              -- apply eqS_N_symmetric.
-              -- right. apply IHest; auto. 
-          + apply eqS_N_symmetric.
-Qed.             
-            
- Lemma relax_edges_intro : 
-   ∀ est carry est' p w_min q_min w u, 
-      find_min_node S eqS plus p carry est = ((w_min, q_min), est') -> 
-      (w, u) ∈ p :: (carry ++ est) -> 
-      eqN u q_min = false -> 
-      (w ⊕ (w_min <| m q_min u), u) ∈ relax_edges S L plus rtr m (w_min, q_min) est'. 
- Proof. induction est; intros carry est' p w_min q_min w u A B C.
-        - simpl in A. destruct p as [w' q']. 
-          inversion A. rewrite <- H1 in C.
-          apply in_list_cons_elim in B.
-          + destruct B as [B | B].
-            * apply brel_product_elim in B.
-              destruct B as [B D].
-              apply symN in D. unfold eqN in C. 
-              rewrite C in D.
-              discriminate D. 
-            * rewrite app_nil_r in B.
-              rewrite H2 in B.
-              apply relax_edges_intro_simple; auto. 
-          + apply eqS_N_symmetric.
-        - destruct p as [h j].
-          destruct a as [w' q']. 
-          simpl in A.
-          case_eq(brel_lte_left eqS plus h w'); intro D; rewrite D in A.
-          + (* show 
-               B : (w, u) ∈ (h, j) :: carry ++ (w', q') :: est 
-              -> 
-               E : (w, u) ∈ (h, j) :: ((w', q') :: carry) ++ est
-
-               Write a tactic for this kind of situation? 
-             *)
-            assert (E : (w, u) ∈ (h, j) :: ((w', q') :: carry) ++ est).
-            {
-              apply in_list_cons_intro.
-              * apply eqS_N_symmetric.
-              * apply in_list_cons_elim in B.
-                -- destruct B as [B | B].
-                   ++ left. exact B. 
-                   ++ right.
-                      apply in_list_concat_intro.
-                      apply in_list_concat_elim in B.
-                      ** destruct B as [B | B].
-                         --- left. apply in_list_cons_intro.
-                             +++ apply eqS_N_symmetric.
-                             +++ right. exact B. 
-                         --- apply in_list_cons_elim in B.
-                             +++ destruct B as [B | B].
-                                 *** left.
-                                     apply in_list_cons_intro.
-                                     ---- apply eqS_N_symmetric.
-                                     ---- left. exact B. 
-                                 *** right. exact B. 
-                             +++ apply eqS_N_symmetric.
-                      ** apply eqS_N_symmetric.
-                -- apply eqS_N_symmetric.
-            } 
-            exact (IHest _ _ _ _ _ _ _ A E C).
-          + (* show 
-               B : (w, u) ∈ (h, j) :: carry ++ (w', q') :: est
-              -> 
-               E : (w, u) ∈ (w', q') :: ((h, j) :: carry) ++ est
-
-               Write a tactic for this kind of situation? 
-             *)
-            assert (E : (w, u) ∈ (w', q') :: ((h, j) :: carry) ++ est).
-            {
-              apply in_list_cons_intro.
-              * apply eqS_N_symmetric.
-              * apply in_list_cons_elim in B.
-                -- destruct B as [B | B].
-                   ++ right.
-                      apply in_list_concat_intro.
-                      left. apply in_list_cons_intro. 
-                      ** apply eqS_N_symmetric.
-                      ** left. exact B. 
-                   ++ apply in_list_concat_elim in B.
-                      destruct B as [B | B].
-                      ** right.
-                         apply in_list_concat_intro.
-                         left.
-                         apply in_list_cons_intro.
-                         --- apply eqS_N_symmetric.
-                         --- right. exact B. 
-                      ** apply in_list_cons_elim in B.
-                         --- destruct B as [B | B].
-                             +++ left. exact B. 
-                             +++ right.
-                                 apply in_list_concat_intro.
-                                 right. exact B. 
-                         --- apply eqS_N_symmetric.
-                      ** apply eqS_N_symmetric.                             
-                -- apply eqS_N_symmetric.
-            } 
-            exact (IHest _ _ _ _ _ _ _ A E C).
- Qed. 
-
- 
- Lemma find_min_node_elim_for_result_list : 
-   ∀ est carry est' p w_min q_min, 
-     find_min_node S eqS plus p carry est = ((w_min, q_min), est') ->
-                   ∀ w q, (w, q) ∈ est' -> (w, q) ∈ p :: (carry ++ est). 
-  Proof. induction est; intros carry est' p w_min q_min A. 
-         - destruct p as [w' q']. simpl in A.
-           inversion A.
-           intros w q B. rewrite app_nil_r. 
-           apply in_list_cons_intro.
-           + apply eqS_N_symmetric.
-           + right. exact B.
-         - intros w q B. simpl in A. 
-           destruct a as [h' j']. 
-           destruct p as [h j].
-           case_eq(brel_lte_left eqS plus h h'); intro C; rewrite C in A.
-           + assert (D := IHest _ _ _ _ _ A _ _ B).
-             (* show 
-                D : (w, q) ∈ (h, j) :: ((h', j') :: carry) ++ est
-                ============================
-                    (w, q) ∈ (h, j) :: carry ++ (h', j') :: est
-
-                Write a tactic for this kind of situation? 
-             *) 
-             apply in_list_cons_elim in D.
-             * destruct D as [D | D].
-               -- apply in_list_cons_intro.
-                  ++ apply eqS_N_symmetric.
-                  ++ left. exact D. 
-               -- apply in_list_concat_elim in D.
-                  ** destruct D as [D | D].
-                     --- apply in_list_cons_intro.
-                         +++ apply eqS_N_symmetric.
-                         +++ right.
-                             apply in_list_concat_intro.
-                             apply in_list_cons_elim in D.
-                             *** destruct D as [D | D].
-                                 ---- right.
-                                      apply in_list_cons_intro.
-                                      ++++ apply eqS_N_symmetric.
-                                      ++++ left. exact D. 
-                                 ---- left. exact D.
-                             *** apply eqS_N_symmetric.
-                     --- apply in_list_cons_intro.
-                         +++ apply eqS_N_symmetric.
-                         +++ right.
-                             apply in_list_concat_intro.
-                             right. apply in_list_cons_intro.
-                             *** apply eqS_N_symmetric.
-                             *** right. exact D. 
-                  ** apply eqS_N_symmetric. 
-             * apply eqS_N_symmetric. 
-           + assert (D := IHest _ _ _ _ _ A _ _ B).
-             (* show 
-                D : (w, q) ∈ (h', j') :: ((h, j) :: carry) ++ est
-                ============================
-                    (w, q) ∈ (h, j) :: carry ++ (h', j') :: est
-
-                Write a tactic for this kind of situation? 
-             *) 
-             apply in_list_cons_elim in D.
-             * destruct D as [D | D].
-               -- apply in_list_cons_intro.
-                  ++ apply eqS_N_symmetric.
-                  ++ right.
-                     apply in_list_concat_intro.
-                     right.
-                     apply in_list_cons_intro.
-                     ** apply eqS_N_symmetric.
-                     ** left. exact D. 
-               -- apply in_list_concat_elim in D.
-                  ++ destruct D as [D | D].
-                     ** apply in_list_cons_intro.
-                        --- apply eqS_N_symmetric.
-                        --- apply in_list_cons_elim in D.
-                            +++ destruct D as [D | D].
-                                *** left. exact D. 
-                                *** right.
-                                    apply in_list_concat_intro.
-                                    left. exact D. 
-                            +++ apply eqS_N_symmetric. 
-                     ** apply in_list_cons_intro.
-                        --- apply eqS_N_symmetric.
-                        --- right. apply in_list_concat_intro.
-                            right.
-                            apply in_list_cons_intro.
-                            +++ apply eqS_N_symmetric.
-                            +++ right. exact D. 
-                  ++ apply eqS_N_symmetric. 
-             * apply eqS_N_symmetric. 
-  Qed. 
-
-  
-
-  Lemma find_min_node_elim_for_head_minimality : 
-   ∀ est carry est' h j w_min q_min, 
-     find_min_node S eqS plus (h, j) carry est = ((w_min, q_min), est')
-     ->  w_min ≦ h.
-  Proof. induction est; intros carry est' h j w_min q_min A.
-         - simpl in A.
-           inversion A.
-           apply lte_ref.
-         - simpl in A. destruct a as [w q]. 
-           case_eq(brel_lte_left eqS plus h w); intro B; rewrite B in A. 
-           + exact (IHest _ _ _ _ _ _ A). 
-           + assert (C := IHest _ _ _ _ _ _ A).
-             assert (D : w ≦ h).
-             {
-               destruct (lte_total w h) as [E | E].
-               * exact E. 
-               * rewrite E in B.
-                 discriminate B. 
-             } 
-             exact (lte_trn _ _ _ C D).
-  Qed.
-
-  
-    Lemma find_min_node_elim_for_minimality : 
-    ∀ est carry est' p w_min q_min,
-      find_min_node S eqS plus p carry est = ((w_min, q_min), est')
-     -> (∀ w q, (w, q) ∈ carry -> w_min ≦ w)                                                    
-     -> (∀ w q, (w, q) ∈ est'  -> w_min ≦ w). 
-     
-  Proof. induction est; intros carry est' p w_min q_min A B w q C.
-         - simpl in A. destruct p as [w' q'].
-           inversion A.
-           rewrite H2 in B.
-           exact (B _ _ C). 
-         - destruct a as [w' q'].
-           destruct p as [h j].
-           simpl in A.
-           case_eq(brel_lte_left eqS plus h w'); intro D; rewrite D in A.
-           + assert (E := IHest _ _ _ _ _ A). 
-             assert (F : ∀ (w : S) (q : nat), (w, q) ∈ (w', q') :: carry → w_min ≦ w).
-             {
-               intros w'' q'' G.
-               apply in_list_cons_elim in G. 
-               * destruct G as [G | G].
-                 -- (* w_min ≦ h ≦ w' = w'' *)
-                   apply brel_product_elim in G.
-                   destruct G as [G H]. 
-                   assert (J := find_min_node_elim_for_head_minimality _ _ _ _ _ _ _ A).
-                   assert (K := lte_trn _ _ _ J D).
-                   rewrite <- (lte_congruence _ _ _ _ (refS w_min) G).
-                   exact K. 
-                 -- exact (B w'' q'' G). 
-               * apply eqS_N_symmetric. 
-              } 
-             exact (E F _ _ C). 
-           + assert (E := IHest _ _ _ _ _ A). 
-             assert (F : ∀ (w : S) (q : nat), (w, q) ∈ (h, j) :: carry → w_min ≦ w).
-             {
-               intros w'' q'' G.
-               apply in_list_cons_elim in G. 
-               * destruct G as [G | G].
-                 -- (* w_min ≦ w' ≦ h = w'' *)
-                   apply brel_product_elim in G.
-                   destruct G as [G H]. 
-                   assert (J := find_min_node_elim_for_head_minimality _ _ _ _ _ _ _ A).
-                   assert (K : w' ≦ h).
-                   {
-                     destruct (lte_total w' h) as [M | M].
-                     * exact M. 
-                     * rewrite M in D.
-                       discriminate D. 
-                   }
-                   rewrite (lte_congruence _ _ _ _ (refS w') G) in K.
-                   exact (lte_trn _ _ _ J K).
-                 -- exact (B _ _ G). 
-               * apply eqS_N_symmetric. 
-              } 
-             exact (E F _ _ C). 
-  Qed. 
-
-  Lemma find_min_node_elim_for_min_origin : 
-   ∀ est carry est' p w_min q_min, 
-     find_min_node S eqS plus p carry est = (w_min, q_min, est')
-     -> (w_min, q_min) ∈ p :: est. 
-  Proof. induction est; intros carry est' p w_min q_min A.
-         - simpl in A. destruct p as [w q].
-           inversion A.
-           apply in_list_cons_intro.
-           + apply eqS_N_symmetric. 
-           + left. apply eqS_N_reflexive.
-         - destruct p as [h j].
-           destruct a as [w' q']. 
-           simpl in A.
-           apply in_list_cons_intro.
-           + apply eqS_N_symmetric.
-           + case_eq(brel_lte_left eqS plus h w'); intro B; rewrite B in A.
-             * apply IHest in A.
-               apply in_list_cons_elim in A.
-               -- destruct A as [A | A].
-                  ++ left. exact A. 
-                  ++ right.  apply in_list_cons_intro.
-                     ** apply eqS_N_symmetric.
-                     ** right. exact A. 
-               -- apply eqS_N_symmetric. 
-             * apply IHest in A.
-               apply in_list_cons_elim in A.
-               -- destruct A as [A | A].
-                  ++ right.  apply in_list_cons_intro.
-                     ** apply eqS_N_symmetric.
-                     ** left. exact A.
-                  ++ right.  apply in_list_cons_intro.
-                     ** apply eqS_N_symmetric.
-                     ** right. exact A.
-               -- apply eqS_N_symmetric. 
-  Qed. 
-
-
-  Lemma pairs_have_nodes_all_unique_cons_intro :
+    Lemma pairs_have_nodes_all_unique_cons_intro :
     ∀ l h j,
-      (∀ (w' : S) (q' : nat), (w', q') ∈ l → eqN j q' = false) 
+      (*∀ (w' : S) (q' : nat), (w', q') ∈ l → eqN j q' = false *)
+      node_not_in_value_node_list j l 
        -> pairs_have_nodes_all_unique l  
        -> pairs_have_nodes_all_unique ((h, j) :: l) .
-  Proof. intros l h j A B. unfold pairs_have_nodes_all_unique.
-         fold pairs_have_nodes_all_unique. 
-         split; auto. 
-  Qed.
+  Proof. intros l h j A B. simpl.  split; auto.   Qed.
 
   Lemma pairs_have_nodes_all_unique_cons_elim :
     ∀ l h j,
       pairs_have_nodes_all_unique ((h, j) :: l) 
-      ->  (∀ (w' : S) (q' : nat), (w', q') ∈ l → eqN j q' = false) 
+      ->  (*∀ (w' : S) (q' : nat), (w', q') ∈ l → eqN j q' = false*)
+          (node_not_in_value_node_list j l)
           *      
           (pairs_have_nodes_all_unique l). 
-  Proof. intros l h j [A B]. unfold pairs_have_nodes_all_unique.
-         split; auto. 
-  Qed.
+  Proof. intros l h j [A B]. split; auto. Qed.
 
 
+  Definition no_shared_nodes_in_value_node_lists l1 l2 := 
+    ∀ (w : S) (q : nat), (w, q) ∈ l1 → node_not_in_value_node_list q l2.
+  
   Lemma pairs_have_nodes_all_unique_concat_intro :
     ∀ l l',
-      (∀ (w : S) (q : nat),
-          (w, q) ∈ l → ∀ (w' : S) (q' : nat), (w', q') ∈ l' → eqN q q' = false)
+      (*∀ (w : S) (q : nat),
+          (w, q) ∈ l → ∀ (w' : S) (q' : nat), (w', q') ∈ l' → eqN q q' = false *)
+      (*∀ (w : S) (q : nat), (w, q) ∈ l → node_not_in_value_node_list q l'*)
+      no_shared_nodes_in_value_node_lists l l'
       -> pairs_have_nodes_all_unique l
       -> pairs_have_nodes_all_unique l'                                       
       -> pairs_have_nodes_all_unique (l ++ l') .
@@ -1381,8 +853,9 @@ Qed.
   Lemma pairs_have_nodes_all_unique_concat_elim :
     ∀ l l',
       pairs_have_nodes_all_unique (l ++ l')
-      -> (∀ (w : S) (q : nat),
-          (w, q) ∈ l → ∀ (w' : S) (q' : nat), (w', q') ∈ l' → eqN q q' = false)
+      -> (*∀ (w : S) (q : nat),
+          (w, q) ∈ l → ∀ (w' : S) (q' : nat), (w', q') ∈ l' → eqN q q' = false)*)
+        (no_shared_nodes_in_value_node_lists l l') 
          *
          (pairs_have_nodes_all_unique l)
          * 
@@ -1612,6 +1085,156 @@ Qed.
 
 
 
+     Lemma relax_edges_elim : 
+   ∀ est w w' q q', 
+      (w, q) ∈ relax_edges S L plus rtr m (w', q') est -> 
+                    {w'' & ((w'', q) ∈ est) * (w =S= (w'' ⊕ (w' <| (m q' q))))}.
+ Proof. induction est; intros w w' q q' A.
+        - compute in A. discriminate A. 
+        - destruct a as [v j].
+          apply in_list_cons_elim in A.
+          + destruct A as [A | A].
+            * apply brel_product_elim in A.
+              destruct A as [A B].
+              exists v. split.
+              -- apply in_list_cons_intro; auto.
+                 ++ apply eqS_N_symmetric.
+                 ++ left.
+                    apply brel_product_intro; auto. 
+              -- apply symS in A.
+                 assert (C := cong_m _ _ _ _ (refN q') B).
+                 assert (D := cong_rtr _ _ _ _ C (refS w')).
+                 assert (E := cong _ _ _ _ (refS v) D). 
+                 exact (trnS _ _ _ A E). 
+            * destruct (IHest _ _ _ _ A) as [w'' [B C]].
+              exists w''. split.
+              -- apply in_list_cons_intro.
+                 ++ apply eqS_N_symmetric.
+                 ++  right. exact B. 
+              -- exact C. 
+          + apply eqS_N_symmetric.
+ Qed.
+
+ Lemma relax_edges_intro_simple : 
+   ∀ est w_min q_min w u,
+      (w, u) ∈ est -> 
+         (w ⊕ (w_min <| m q_min u), u) ∈ relax_edges S L plus rtr m (w_min, q_min) est. 
+ Proof. induction est; intros w_min q_min w u A.
+        - compute in A. discriminate A.
+        - destruct a as [h j]. 
+          apply in_list_cons_elim in A.
+          + destruct A as [A | A].
+            * apply in_list_cons_intro.
+              -- apply eqS_N_symmetric.
+              -- left.
+                 apply brel_product_elim in A.
+                 destruct A as [A B].
+                 apply brel_product_intro; auto.
+                 assert (C := cong_m _ _ _ _ (refN q_min) B).
+                 assert (D := cong_rtr _ _ _ _ C (refS w_min)).
+                 exact(cong _ _ _ _ A D).
+            * apply in_list_cons_intro.
+              -- apply eqS_N_symmetric.
+              -- right. apply IHest; auto. 
+          + apply eqS_N_symmetric.
+Qed.             
+            
+ Lemma relax_edges_intro : 
+   ∀ est carry est' p w_min q_min w u, 
+      FindMin p carry est = ((w_min, q_min), est') -> 
+      (w, u) ∈ p :: (carry ++ est) -> 
+      eqN u q_min = false -> 
+      (w ⊕ (w_min <| m q_min u), u) ∈ relax_edges S L plus rtr m (w_min, q_min) est'. 
+ Proof. induction est; intros carry est' p w_min q_min w u A B C.
+        - simpl in A. destruct p as [w' q']. 
+          inversion A. rewrite <- H1 in C.
+          apply in_list_cons_elim in B.
+          + destruct B as [B | B].
+            * apply brel_product_elim in B.
+              destruct B as [B D].
+              apply symN in D. unfold eqN in C. 
+              rewrite C in D.
+              discriminate D. 
+            * rewrite app_nil_r in B.
+              rewrite H2 in B.
+              apply relax_edges_intro_simple; auto. 
+          + apply eqS_N_symmetric.
+        - destruct p as [h j].
+          destruct a as [w' q']. 
+          simpl in A.
+          case_eq(brel_lte_left eqS plus h w'); intro D; rewrite D in A.
+          + (* show 
+               B : (w, u) ∈ (h, j) :: carry ++ (w', q') :: est 
+              -> 
+               E : (w, u) ∈ (h, j) :: ((w', q') :: carry) ++ est
+
+               Write a tactic for this kind of situation? 
+             *)
+            assert (E : (w, u) ∈ (h, j) :: ((w', q') :: carry) ++ est).
+            {
+              apply in_list_cons_intro.
+              * apply eqS_N_symmetric.
+              * apply in_list_cons_elim in B.
+                -- destruct B as [B | B].
+                   ++ left. exact B. 
+                   ++ right.
+                      apply in_list_concat_intro.
+                      apply in_list_concat_elim in B.
+                      ** destruct B as [B | B].
+                         --- left. apply in_list_cons_intro.
+                             +++ apply eqS_N_symmetric.
+                             +++ right. exact B. 
+                         --- apply in_list_cons_elim in B.
+                             +++ destruct B as [B | B].
+                                 *** left.
+                                     apply in_list_cons_intro.
+                                     ---- apply eqS_N_symmetric.
+                                     ---- left. exact B. 
+                                 *** right. exact B. 
+                             +++ apply eqS_N_symmetric.
+                      ** apply eqS_N_symmetric.
+                -- apply eqS_N_symmetric.
+            } 
+            exact (IHest _ _ _ _ _ _ _ A E C).
+          + (* show 
+               B : (w, u) ∈ (h, j) :: carry ++ (w', q') :: est
+              -> 
+               E : (w, u) ∈ (w', q') :: ((h, j) :: carry) ++ est
+
+               Write a tactic for this kind of situation? 
+             *)
+            assert (E : (w, u) ∈ (w', q') :: ((h, j) :: carry) ++ est).
+            {
+              apply in_list_cons_intro.
+              * apply eqS_N_symmetric.
+              * apply in_list_cons_elim in B.
+                -- destruct B as [B | B].
+                   ++ right.
+                      apply in_list_concat_intro.
+                      left. apply in_list_cons_intro. 
+                      ** apply eqS_N_symmetric.
+                      ** left. exact B. 
+                   ++ apply in_list_concat_elim in B.
+                      destruct B as [B | B].
+                      ** right.
+                         apply in_list_concat_intro.
+                         left.
+                         apply in_list_cons_intro.
+                         --- apply eqS_N_symmetric.
+                         --- right. exact B. 
+                      ** apply in_list_cons_elim in B.
+                         --- destruct B as [B | B].
+                             +++ left. exact B. 
+                             +++ right.
+                                 apply in_list_concat_intro.
+                                 right. exact B. 
+                         --- apply eqS_N_symmetric.
+                      ** apply eqS_N_symmetric.                             
+                -- apply eqS_N_symmetric.
+            } 
+            exact (IHest _ _ _ _ _ _ _ A E C).
+ Qed. 
+
     
   Lemma relax_edges_preserves_uniqueness : 
     ∀ est w_min q_min,
@@ -1633,7 +1256,7 @@ Qed.
   Lemma find_min_node_preserves_uniqueness : 
     ∀ est carry est' h j w_min q_min,
       pairs_have_nodes_all_unique (((h, j) ::est) ++ carry)
-      → find_min_node S eqS plus (h, j) carry est = (w_min, q_min, est')
+      → FindMin (h, j) carry est = (w_min, q_min, est')
       → pairs_have_nodes_all_unique ((w_min, q_min) :: est'). 
   Proof. induction est; intros carry est' h j w_min q_min A B.
          - simpl in B. inversion B.
@@ -1654,6 +1277,449 @@ Qed.
              apply (IHest ((h, j) :: carry) _ _ _ _ _ A' B). 
   Qed. 
 
+  Lemma q_min_not_in_est' : 
+    ∀ est est' h j w_min q_min,
+      pairs_have_nodes_all_unique (((h, j) ::est))
+      → FindMin (h, j) [] est = (w_min, q_min, est')
+      → node_not_in_value_node_list q_min est'. 
+  Proof. intros est est' h j w_min q_min A B.
+         rewrite app_nil_end in A. 
+         assert (C := find_min_node_preserves_uniqueness est [] est' h j w_min q_min A B). 
+         unfold pairs_have_nodes_all_unique in C.
+         destruct C as [C _].
+         exact C.
+  Qed. 
+         
+  (* we really should have a general version of in_list_map elim .... *) 
+  Lemma in_map_elim : 
+        ∀ l w q, (w, q) ∈ map (λ j : Node, (one <| m i j, j)) l -> q ∈' l. 
+  Proof. induction l; simpl; intros w q A.
+         - exact A. 
+         - case_eq(q =?N a); intro B. 
+           + simpl. reflexivity.
+           + simpl. assert (C := IHl w q).
+             apply C.
+             apply bop_or_elim in A.
+             destruct A as [A | A].
+             * apply bop_and_elim in A.
+               destruct A as [_ A].
+               rewrite A in B. discriminate B. 
+             * exact A. 
+  Qed. 
+
+  Lemma map_init_preserves_uniqueness : 
+        ∀ l, nodes_all_unique l -> 
+             pairs_have_nodes_all_unique (map (λ j : Node, (one <| m i j, j)) l). 
+  Proof. induction l; intro A.
+         - simpl. auto. 
+         - simpl. simpl in A.
+           destruct A as [A B]. 
+           split.
+           + intros w q C.
+             apply in_map_elim in C.
+             assert (D := A _ C).
+             case_eq(eqN a q); intro E; auto.
+             apply symN in E. rewrite E in D.
+             discriminate D. 
+           + apply IHl; auto. 
+  Qed. 
+
+
+  
+  (******************* Invariantes for Dijkstra ***************************************)
+
+
+   Definition Invariant_i_in_visited (s  : state S) := 
+     (one, i) ∈ visited _ s.
+
+   Definition Invariant_visited_not_in_estimated (s : state S) := 
+      ∀ w w' q q',  (w, q) ∈ visited _ s → (w', q') ∈ estimated _ s → eqN q q' = false. 
+
+   Definition Invariant_visited_closer (s : state S) := 
+     ∀ w q,  (w, q) ∈ (visited _ s) → ∀ w' q', (w', q') ∈ (estimated _ s) → w ≦ w'. 
+
+   Definition Invariant_right_equation_visited (s : state S) := 
+     ∀ w j, (w, j) ∈ visited _ s →
+         w =S= (I i j ⊕ (⨁ (λ '(w', q), w' <| m q j) (visited S s))).
+
+   Definition Invariant_right_equation_estimated (s : state S) := 
+     ∀ w j, (w, j) ∈ estimated _ s  →
+            w =S= (⨁ (λ '(w', q), w' <| m q j) (visited S s)).
+
+  Definition Invariant_all_nodes_unique (s : state S) :=
+    pairs_have_nodes_all_unique ((visited _ s) ++ (estimated _ s)).
+
+(*  This is only needed at the very end to show that
+    Invariant_visited_not_in_estimated. 
+    It is implied by Invariant_all_nodes_unique. 
+*) 
+  Definition Invariant_estimated_node_unique (s : state S) :=
+    pairs_have_nodes_all_unique (estimated _ s). 
+
+(*  This is only needed at the very end to show that
+    visited_to_map is correct. 
+    It is implied by Invariant_all_nodes_unique. 
+*) 
+  Definition Invariant_visited_node_unique (s : state S) :=
+    pairs_have_nodes_all_unique (visited _ s). 
+
+  
+   (*********** Invariants hold for initial state IS **************************)
+  Lemma Invariant_estimated_node_unique_IS :
+     Invariant_estimated_node_unique IS.
+  Proof. unfold IS, Invariant_estimated_node_unique, initial_state. unfold estimated.
+         apply map_init_preserves_uniqueness.
+         apply nodes_0_to_finish_without_i_unique. 
+  Qed. 
+
+
+  Lemma Invariant_visited_node_unique_IS :
+     Invariant_visited_node_unique IS.
+  Proof. unfold IS, Invariant_visited_node_unique, initial_state.
+         unfold visited.
+         unfold pairs_have_nodes_all_unique.
+         split; auto.
+         intros w q A. 
+         compute in A. discriminate A. 
+  Qed. 
+
+
+    Lemma Invariant_all_nodes_unique_IS :
+     Invariant_all_nodes_unique IS.
+     Proof. unfold IS, Invariant_all_nodes_unique, initial_state.
+            unfold visited, estimated.
+            apply pairs_have_nodes_all_unique_concat_intro.
+            - intros w q A w' q' B.
+              apply in_list_cons_elim in A.
+              + destruct A as [A | A].
+                * apply brel_product_elim in A.
+                  destruct A as [A1 A2].
+                  apply in_map_elim in B.
+                  apply in_nodes_0_to_finish_without_i_elim in B.
+                  case_eq(eqN q q'); intro C; auto.
+                  assert (D := trnN _ _ _ A2 C).
+                  apply symN in D. rewrite D in B.
+                  discriminate B. 
+                * compute in A. discriminate A.
+              + apply eqS_N_symmetric.
+            - unfold pairs_have_nodes_all_unique.
+              split; auto.
+              intros w q A. 
+              compute in A. discriminate A.
+            - apply map_init_preserves_uniqueness.
+              apply nodes_0_to_finish_without_i_unique.
+     Qed. 
+
+
+  
+ Lemma Invariant_i_in_visited_IS : Invariant_i_in_visited IS. 
+ Proof. unfold Invariant_i_in_visited.
+        unfold IS. unfold initial_state.
+        apply in_list_cons_intro. 
+        - apply eqS_N_symmetric.
+        - left. apply eqS_N_reflexive. 
+ Qed.
+            
+ (* move this to eqv.list.v ? *)
+ Lemma in_list_map_intro
+       (V U : Type)
+       (eqV : brel V)
+       (eqU : brel U)
+       (symV : brel_symmetric V eqV) 
+       (f : V -> U)
+       (cong_f : ∀ v v', eqV v v' = true -> eqU (f v) (f v') = true)
+       (v : V) :
+   ∀ l, in_list eqV l v = true -> in_list eqU (map f l) (f v) = true.
+ Proof. induction l; intro A. 
+        - compute in A. discriminate A. 
+        - apply in_list_cons_elim in A; auto. simpl. 
+          apply bop_or_intro. 
+          + simpl. destruct A as [A | A].
+            * left. apply cong_f; auto. 
+            * right. apply IHl; auto. 
+ Qed.
+
+   Lemma Invariant_visited_not_in_estimated_IS :
+     Invariant_visited_not_in_estimated IS.
+   Proof. intros w w' q q'.
+          unfold IS. unfold initial_state.
+          intros A B.
+          apply in_list_cons_elim in A.
+          - destruct A as [A | A].
+            + apply brel_product_elim in A.
+              destruct A as [A C].
+              apply initial_estimate_elim in B. destruct B as [B D].
+              apply in_nodes_0_to_finish_without_i_elim in D.
+              unfold eqN in *.
+              rewrite (conN _ _ _ _  (refN q') C) in D.
+              case_eq(q =?N q'); intro E; auto.
+              apply symN in E. rewrite E in D.
+              discriminate D. 
+            + compute in A. discriminate A. 
+          - apply eqS_N_symmetric. 
+   Qed. 
+   
+   Lemma Invariant_visited_closer_IS :
+     Invariant_visited_closer IS.
+   Proof. unfold IS. unfold initial_state; simpl.
+          intros w q A w' q' B. 
+          apply in_list_cons_elim in A.
+          - destruct A as [A | A].
+            + apply brel_product_elim in A.
+              destruct A as [A C].
+              assert (D := one_is_bottom w').
+              assert (E := lte_congruence _ _ _ _ A (refS w')).
+              rewrite E in D.  exact D. 
+            + compute in A. discriminate A. 
+          - apply eqS_N_symmetric.
+   Qed. 
+
+ Lemma Invariant_right_equation_visited_IS :
+   Invariant_right_equation_visited IS.
+ Proof. intros w j.
+        unfold IS. unfold initial_state. 
+        intro A. unfold big_plus. simpl.
+        apply in_list_cons_elim in A.
+        - destruct A as [A | A].
+          ++ apply brel_product_elim in A.
+             destruct A as [A B].
+             assert (C := I_on_diagonal _  B).
+             assert (D := cong _ _ _ _ C (refS ((one <| m i j) ⊕ zero))).
+             destruct (oneAnn ((one <| m i j) ⊕ zero)) as [E F]. 
+             apply symS in A, D, E. 
+             exact (trnS _ _ _ (trnS _ _ _ A E) D). 
+          ++ compute in A. discriminate A. 
+        - apply eqS_N_symmetric. 
+ Qed.
+
+
+ Lemma Invariant_right_equation_estimated_IS :
+   Invariant_right_equation_estimated IS.
+ Proof. intros w j.
+        unfold IS. unfold initial_state; simpl.
+        intro A.
+        apply initial_estimate_elim in A.
+        destruct A as [A B].
+        unfold big_plus. simpl. 
+        destruct (zeroId (one <| m i j)) as [C D].
+        apply symS in D.
+        exact (trnS _ _ _ A D). 
+ Qed. 
+ 
+
+ (*********** Invariantes are preserved by one step of dijkstra, D1 **************************)
+
+ 
+ Lemma find_min_node_elim_for_result_list : 
+   ∀ est carry est' p w_min q_min, 
+     FindMin p carry est = ((w_min, q_min), est') ->
+                   ∀ w q, (w, q) ∈ est' -> (w, q) ∈ p :: (carry ++ est). 
+  Proof. induction est; intros carry est' p w_min q_min A. 
+         - destruct p as [w' q']. simpl in A.
+           inversion A.
+           intros w q B. rewrite app_nil_r. 
+           apply in_list_cons_intro.
+           + apply eqS_N_symmetric.
+           + right. exact B.
+         - intros w q B. simpl in A. 
+           destruct a as [h' j']. 
+           destruct p as [h j].
+           case_eq(brel_lte_left eqS plus h h'); intro C; rewrite C in A.
+           + assert (D := IHest _ _ _ _ _ A _ _ B).
+             (* show 
+                D : (w, q) ∈ (h, j) :: ((h', j') :: carry) ++ est
+                ============================
+                    (w, q) ∈ (h, j) :: carry ++ (h', j') :: est
+
+                Write a tactic for this kind of situation? 
+             *) 
+             apply in_list_cons_elim in D.
+             * destruct D as [D | D].
+               -- apply in_list_cons_intro.
+                  ++ apply eqS_N_symmetric.
+                  ++ left. exact D. 
+               -- apply in_list_concat_elim in D.
+                  ** destruct D as [D | D].
+                     --- apply in_list_cons_intro.
+                         +++ apply eqS_N_symmetric.
+                         +++ right.
+                             apply in_list_concat_intro.
+                             apply in_list_cons_elim in D.
+                             *** destruct D as [D | D].
+                                 ---- right.
+                                      apply in_list_cons_intro.
+                                      ++++ apply eqS_N_symmetric.
+                                      ++++ left. exact D. 
+                                 ---- left. exact D.
+                             *** apply eqS_N_symmetric.
+                     --- apply in_list_cons_intro.
+                         +++ apply eqS_N_symmetric.
+                         +++ right.
+                             apply in_list_concat_intro.
+                             right. apply in_list_cons_intro.
+                             *** apply eqS_N_symmetric.
+                             *** right. exact D. 
+                  ** apply eqS_N_symmetric. 
+             * apply eqS_N_symmetric. 
+           + assert (D := IHest _ _ _ _ _ A _ _ B).
+             (* show 
+                D : (w, q) ∈ (h', j') :: ((h, j) :: carry) ++ est
+                ============================
+                    (w, q) ∈ (h, j) :: carry ++ (h', j') :: est
+
+                Write a tactic for this kind of situation? 
+             *) 
+             apply in_list_cons_elim in D.
+             * destruct D as [D | D].
+               -- apply in_list_cons_intro.
+                  ++ apply eqS_N_symmetric.
+                  ++ right.
+                     apply in_list_concat_intro.
+                     right.
+                     apply in_list_cons_intro.
+                     ** apply eqS_N_symmetric.
+                     ** left. exact D. 
+               -- apply in_list_concat_elim in D.
+                  ++ destruct D as [D | D].
+                     ** apply in_list_cons_intro.
+                        --- apply eqS_N_symmetric.
+                        --- apply in_list_cons_elim in D.
+                            +++ destruct D as [D | D].
+                                *** left. exact D. 
+                                *** right.
+                                    apply in_list_concat_intro.
+                                    left. exact D. 
+                            +++ apply eqS_N_symmetric. 
+                     ** apply in_list_cons_intro.
+                        --- apply eqS_N_symmetric.
+                        --- right. apply in_list_concat_intro.
+                            right.
+                            apply in_list_cons_intro.
+                            +++ apply eqS_N_symmetric.
+                            +++ right. exact D. 
+                  ++ apply eqS_N_symmetric. 
+             * apply eqS_N_symmetric. 
+  Qed. 
+
+  
+
+  Lemma find_min_node_elim_for_head_minimality : 
+   ∀ est carry est' h j w_min q_min, 
+     FindMin (h, j) carry est = ((w_min, q_min), est')
+     ->  w_min ≦ h.
+  Proof. induction est; intros carry est' h j w_min q_min A.
+         - simpl in A.
+           inversion A.
+           apply lte_ref.
+         - simpl in A. destruct a as [w q]. 
+           case_eq(brel_lte_left eqS plus h w); intro B; rewrite B in A. 
+           + exact (IHest _ _ _ _ _ _ A). 
+           + assert (C := IHest _ _ _ _ _ _ A).
+             assert (D : w ≦ h).
+             {
+               destruct (lte_total w h) as [E | E].
+               * exact E. 
+               * rewrite E in B.
+                 discriminate B. 
+             } 
+             exact (lte_trn _ _ _ C D).
+  Qed.
+
+  
+    Lemma find_min_node_elim_for_minimality : 
+    ∀ est carry est' p w_min q_min,
+      FindMin p carry est = ((w_min, q_min), est')
+     -> (∀ w q, (w, q) ∈ carry -> w_min ≦ w)                                                    
+     -> (∀ w q, (w, q) ∈ est'  -> w_min ≦ w). 
+     
+  Proof. induction est; intros carry est' p w_min q_min A B w q C.
+         - simpl in A. destruct p as [w' q'].
+           inversion A.
+           rewrite H2 in B.
+           exact (B _ _ C). 
+         - destruct a as [w' q'].
+           destruct p as [h j].
+           simpl in A.
+           case_eq(brel_lte_left eqS plus h w'); intro D; rewrite D in A.
+           + assert (E := IHest _ _ _ _ _ A). 
+             assert (F : ∀ (w : S) (q : nat), (w, q) ∈ (w', q') :: carry → w_min ≦ w).
+             {
+               intros w'' q'' G.
+               apply in_list_cons_elim in G. 
+               * destruct G as [G | G].
+                 -- (* w_min ≦ h ≦ w' = w'' *)
+                   apply brel_product_elim in G.
+                   destruct G as [G H]. 
+                   assert (J := find_min_node_elim_for_head_minimality _ _ _ _ _ _ _ A).
+                   assert (K := lte_trn _ _ _ J D).
+                   rewrite <- (lte_congruence _ _ _ _ (refS w_min) G).
+                   exact K. 
+                 -- exact (B w'' q'' G). 
+               * apply eqS_N_symmetric. 
+              } 
+             exact (E F _ _ C). 
+           + assert (E := IHest _ _ _ _ _ A). 
+             assert (F : ∀ (w : S) (q : nat), (w, q) ∈ (h, j) :: carry → w_min ≦ w).
+             {
+               intros w'' q'' G.
+               apply in_list_cons_elim in G. 
+               * destruct G as [G | G].
+                 -- (* w_min ≦ w' ≦ h = w'' *)
+                   apply brel_product_elim in G.
+                   destruct G as [G H]. 
+                   assert (J := find_min_node_elim_for_head_minimality _ _ _ _ _ _ _ A).
+                   assert (K : w' ≦ h).
+                   {
+                     destruct (lte_total w' h) as [M | M].
+                     * exact M. 
+                     * rewrite M in D.
+                       discriminate D. 
+                   }
+                   rewrite (lte_congruence _ _ _ _ (refS w') G) in K.
+                   exact (lte_trn _ _ _ J K).
+                 -- exact (B _ _ G). 
+               * apply eqS_N_symmetric. 
+              } 
+             exact (E F _ _ C). 
+  Qed. 
+
+  Lemma find_min_node_elim_for_min_origin : 
+   ∀ est carry est' p w_min q_min, 
+     FindMin p carry est = (w_min, q_min, est')
+     -> (w_min, q_min) ∈ p :: est. 
+  Proof. induction est; intros carry est' p w_min q_min A.
+         - simpl in A. destruct p as [w q].
+           inversion A.
+           apply in_list_cons_intro.
+           + apply eqS_N_symmetric. 
+           + left. apply eqS_N_reflexive.
+         - destruct p as [h j].
+           destruct a as [w' q']. 
+           simpl in A.
+           apply in_list_cons_intro.
+           + apply eqS_N_symmetric.
+           + case_eq(brel_lte_left eqS plus h w'); intro B; rewrite B in A.
+             * apply IHest in A.
+               apply in_list_cons_elim in A.
+               -- destruct A as [A | A].
+                  ++ left. exact A. 
+                  ++ right.  apply in_list_cons_intro.
+                     ** apply eqS_N_symmetric.
+                     ** right. exact A. 
+               -- apply eqS_N_symmetric. 
+             * apply IHest in A.
+               apply in_list_cons_elim in A.
+               -- destruct A as [A | A].
+                  ++ right.  apply in_list_cons_intro.
+                     ** apply eqS_N_symmetric.
+                     ** left. exact A.
+                  ++ right.  apply in_list_cons_intro.
+                     ** apply eqS_N_symmetric.
+                     ** right. exact A.
+               -- apply eqS_N_symmetric. 
+  Qed. 
+
+
  Lemma in_visited_after_one_step:
    ∀ s w q ,
       Invariant_estimated_node_unique s -> 
@@ -1665,8 +1731,9 @@ Qed.
         unfold dijkstra_one_step.
         destruct estimated0 eqn:A. simpl. 
         - intros INV B. left. exact B. 
-        - destruct (find_min_node S eqS plus p [] l) as [[w_min q_min] est'] eqn:B. 
-          destruct p as [w' q']. simpl. rewrite B. simpl.
+        - destruct (FindMin p [] l) as [[w_min q_min] est'] eqn:B. 
+          destruct p as [w' q']. simpl.
+          rewrite B. simpl.
           unfold Invariant_estimated_node_unique.
           unfold estimated. simpl. 
           intros [E INV] C. 
@@ -1700,7 +1767,7 @@ Qed.
           compute in A.
           discriminate A. 
         - intros w q A.
-          destruct (find_min_node S eqS plus (h, j) [] est) as [[w_min q_min] est'] eqn:Eq2.
+          destruct (FindMin (h, j) [] est) as [[w_min q_min] est'] eqn:Eq2.
           simpl in A.
           apply relax_edges_elim in A.
           destruct A as [w' [C D]].
@@ -1710,12 +1777,12 @@ Qed.
   Qed.
 
 
- Lemma sum_fn_to_equal_destinations: 
+ Lemma big_plus_to_equal_destinations: 
    ∀  l j j',
      j =N= j' -> 
-          (sum_fn zero plus (λ '(w, q), w <| m q j) l)
+          (⨁ (λ '(w, q), w <| m q j) l)
           =S=
-          (sum_fn zero plus (λ '(w, q), w <| m q j') l). 
+          (⨁ (λ '(w, q), w <| m q j') l). 
  Proof. intros l j j' A.
         assert (B: ∀ p1 p2, eqS_N p1 p2 = true →
                             ((λ '(w', q), w' <| m q j) p1)
@@ -1726,12 +1793,12 @@ Qed.
           apply bop_and_elim in X. destruct X as [X Y].
           assert (Z := cong_m _ _ _ _ Y A).
           exact(cong_rtr _ _ _ _ Z X). 
-        } 
-        exact (sum_fn_congruence_general _ eqS plus zero refS cong
-                                         _ 
+        }
+        exact (big_plus_congruence_general _ eqS refS plus cong zero 
+                                         _ eqS_N 
                                          (λ '(w', q), w' <| m q j)
                                          (λ '(w', q), w' <| m q j')
-                                         eqS_N B l l 
+                                         B l l 
                                          (brel_list_reflexive _ eqS_N eqS_N_reflexive l)). 
  Qed.
 
@@ -1763,18 +1830,18 @@ Qed.
          destruct s; intro i_in_vis.
          destruct estimated0; simpl. 
          + exact i_in_vis. 
-         + destruct (find_min_node S eqS plus p [] estimated0) as [[w q] est]; simpl. 
+         + destruct (FindMin p [] estimated0) as [[w q] est]; simpl. 
            * apply bop_or_intro. right. exact i_in_vis.
   Qed.              
 
-
+  (*
   Lemma dijkstra_one_step_preserves_Invariant_estimated_node_unique (s : state S) :
     Invariant_estimated_node_unique s -> Invariant_estimated_node_unique (D1 s).
   Proof. unfold Invariant_estimated_node_unique, D1, dijkstra_one_step.
          destruct s; simpl. intros est_unique.
          destruct estimated0 as [ | [h j] est] eqn:Eq1.
          - simpl. auto. 
-         - destruct (find_min_node S eqS plus (h, j) [] est) as [[w_min q_min] est'] eqn:Eq2.
+         - destruct (FindMin (h, j) [] est) as [[w_min q_min] est'] eqn:Eq2.
            unfold estimated.
            assert (A : pairs_have_nodes_all_unique (((h, j) ::est) ++ [])).
            {
@@ -1784,6 +1851,7 @@ Qed.
            apply relax_edges_preserves_uniqueness; auto. 
   Qed.
 
+
   Lemma dijkstra_one_step_preserves_Invariant_visited_node_unique (s : state S) :
     Invariant_visited_node_unique s -> Invariant_visited_node_unique (D1 s).
   Proof. unfold Invariant_visited_node_unique, D1, dijkstra_one_step.
@@ -1791,12 +1859,12 @@ Qed.
          destruct visited0 as [ | [h j] vis] eqn:Eq1.
          - simpl. destruct estimated0; simpl; auto.
            + destruct p as (h, j);
-             destruct (find_min_node S eqS plus (h, j) [] estimated0) as [[w_min q_min] est'] eqn:Eq2.
+             destruct (FindMin (h, j) [] estimated0) as [[w_min q_min] est'] eqn:Eq2.
              simpl. split; auto. intros _ q A. discriminate A. 
          - destruct estimated0. 
            + unfold visited. exact vis_unique. 
            + destruct p as [h' j']. 
-             destruct (find_min_node S eqS plus (h', j') [] estimated0) as [[w_min q_min] est'] eqn:Eq2.
+             destruct (FindMin (h', j') [] estimated0) as [[w_min q_min] est'] eqn:Eq2.
              simpl. split.
              * intros w' q' A. apply bop_or_elim in A. destruct A as [A | A].
                -- apply bop_and_elim in A.  destruct A as [A B].
@@ -1806,6 +1874,8 @@ Qed.
 Admitted.              
 
   
+   *)
+
   Lemma dijkstra_one_step_preserves_Invariant_visited_not_in_estimated (s : state S) :
     Invariant_estimated_node_unique s -> 
     Invariant_visited_not_in_estimated s -> Invariant_visited_not_in_estimated (D1 s).
@@ -1819,6 +1889,116 @@ Admitted.
            -- exact (A _ _ B).
     Qed.
 
+    Lemma dijkstra_one_step_preserves_Invariant_all_nodes_unique (s : state S) :
+    Invariant_all_nodes_unique s -> Invariant_all_nodes_unique (D1 s).
+    Proof. unfold Invariant_all_nodes_unique, D1, dijkstra_one_step.
+           destruct s; simpl. intros all_unique.
+           destruct estimated0 as [ | [w q] est] eqn:EqEst.
+           - simpl. exact all_unique.
+           - destruct (FindMin (w, q) [] est) as [[w_min q_min] est'] eqn:FMN.
+             unfold visited, estimated.
+             assert (A := find_min_node_elim_for_min_origin _ _ _ _ _ _ FMN).
+             apply pairs_have_nodes_all_unique_concat_elim in all_unique.
+             destruct all_unique as [[U1 U2] U3]. 
+             apply pairs_have_nodes_all_unique_concat_intro.
+             + (* no_shared_nodes_in_value_node_lists ((w_min, q_min) :: visited0) (relax_edges S L plus rtr m (w_min, q_min) est') *) 
+               unfold no_shared_nodes_in_value_node_lists in *.
+               intros w' q' B. intros w'' q'' C.
+               apply relax_edges_elim in C.
+               destruct C as [w0 [C D]].
+               apply in_list_cons_elim in B.
+               * destruct B as [B | B].
+                 -- apply brel_product_elim in B.
+                    destruct B as [B1 B2].
+                    assert (E := q_min_not_in_est' est est' w q w_min q_min U3 FMN _ _ C). 
+                    case_eq(eqN q' q''); intro F; auto.
+                    unfold eqN in E, F. 
+                    rewrite (trnN _ _ _ B2 F) in E.
+                    discriminate E. 
+                 -- assert (F := U1 _ _ B).
+                    assert (G := find_min_node_elim_for_result_list est [] est' (w, q) w_min q_min FMN _ _ C).
+                    rewrite app_nil_l in G. 
+                    exact (F _ _ G).
+               * apply eqS_N_symmetric. 
+             + (* pairs_have_nodes_all_unique ((w_min, q_min) :: visited0) *)
+               simpl. split; auto.
+               unfold no_shared_nodes_in_value_node_lists in U1. 
+               intros w' q' B.
+               assert (C := U1 _ _ B _ _ A).
+               case_eq(eqN q_min q'); intro D; auto.
+               apply symN in D. unfold eqN in C. rewrite C in D.
+               discriminate D. 
+             + (* pairs_have_nodes_all_unique (relax_edges S L plus rtr m (w_min, q_min) est') *)
+               apply relax_edges_preserves_uniqueness.
+               rewrite app_nil_end in U3.
+               assert (B := find_min_node_preserves_uniqueness _ _ _ _ _ _ _ U3 FMN).
+               apply pairs_have_nodes_all_unique_cons_elim in B.
+               destruct B as [B1 B2]. 
+               apply pairs_have_nodes_all_unique_cons_intro. 
+               * (*  node_not_in_value_node_list q_min est' *)
+                 exact B1. 
+               * exact B2. 
+    Qed. 
+
+  Lemma dijkstra_one_step_preserves_Invariant_estimated_node_unique (s : state S) :
+    Invariant_all_nodes_unique s -> Invariant_estimated_node_unique  s.
+  Proof. intro A.
+         unfold Invariant_all_nodes_unique  in A.
+         unfold Invariant_estimated_node_unique.
+         apply pairs_have_nodes_all_unique_concat_elim in A. 
+         destruct A as [[A B] C].
+         exact C.
+  Qed. 
+
+    Lemma dijkstra_one_step_preserves_Invariant_visited_node_unique (s : state S) :
+    Invariant_all_nodes_unique s -> Invariant_visited_node_unique  s.
+  Proof. intro A.
+         unfold Invariant_all_nodes_unique  in A.
+         unfold Invariant_estimated_node_unique.
+         apply pairs_have_nodes_all_unique_concat_elim in A. 
+         destruct A as [[A B] C].
+         exact B.
+  Qed. 
+
+(*    
+    Lemma dijkstra_one_step_preserves_Invariant_all_nodes_unique (s : state S) :
+    Invariant_all_nodes_unique s -> Invariant_all_nodes_unique (D1 s).
+  Proof. unfold Invariant_all_nodes_unique, D1, dijkstra_one_step.
+         destruct s; simpl. intros all_unique.
+         destruct visited0 as [ | [w q] vis] eqn:Eq1; 
+           destruct estimated0 as [ | [w' q'] est] eqn:Eq2.
+         - compute; auto. 
+         - destruct (FindMin (w', q') [] est) as [[w_min q_min] est'] eqn:Eq3.
+           unfold visited, estimated.
+           admit. 
+         - simpl. rewrite app_nil_r in *.
+           simpl in all_unique. exact all_unique. 
+         - apply pairs_have_nodes_all_unique_concat_elim in all_unique.
+           destruct all_unique as [[U1 U2] U3].
+           apply pairs_have_nodes_all_unique_cons_elim in U2, U3.
+           assert (U3' := U3). 
+           destruct U3 as [U4 U5].
+           destruct U2 as [U2 U3]. 
+           destruct (FindMin (w', q') [] est) as [[w_min q_min] est'] eqn:Eq3.
+           unfold visited, estimated. 
+           apply pairs_have_nodes_all_unique_concat_intro.
+           + intros w0 q0 A w2 q2 B.
+             apply relax_edges_elim in B.
+             destruct B as [w'' [B1 B2]].
+             admit. 
+           + apply pairs_have_nodes_all_unique_cons_intro.
+             * admit. 
+             * apply pairs_have_nodes_all_unique_cons_intro.
+               -- exact U2. 
+               -- exact U3. 
+           + apply relax_edges_preserves_uniqueness.
+             apply (find_min_node_preserves_uniqueness est [] est' w' q' w_min q_min).
+             * rewrite app_nil_r. exact U3'. 
+             * exact Eq3.
+Admitted.                
+*) 
+
+
     Lemma dijkstra_one_step_preserves_Invariant_visited_closer (s : state S) :
         Invariant_visited_closer s -> Invariant_visited_closer (D1 s).
     Proof. unfold Invariant_visited_closer, D1, dijkstra_one_step.
@@ -1826,7 +2006,7 @@ Admitted.
            destruct estimated0; simpl; simpl in vis_closest, A, B.
            ++ compute in B. discriminate B. 
            ++ destruct p as [h j]. (* head of estimated *)
-              destruct (find_min_node S eqS plus (h, j) [] estimated0) as [[w_min q_min] est'] eqn:Eq1. 
+              destruct (FindMin (h, j) [] estimated0) as [[w_min q_min] est'] eqn:Eq1. 
               simpl in A, B.
               apply bop_or_elim in A.
               destruct A as [A | A].
@@ -1888,9 +2068,13 @@ Admitted.
            destruct estimated0 as [ | [h hj] est] eqn:Eq1; 
              simpl; simpl in right_equation_vis, A.
            ** apply right_equation_vis; auto. 
-           ** destruct (find_min_node S eqS plus (h, hj) [] est) as [[w_min q_min] est'] eqn:Eq2.
+           ** destruct (FindMin (h, hj) [] est) as [[w_min q_min] est'] eqn:Eq2.
               simpl; simpl in A.
-              rewrite (sum_fn_cons _ plus zero _ (λ '(w', q), w' <| m q j) ((w_min, q_min)) visited0).
+(*              
+              assert (Z := big_plus_cons _ _ eqS plus zero refS (λ '(w', q), w' <| m q j) (w_min, q_min) visited0).
+
+              rewrite (big_plus_cons _ plus zero _ (λ '(w', q), w' <| m q j) ((w_min, q_min)) visited0).
+*) 
               unfold Invariant_right_equation_estimated in right_equation_est.
               simpl in right_equation_est.                     
               apply bop_or_elim in A.
@@ -1900,9 +2084,9 @@ Admitted.
                   (* Eq1 : estimated0 = (h, hj) :: est *)
                   assert (C := find_min_node_elim_for_min_origin _ _ _ _ _ _ Eq2).
                   assert (D1 := right_equation_est _ _ C).
-                  assert (D : w_min =S= sum_fn zero plus (λ '(w', q), w' <| m q j) visited0).
+                  assert (D : w_min =S= ⨁ (λ '(w', q), w' <| m q j) visited0).
                   { 
-                    assert (F := sum_fn_to_equal_destinations visited0 _ _ B). 
+                    assert (F := big_plus_to_equal_destinations visited0 _ _ B). 
                     apply symS in F.
                     exact (trnS _ _ _ D1 F). 
                   }
@@ -1938,8 +2122,8 @@ Admitted.
                     assert (R := vis_est_disjoint _ _ _ _ i_in_vis Q). 
                     unfold eqN in R. rewrite M in R. discriminate R. 
                   } 
-                  assert (M := cong _ _ _ _ K (refS (((w_min <| m q_min j) ⊕ sum_fn zero plus (λ '(w', q), w' <| m q j) visited0)))).
-                  destruct (zeroId ((w_min <| m q_min j) ⊕ sum_fn zero plus (λ '(w', q), w' <| m q j) visited0)) as [P _]. 
+                  assert (M := cong _ _ _ _ K (refS (((w_min <| m q_min j) ⊕ ⨁ (λ '(w', q), w' <| m q j) visited0)))).
+                  destruct (zeroId ((w_min <| m q_min j) ⊕ ⨁ (λ '(w', q), w' <| m q j) visited0)) as [P _]. 
                   assert (O := trnS _ _ _ M P). apply symS in O.
                   assert (Q := trnS _ _ _ J O).
                   exact Q. 
@@ -1957,21 +2141,21 @@ Admitted.
                   } 
                   assert (J : ((w_min <| m q_min j) ⊕ w)
                               =S=
-                              ((w_min <| m q_min j) ⊕ (I i j ⊕ sum_fn zero plus (λ '(w', q), w' <| m q j) visited0))).
+                              ((w_min <| m q_min j) ⊕ (I i j ⊕ ⨁ (λ '(w', q), w' <| m q j) visited0))).
                   {
                     exact (cong _ _ _ _ (refS ((w_min <| m q_min j))) B). 
                   } 
                   assert (K := trnS _ _ _ H J).
-                  assert (M := assoc (w_min <| m q_min j) (I i j) (sum_fn zero plus (λ '(w', q), w' <| m q j) visited0)).
+                  assert (M := assoc (w_min <| m q_min j) (I i j) (⨁ (λ '(w', q), w' <| m q j) visited0)).
                   apply symS in M.
                   assert (O := trnS _ _ _ K M).
                   assert (P := comm (w_min <| m q_min j) (I i j)).
-                  assert (Q := cong _ _ _ _ P (refS (sum_fn zero plus (λ '(w', q), w' <| m q j) visited0))). 
+                  assert (Q := cong _ _ _ _ P (refS (⨁ (λ '(w', q), w' <| m q j) visited0))). 
                   assert (R := trnS _ _ _ O Q).
-                  assert (U := assoc (I i j) (w_min <| m q_min j) (sum_fn zero plus (λ '(w', q), w' <| m q j) visited0)).                                                      assert (W := trnS _ _ _ R U).
+                  assert (U := assoc (I i j) (w_min <| m q_min j) (⨁ (λ '(w', q), w' <| m q j) visited0)).                                                      assert (W := trnS _ _ _ R U).
                   exact W.            
     Qed. 
-
+    
     Lemma dijkstra_one_step_preserves_Invariant_right_equation_estimated (s : state S) :
      Invariant_right_equation_estimated s -> Invariant_right_equation_estimated (D1 s).
     Proof. unfold Invariant_right_equation_estimated, D1, dijkstra_one_step.
@@ -1980,10 +2164,12 @@ Admitted.
                       (* Eq1 : estimated0 = (h, hj) :: est *) 
                       simpl.  
                     ** apply right_equation_est; auto. 
-                    ** destruct (find_min_node S eqS plus (h, hj) [] est) as [[w_min q_min] est'] eqn:Eq2.
+                    ** destruct (FindMin (h, hj) [] est) as [[w_min q_min] est'] eqn:Eq2.
                        unfold visited, estimated in right_equation_est.
                        simpl in A. simpl.
-                       rewrite (sum_fn_cons _ plus zero _ (λ '(w', q), w' <| m q j) ((w_min, q_min)) visited0).
+(*                       
+                       rewrite (big_plus_cons _ plus zero _ (λ '(w', q), w' <| m q j) ((w_min, q_min)) visited0).
+*) 
                        apply relax_edges_elim in A.
                        destruct A as [w' [A B]].
                        assert (C : (w', j) ∈ (h, hj) :: est).
@@ -2003,7 +2189,8 @@ Admitted.
  Definition dijkstra_invariants (s : state S) :=
      (Invariant_i_in_visited s)
       * 
-      ((Invariant_estimated_node_unique s) 
+      ( (* (Invariant_estimated_node_unique s) *)
+        (Invariant_all_nodes_unique s)    
       *
       ((Invariant_visited_not_in_estimated s)
        *
@@ -2021,7 +2208,8 @@ Admitted.
          split.
          - apply Invariant_i_in_visited_IS. 
          - split.
-           + apply Invariant_estimated_node_unique_IS. 
+           + (* apply Invariant_estimated_node_unique_IS. *)
+             apply Invariant_all_nodes_unique_IS.
            + split. 
              * apply Invariant_visited_not_in_estimated_IS. 
              * split.
@@ -2035,13 +2223,14 @@ Admitted.
   Lemma dijkstra_one_step_preserves_all_invariants (s : state S) :
     dijkstra_invariants s -> dijkstra_invariants (D1 s).
   Proof. unfold dijkstra_invariants.
-         intros [i_in_vis [est_unique [vis_est_disjoint [vis_closest [right_equation_vis right_equation_est]]]]]. 
+         intros [i_in_vis [all_unique [vis_est_disjoint [vis_closest [right_equation_vis right_equation_est]]]]]. 
          split.
          - exact (dijkstra_one_step_preserves_Invariant_i_in_visited s i_in_vis). 
          - split.
-           + exact (dijkstra_one_step_preserves_Invariant_estimated_node_unique s est_unique).
+           + (*exact (dijkstra_one_step_preserves_Invariant_estimated_node_unique s est_unique). *)
+             exact (dijkstra_one_step_preserves_Invariant_all_nodes_unique s all_unique). 
            + split.
-             * exact (dijkstra_one_step_preserves_Invariant_visited_not_in_estimated s est_unique vis_est_disjoint). 
+             * exact (dijkstra_one_step_preserves_Invariant_visited_not_in_estimated s (dijkstra_one_step_preserves_Invariant_estimated_node_unique s all_unique) vis_est_disjoint).
              * split.
                -- exact (dijkstra_one_step_preserves_Invariant_visited_closer s vis_closest). 
                -- split.
@@ -2051,10 +2240,6 @@ Admitted.
   Qed. 
 
 
-    Local Definition DR      := dijkstra_raw S L eqS one plus rtr m n i.
-    Local Definition Dk      := dijkstra_k_steps S L eqS one plus rtr m n i.
-
-  
   Lemma dijkstra_invariants_Dk :
     ∀ k, dijkstra_invariants (Dk k).
   Proof. induction k. 
@@ -2072,13 +2257,9 @@ Admitted.
 
   (* Main result for dijkstra_raw
 
-    ∀ (w : S) (j : nat),
-      (w, j) ∈ visited S (dijkstra_raw S L eqS one plus rtr m n i)
-      → w =S= (I i j
-                ⊕ 
-               sum_fn zero plus (λ '(w', q), w' <| m q j)
-                                (visited S (dijkstra_raw S L eqS one plus rtr m n i)))
-   *) 
+   ∀ (w : S) (j : nat), (w, j) ∈ visited S DR 
+     → w =S= (I i j) ⊕ ⨁ (λ '(w', q), w' <| m q j) (visited S DR)
+  *) 
   Lemma Invariant_right_equation_visited_DR :
      Invariant_right_equation_visited DR.
   Proof. destruct dijkstra_invariants_DR as [_ [_ [_ [_ [A _]]]]].
@@ -2118,7 +2299,7 @@ Admitted.
   Admitted.
 
   
-  Lemma tmp1 :   
+  Lemma dijkstra_in_visited :   
     ∀ j, (j <? n) = true -> (D j, j) ∈ visited S DR.
   Proof. intros j A.
          unfold D. unfold dijkstra. unfold DR.
@@ -2133,46 +2314,125 @@ Admitted.
          exact (in_list_left_congruence _ _ _ H B). 
   Qed. 
 
-  Lemma tmp2 : 
-    ∀ j, 
-           (sum_fn zero plus (λ '(w', q), w' <| m q j) (visited S DR))
-           =S= 
-           (sum_fn zero plus (λ q, D q <| m q j) (list_enum n)).
-  Proof. intro j.
-         unfold D. unfold DR. unfold dijkstra. 
-  (*
-  (sum_fn zero plus (λ '(w', q), w' <| m q j) (visited S DR))
-  =S=
-  sum_fn zero plus (λ q : Node, visited_to_map S (λ _ : Node, zero) (visited S DR) (q <| m q j)) (list_enum n)
 
-   *) 
+  Lemma dijkstra_big_plus_equation_1 : ∀ l j f,
+    (⨁ (λ '(w', q), w' <| m q j) (map (λ q, (f q, q)) l))
+     =S= 
+    (⨁ (λ q, f q <| m q j) l). 
+  Proof. induction l; intros j f. 
+         - compute. apply refS.
+         - simpl.
+           assert (A := big_plus_cons _ _ eqS refS plus zero (λ '(w', q), w' <| m q j) (f a, a) ((map (λ q : Node, (f q, q))) l)).
+           assert (B := big_plus_cons _ _ eqS refS plus zero (λ q : Node, f q <| m q j) a l).
+           simpl in A, B.
+           assert (C : 
+                    ((f a <| m a j) ⊕ ⨁ (λ '(w', q), w' <| m q j) (map (λ q : Node, (f q, q)) l))
+                    =S=
+                      ((f a <| m a j) ⊕ ⨁ (λ q : Node, f q <| m q j) l)).
+           {
+             exact (cong _ _ _ _ (refS (f a <| m a j)) (IHl j f)).
+           } 
+           assert (D := trnS _ _ _ A C). apply symS in B. 
+           exact (trnS _ _ _ D B). 
+  Qed.
 
+  Lemma dijkstra_big_plus_equation_2 (j : Node) : 
+     (⨁ (λ '(w', q), w' <| m q j) (map (λ q, (D q, q)) (list_enum n)))
+     =S= 
+     (⨁ (λ q, D q <| m q j) (list_enum n)). 
+  Proof. apply dijkstra_big_plus_equation_1. Qed.
+
+    (*
+
+
+     Show : Permutation (visited S DR) (map (λ q, (D q, q)) (list_enum n))
+
+            Permutation (visited S DR) 
+                        (map (λ q, ((visited_to_map (λ x, zero) (visited S DR)) q, q)) (list_enum n))
+
+            Permutation lp 
+                        (map (λ q, ((visited_to_map (λ x, zero) lp) q, q)) ?l?)
+
+
+  Definition visited_to_map (g : Node -> S) (l : list (S * Node)) : Node -> S := 
+    List.fold_left (λ f '(v, q) x, if brel_eq_nat x q then v else f x) l g.
+
+     *)
+
+
+  Lemma dijkstra_permutation_lemma_general :
+    ∀ f pl l ,
+    Permutation l (map snd pl) -> 
+    Permutation pl 
+               (map (λ q : Node, (visited_to_map S f pl q, q)) l). 
+  Proof. intro f. induction pl as [ | [w q] pl'];
+           induction l as [ | q' l']; simpl; intro A; try auto. 
+         - apply Permutation_sym in A.
+           apply Permutation_nil_cons in A. elim A. 
+         - apply Permutation_nil_cons in A. elim A. 
+         - admit. 
   Admitted.
 
+  Lemma test (k : nat) :
+    Permutation (list_enum k) (map snd (visited S (dijkstra_k_steps S L eqS one plus rtr m k i (nat_pred k)))).
+  Proof. induction k.
+         - simpl. admit.
+         - simpl. admit.
+  Admitted.            
+
+  Lemma list_enum_permutation_lemma :
+    Permutation (list_enum n) (map snd (visited S DR)). 
+  Proof. unfold DR. unfold dijkstra_raw.
+         apply test.
+  Qed. 
+  
+  Lemma dijkstra_permutation_lemma :
+    Permutation
+      (visited S DR)
+      (map (λ q, (D q, q)) (list_enum n)).
+  Proof. unfold D, DR. unfold dijkstra. 
+         apply dijkstra_permutation_lemma_general.
+         apply list_enum_permutation_lemma. 
+  Qed. 
+
+  Lemma dijkstra_big_plus_equation_3 (j : Node) : 
+     (⨁ (λ '(w', q), w' <| m q j) (visited S DR))
+     =S= 
+     (⨁ (λ '(w', q), w' <| m q j) (map (λ q, (D q, q)) (list_enum n))).
+  Proof. apply big_plus_permutation; auto. 
+         apply dijkstra_permutation_lemma. 
+  Qed.
+  
+  Lemma dijkstra_big_plus_equation (j : Node) : 
+    (⨁ (λ '(w', q), w' <| m q j) (visited S DR))
+     =S= 
+    (⨁ (λ q, D q <| m q j) (list_enum n)).
+  Proof. assert (A := dijkstra_big_plus_equation_3 j).
+         assert (B := dijkstra_big_plus_equation_2 j).
+         exact (trnS _ _ _ A B). 
+  Qed. 
+    
 (*  Main non-classical result. 
 
               (D i)[j] = ((D i) <| A)[j] + (v i)[j] 
                        = (sum_q (D i)[q] <| A[q,j]) + (v i)[j] 
 
 *)
-
   Theorem dijkstra_solves_right_equation : 
-  ∀ j, j <? n = true -> D j =S= (I i j ⊕ (sum_fn zero plus (λ q, D q <| m q j) (list_enum n))).
+  ∀ j, j <? n = true -> D j =S= (I i j ⊕ (⨁ (λ q, D q <| m q j) (list_enum n))).
   Proof. intros j A. 
          assert (B := Invariant_right_equation_visited_DR).
          unfold Invariant_right_equation_visited in B.
-         assert (C' := B (D j) j).
-         assert (C := C' (tmp1 j A)).
-         assert (D := tmp2 j).
+         assert (C := B (D j) j (dijkstra_in_visited j A)).
+         assert (D := dijkstra_big_plus_equation j).
          assert (E := cong _ _ _ _ (refS (I i j)) D).
          exact (trnS _ _ _ C E).
-  Qed.          
+  Qed.
+
 
 End Theory. 
 
 (*
-
-
 Note: These assumptions are never used in Invariant_right_equation_visited_DR: 
 
     (zero_lt_n : Nat.ltb 0 n = true)
@@ -2180,35 +2440,6 @@ Note: These assumptions are never used in Invariant_right_equation_visited_DR:
 
 
 Check Invariant_right_equation_visited_DR.
-
-Invariant_right_equation_visited_DR
-     : ∀ 
-(S L : Type) 
-(eqS : brel S) 
-(eqL : brel L) 
-(zero one : S) 
-(plus : binary_op S) 
-(rtr : rtr_type L S),
-brel_congruence S eqS eqS
-→ brel_reflexive S eqS
-→ brel_symmetric S eqS
-→ brel_transitive S eqS
-→ brel_reflexive L eqL
-→ bop_congruence S eqS plus
-→ bop_associative S eqS plus
-→ bop_commutative S eqS plus
-→ bop_selective S eqS plus
-→ bop_is_id S eqS plus zero
-→ bop_is_ann S eqS plus one
-→ rtr_congruence L S eqL eqS rtr
-→ srt_absorptive eqS plus rtr
-→ ∀ (m : Node → Node → L) 
-   (n nat) 
-   (i : Node),
-   (∀ v v' j j' : nat, brel_eq_nat v v' = true → brel_eq_nat j j' = true → eqL (m v j) (m v' j') = true)
-   → Invariant_right_equation_visited S L
-          eqS zero one plus rtr m i
-          (DR S L eqS one plus rtr m n i)
 
 *) 
   

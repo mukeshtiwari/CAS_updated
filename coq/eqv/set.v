@@ -281,7 +281,35 @@ Lemma brel_set_congruence : brel_congruence (finite_set S) (brel_set eq) (brel_s
 Proof. apply brel_congruence_self. 
        apply brel_set_symmetric; auto.  
        apply brel_set_transitive; auto.  
-Defined. 
+Defined.
+
+Lemma brel_set_map_congruence
+  (f g : S -> S)
+  (con_f : ∀ s t : S, eq s t = true → eq (f s) (f t) = true)
+  (con_g : ∀ s t : S, eq s t = true → eq (g s) (g t) = true) 
+  (eq_fg : ∀ x y : S, eq x y = true -> eq (f x) (g y) = true):                             
+  ∀ (X Y : finite_set S),
+    brel_set eq X Y = true -> brel_set eq (List.map f X) (List.map g Y) = true. 
+Proof. intros X Y A. 
+       apply brel_set_elim_prop in A.
+       destruct A as [A B].
+       apply brel_set_intro_prop. split; intros a C. 
+       - apply in_set_map_elim in C; auto.
+         apply in_set_map_intro; auto.
+         + destruct C as [b [C D]].
+           exists b. split.
+           * apply A; auto. 
+           * assert (E := eq_fg _ _ (refS b)).
+             exact (tranS _ _ _ D E). 
+       - apply in_set_map_elim in C; auto.
+         apply in_set_map_intro; auto.
+         + destruct C as [b [C D]].
+           exists b. split.
+           * apply B; auto. 
+           * assert (E := eq_fg _ _ (refS b)).
+             apply symS in E. 
+             exact (tranS _ _ _ D E). 
+Qed.          
 
 Lemma brel_set_not_trivial (s : S) : 
    brel_not_trivial (finite_set S) (brel_set eq) (λ (l : finite_set S), if brel_set eq nil l then (s :: nil) else nil). 

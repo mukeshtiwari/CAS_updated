@@ -5,13 +5,13 @@ Require Import Coq.Lists.List.
 
 Require Import CAS.coq.common.compute. 
 Require Import CAS.coq.eqv.properties.
-Require Import CAS.coq.eqv.theory. 
+Require Import CAS.coq.eqv.theory.
 
 Require Import CAS.coq.sg.and.
 Require Import CAS.coq.sg.or. 
 
 Open Scope list_scope.
-
+Close Scope nat_scope. (* why? *) 
 Section Computation.
 
 Definition in_set : ∀ {S : Type},  brel S -> brel2 (finite_set S) S
@@ -189,6 +189,42 @@ Proof. intros X a b E.
        rewrite (in_set_right_congruence _ _ _ E H1) in H2. discriminate H2. 
        apply symS in E. rewrite (in_set_right_congruence _ _ _ E H2) in H1. discriminate H1. 
 Qed.
+
+
+Lemma in_set_map_intro :
+  ∀ (f : S -> S)
+    (cong : ∀ s t, r s t = true -> r (f s) (f t) = true)
+    (X : finite_set S) (a : S),
+    { b : S & (in_set r X b = true) * (r a (f b) = true) } ->
+       in_set r (map f X) a = true.
+Proof.  intros f cong. induction X as [ | x X]; intros a [b [A B]].
+        - compute in A. discriminate A. 
+        - simpl. apply bop_or_intro.
+          apply in_set_cons_elim in A.
+          destruct A as [A | A].
+          + left. assert (C := cong _ _ A).
+            apply symS in C.
+            exact (tranS _ _ _ B C). 
+          + assert (C : {b : S & (in_set r X b = true) * (r a (f b) = true)}).
+            {
+              exists b; auto.
+            }
+            right. exact (IHX _ C). 
+Qed.
+
+Lemma in_set_map_elim : ∀ (f : S -> S) (X : finite_set S) (a : S),
+    in_set r (map f X) a = true ->
+       { b : S & (in_set r X b = true) * (r a (f b) = true) }.
+Proof.  intro f. induction X as [ | x X]; intros a A.
+        - compute in A. discriminate A. 
+        - simpl in A. apply bop_or_elim in A.
+          destruct A as [A | A].
+          + exists x. split; auto.
+            apply in_set_cons_intro; auto. 
+          + destruct (IHX _ A) as [b [B C]].
+            exists b; split; auto.
+            apply in_set_cons_intro; auto. 
+Defined. 
 
 
 

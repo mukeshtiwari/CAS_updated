@@ -261,7 +261,7 @@ Proof. intros a X Y H1.
        apply symA in H3.
        exact (trnA _ _ _ H3 (trnA _ _ _ H2 H4)).
 Qed. 
-*)        
+
      Definition sum_fn
                {V : Type}               
                {R : Type}
@@ -269,7 +269,7 @@ Qed.
                (plusR : binary_op R)                
                (f : V -> R)
                (row : list V) : R := fold_right plusR zeroR (map f row). 
-
+*)        
 (*
   Lemma sum_fn_set_congruence
     (A : Type)
