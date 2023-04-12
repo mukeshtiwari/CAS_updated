@@ -48,6 +48,105 @@ Proof. intros a b X H.
        destruct H as [H | H]; auto.
 Qed.
 
+Lemma in_list_cons_false_elim : ∀ (a b : S) (X : finite_set S),
+    in_list eq (a :: X) b = false -> ((eq a b = false) * (in_list eq X b = false)). 
+Proof. intros a b X H.
+       simpl in H. apply bop_or_false_elim in H.
+       destruct H as [H G].
+       split; auto.
+       case_eq(eq a b); intro I; auto.
+       apply sym in I. rewrite I in H.
+       exact H. 
+Qed.
+
+Lemma in_list_map_intro  (T : Type) (eqT : brel T) (f : S -> T) 
+  (f_cong : ∀ s s',  eq s s' = true -> eqT (f s) (f s') = true) : 
+  ∀ (a : S) (X : list S),
+    in_list eq X a = true -> in_list eqT (map f X) (f a) = true.
+Proof. intro a. induction X; intro A.
+       - compute in A. discriminate A.
+       - simpl. apply bop_or_intro.
+         apply in_list_cons_elim in A.
+         destruct A as [A | A].
+         + left. apply f_cong; auto. 
+         + right. apply IHX; auto. 
+Qed.
+
+Lemma in_list_map_false_intro  (T : Type) (eqT : brel T)
+  (symT : brel_symmetric T eqT) (f : S -> T) 
+  (one2one : ∀ s s', eqT (f s) (f s') = true -> eq s s' = true) : 
+  ∀ (a : S) (X : list S),
+    in_list eq X a = false -> in_list eqT (map f X) (f a) = false.
+Proof. intro a. induction X; intro A.
+       - compute; auto. 
+       - simpl. apply in_list_cons_false_elim in A.
+         destruct A as [A B]. 
+         apply bop_or_false_intro.
+         + case_eq(eqT (f a) (f a0)); intro C; auto.
+           apply symT in C. rewrite (one2one _ _ C) in A.
+           discriminate A. 
+         + apply IHX; auto. 
+Qed.
+
+
+Lemma in_list_map_elim  (T : Type) (eqT : brel T) (f : S -> T) 
+  (one2one : ∀ s s', eqT (f s) (f s') = true -> eq s s' = true) : 
+  ∀ (a : S) (X : list S),
+    in_list eqT (map f X) (f a) = true -> in_list eq X a = true.
+Proof. intro a. induction X; intro A.
+       - compute in A. discriminate A.
+       - simpl in A. apply bop_or_elim in A. 
+         apply in_list_cons_intro.
+         destruct A as [A | A].
+         + left. apply sym. apply one2one; auto. 
+         + right. apply IHX; auto. 
+Qed.
+
+
+Lemma in_list_filter_intro (f : S -> bool)
+  (f_cong : ∀ s s',  eq s s' = true -> (f s) = (f s')) 
+  (a : S):
+   ∀ (X : list S),    
+    f a = true -> in_list eq X a = true -> in_list eq (filter f X) a = true.
+Proof. induction X; intros A B.
+       - compute in B. discriminate B.
+       - apply in_list_cons_elim in B.
+         simpl. 
+         destruct B as [B | B].
+         + assert (C : f a0 = true).
+           {
+             apply f_cong in B.
+             rewrite B. exact A. 
+             } 
+           rewrite C.
+           apply in_list_cons_intro.
+           left. auto. 
+         + case_eq(f a0); intro C.
+           * apply in_list_cons_intro.
+             right. apply IHX; auto. 
+           * apply IHX; auto. 
+Qed.
+
+(*
+Lemma in_set_filter_elim :    ∀ (g : bProp S) (X : finite_set S) (a : S),
+    bProp_congruence S r g ->
+    in_set r (filter g X) a = true -> (g a = true) * (in_set r X a = true).
+Proof. intros g X a cong H.
+       induction X.  compute in H.  discriminate H.
+       unfold filter in H. fold (@filter S) in H. 
+       unfold in_set.  fold (@in_set S).
+       case_eq(g a); intro J; case_eq(r a a0); intro K; case_eq(g a0); intro L; auto. 
+       split; auto. simpl. rewrite L in H. unfold in_set in H. fold (@in_set S) in H. 
+       rewrite K in H. simpl in H.  apply IHX; auto. 
+       split; auto; simpl. rewrite L in H. apply IHX; auto.
+       rewrite (cong _ _ K) in J. rewrite L in J. discriminate J.
+       rewrite L in H. destruct (IHX H) as [F _]. rewrite F in J. discriminate J. 
+       rewrite L in H.
+       unfold in_set in H. fold (@in_set S) in H. rewrite K in H. simpl in H. 
+       destruct (IHX H) as [F _]. rewrite F in J. discriminate J.
+       rewrite L in H. destruct (IHX H) as [F _]. rewrite F in J. discriminate J.
+Qed.
+*) 
 
 Lemma in_list_concat_intro : ∀ (X Y : list S) (a : S),
      (in_list eq X a = true) + (in_list eq Y a = true) → in_list eq (X ++ Y) a = true. 
@@ -116,6 +215,9 @@ Proof. induction X; induction X'; intros Y Y' A B.
                 ++++ exact C. 
                 ++++ exact B. 
 Qed.
+
+
+
 
 Lemma brel_list_map_intro
       (f g : S -> S)

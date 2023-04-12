@@ -94,7 +94,8 @@ CAS=\
    coq/tr/left/lift.v \
    coq/tr/left/product.v \
    coq/tr/left/add_ann.v  \
-   coq/tr/left/go.v  \
+   coq/tr/left/sum.v  \
+   coq/tr/left/choice_product.v  \
    coq/bs/properties.v \
    coq/bs/structures.v \
    coq/bs/theory.v \
