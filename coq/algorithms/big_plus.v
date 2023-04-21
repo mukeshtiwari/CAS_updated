@@ -11,9 +11,9 @@ From CAS Require Import
      coq.eqv.set 
      coq.sg.properties
      coq.sg.union
-     coq.tr.properties
-     coq.algorithms.list_congruences     
-     coq.algorithms.matrix_definition.
+     coq.ltr.properties
+     coq.algorithms.list_congruences. 
+
 
 Section Computation.
   
@@ -163,7 +163,8 @@ Section Theory.
       (f a) ⊕ (⨁_(l) f).
   Proof. intros a l. apply refR. Qed.
 
-  Lemma fold_right_extract_plus (plusID : bop_is_id R eqR plus zero) (v : R) (l : list R) : 
+  Lemma fold_right_extract_plus
+    (plusID : bop_is_id R eqR plus zero) (v : R) (l : list R) : 
     fold_right plus v l
     =r=
     (fold_right plus zero l) ⊕ v.
@@ -174,27 +175,19 @@ Section Theory.
            exact (trnR _ _ _ B A). 
   Qed. 
            
-  Lemma big_plus_distributes_over_concat (plusID : bop_is_id R eqR plus zero) (f : V -> R) (l₁ l₂ : list V) : 
+  Lemma big_plus_distributes_over_concat
+    (plusID : bop_is_id R eqR plus zero) (f : V -> R) (l₁ l₂ : list V) : 
     ⨁_(l₁ ++ l₂) f 
     =r=
     (⨁_(l₁) f) ⊕ (⨁_(l₂) f).
     Proof. unfold big_plus.
            rewrite map_app. 
            rewrite fold_right_app.
-           (* Show 
-             fold_right plus (fold_right plus zero (map f l₂)) (map f l₁) 
-             =r=
-             plus (fold_right plus zero (map f l₁)) (fold_right plus zero (map f l₂))
-
-             Proof: 
-             fold_right plus (fold_right plus zero (map f l₂)) (map f l₁) 
-             =r= {fold_right_extract_plus} 
-             plus (fold_right plus zero (map f l₂)) (fold_right plus zero (map f l₁)).
-            *)
            apply fold_right_extract_plus; auto. 
     Qed.
 
-  Lemma big_plus_shift_middle (plusID : bop_is_id R eqR plus zero) (f : V -> R) (v : V) (l₁ l₂ : list V) : 
+  Lemma big_plus_shift_middle
+      (plusID : bop_is_id R eqR plus zero) (f : V -> R) (v : V) (l₁ l₂ : list V) : 
     ⨁_(l₁ ++ [v] ++ l₂) f 
     =r=
     (f v) ⊕ (⨁_(l₁ ++ l₂) f ).
@@ -215,9 +208,7 @@ Section Theory.
          assert (M := congrP _ _ _ _ (refR (f v)) C).
          exact (trnR _ _ _ L M).
   Qed.
-
  
-
   Lemma big_plus_permutation (f : V -> R) :
     ∀ (l₁ l₂ : list V), Permutation l₁ l₂ -> (⨁_(l₁) f) =r= (⨁_(l₂) f).
   Proof. apply (Permutation_ind_bis (fun l1 => fun l2 => (⨁_(l1) f) =r= (⨁_(l2) f))). 
@@ -255,40 +246,31 @@ Section Theory.
   Qed.
 
 
-
-
 (************** BIG PLUS OVER SETS ***************************)
 
   Local Definition de := uop_duplicate_elim eqV.
-
   Local Notation "x =S= y" := (brel_set eqV x y = true) (at level 70).
 
-(*
+  Fixpoint no_duplicates {T : Type} (r : brel T) (X : finite_set T) : bool := 
+    match X with
+    | [] => true 
+    | a :: Y => if in_set r Y a then false else no_duplicates r Y 
+    end.
 
-uop_duplicate_elim = 
-λ (S : Type) (r : brel S), fix f (x : finite_set S) : finite_set S := 
-match x with
-| [] => []
-| a :: y => if in_set r y a then f y else a :: f y
-end
+  Lemma no_duplicates_cons_intro (v : V) (X : finite_set V) :
+     in_set eqV X v = false -> no_duplicates eqV X = true -> 
+        no_duplicates eqV (v :: X) = true. 
+  Proof. intros A B; simpl. 
+         rewrite A. exact B. 
+  Qed.
 
-  brel_subset = 
-fix f (S : Type) (r : brel S) (set1 set2 : finite_set S) {struct set1} : bool :=
-  match set1 with
-  | [] => true
-  | a :: rest => and.bop_and (in_set r set2 a) (f S r rest set2)
-  end
-
-  brel_set = λ (S : Type) (r : brel S), brel_and_sym (brel_subset r)
-
- *)
-
-Fixpoint no_duplicates {T : Type} (r : brel T) (X : finite_set T) : bool := 
-match X with
-| [] => true 
-| a :: Y => if in_set r Y a then false else no_duplicates r Y 
-end.
-
+  Lemma no_duplicates_cons_elim (v : V) (X : finite_set V) :
+    no_duplicates eqV (v :: X) = true ->
+    (in_set eqV X v = false) * (no_duplicates eqV X = true). 
+  Proof. intros A. simpl in A.
+         case_eq(in_set eqV X v); intro B; rewrite B  in A; auto. 
+         - discriminate A. 
+  Qed.            
 
   Lemma duplicate_elim_eliminates_duplicates : ∀ X, no_duplicates eqV (de X) = true. 
   Proof. unfold de. induction X; simpl; try auto. 
@@ -299,7 +281,8 @@ end.
            * apply in_set_uop_duplicate_elim_elim in B.
              rewrite A in B. discriminate B. 
            * exact IHX.
-  Qed. 
+  Qed.
+  
   Lemma  duplicate_elim_preserves_equality : ∀ X, X =S= (de X). 
   Proof. unfold de. intro X. 
          apply brel_set_intro_prop; auto; split; intros a A. 
@@ -318,25 +301,54 @@ end.
          apply brel_set_intro; auto.
   Qed.
 
+  
   Lemma equal_sets_with_no_duplicates_are_permuted_lists :
-    ∀ X Y,  no_duplicates eqV X = true -> no_duplicates eqV Y = true ->
-            X =S= Y -> Permutation X Y.
+    ∀ (X Y : finite_set V),
+      no_duplicates eqV X = true -> no_duplicates eqV Y = true ->
+               X =S= Y -> Permutation X Y.
   Proof. induction X; induction Y; intros A B C. 
          - exact (@perm_nil V). 
          - compute in C. discriminate C.
          - compute in C. discriminate C.
-         - case_eq(eqV a a0); intro E.
-           + assert (F : X =S= Y). admit.
-             assert (G : no_duplicates eqV X = true). admit.
-             assert (H : no_duplicates eqV Y = true). admit.
-             assert (I := IHX _ G H F).
+         - apply no_duplicates_cons_elim in A, B.
+           destruct A as [A A']; destruct B as [B B'].
+           case_eq(eqV a a0); intro E.
+           + assert (F : X =S= Y).
+             {
+               apply brel_set_elim_prop in C; auto.
+               destruct C as [C D].
+               apply brel_set_intro_prop; auto.
+               split; intros v F.
+               * assert (G : in_set eqV (a :: X) v = true).
+                 {
+                   apply in_set_cons_intro; auto. 
+                 } 
+                 assert (H := C _ G).
+                 apply in_set_cons_elim in H; auto.
+                 destruct H as [H | H]; auto. 
+                 -- assert (I := trnV _ _ _ E H). apply symV in I. 
+                    rewrite (in_set_right_congruence _ _ symV trnV _ _ X I F) in A.
+                    discriminate A. 
+               * assert (G : in_set eqV (a0 :: Y) v = true).
+                 {
+                   apply in_set_cons_intro; auto. 
+                 } 
+                 assert (H := D _ G).
+                 apply in_set_cons_elim in H; auto.
+                 destruct H as [H | H]; auto. 
+                 -- apply symV in E.
+                    assert (I := trnV _ _ _ E H). apply symV in I.
+                    rewrite (in_set_right_congruence _ _ symV trnV _ _ Y I F) in B.
+                    discriminate B. 
+             }
+             assert (I := IHX _ A' B' F).
              (* perm_skip : ∀ (x : A) (l l' : list A), Permutation l l' → Permutation (x :: l) (x :: l') 
                 Note: this is using =, but we need to use eqV.  So, need to define 
                 a version Permutation parameterized by an equality. 
              *)
              admit. 
-           + assert (F : in_set eqV Y a = true). admit.
-             assert (G : in_set eqV X a0 = true). admit. 
+           +
+             
 (*
             Need to define a new function for this case .... 
 
@@ -348,6 +360,116 @@ end.
   | perm_trans : ∀ l l' l'' : list A, Permutation l l' → Permutation l' l'' → Permutation l l''.
 *)              
   Admitted.
+
+
+  Inductive PermutationEqv : list V → list V → Prop :=
+    perm_eqv_nil : PermutationEqv [] []
+  | perm_eqv_skip : ∀ (x x' : V) (l l' : list V), eqV x x' = true → PermutationEqv l l' → PermutationEqv (x :: l) (x' :: l')
+  | perm_eqv_swap : ∀ (x x' y y' : V) (l : list V), eqV x x' = true → eqV y y' = true → PermutationEqv (y :: x :: l) (x' :: y' :: l)
+  | perm_eqv_trans : ∀ l l' l'' : list V, PermutationEqv l l' → PermutationEqv l' l'' → PermutationEqv l l''
+  .
+
+
+  Fixpoint list_remove l a :=
+    match l with
+    | [] => []
+    | b :: l' => if eqV a b then l' else b :: (list_remove l' a)
+    end.
+
+  Local Infix "/" := (list_remove). 
+
+
+  Lemma remove_permutation (v : V) :
+    ∀ X, in_set eqV X v = true -> 
+         PermutationEqv X (v :: (X / v)).
+  Proof. induction X; intro A.
+         - compute in A. discriminate A.
+         - apply in_set_cons_elim in A; auto.
+           destruct A as [A | A].
+           + admit. 
+           + assert (B := IHX A).
+             assert (C : PermutationEqv (a :: X) (a :: (v :: X / v))).
+             {
+               apply perm_eqv_skip; auto. 
+             }
+             assert (D : PermutationEqv (a :: v :: X / v) (v :: (a :: X) / v)).
+             {
+               assert (E := perm_eqv_swap _ _ _ _ (X / v) (refV a) (refV v)).
+               admit. 
+             } 
+             admit.
+  Admitted.
+  
+  Lemma equal_sets_with_no_duplicates_are_permuted_lists_VII :
+    ∀ n (X Y : finite_set V),
+      n = length X -> 
+      no_duplicates eqV X = true -> no_duplicates eqV Y = true ->
+               X =S= Y -> PermutationEqv X Y.
+  Proof. induction n; intros X Y XL A B C.
+         - destruct X; destruct Y.
+           + exact perm_eqv_nil. 
+           + compute in C. discriminate C.
+           + compute in C. discriminate C.
+           + simpl in XL. admit. 
+         - destruct X; destruct Y.
+           + compute in XL. admit. 
+           + compute in C. discriminate C.
+           + compute in C. discriminate C.
+           + apply no_duplicates_cons_elim in A, B.
+             destruct A as [A A']; destruct B as [B B'].
+             assert (XL' : n = length X). admit. 
+             case_eq(eqV v v0); intro E.
+             * assert (F : X =S= Y).
+               {
+                 apply brel_set_elim_prop in C; auto.
+                 destruct C as [C D].
+                 apply brel_set_intro_prop; auto.
+                 split; intros v' F.
+                 -- assert (G : in_set eqV (v :: X) v' = true).
+                    {
+                      apply in_set_cons_intro; auto. 
+                    } 
+                    assert (H := C _ G).
+                    apply in_set_cons_elim in H; auto.
+                    destruct H as [H | H]; auto. 
+                    ++ assert (I := trnV _ _ _ E H). apply symV in I. 
+                       rewrite (in_set_right_congruence _ _ symV trnV _ _ X I F) in A.
+                       discriminate A. 
+                 -- assert (G : in_set eqV (v0 :: Y) v' = true).
+                    {
+                      apply in_set_cons_intro; auto. 
+                    } 
+                    assert (H := D _ G).
+                    apply in_set_cons_elim in H; auto.
+                    destruct H as [H | H]; auto. 
+                    ** apply symV in E.
+                       assert (I := trnV _ _ _ E H). apply symV in I.
+                       rewrite (in_set_right_congruence _ _ symV trnV _ _ Y I F) in B.
+                       discriminate B. 
+               }
+               assert (I := IHn _ _ XL' A' B' F).
+               (* perm_skip : ∀ (x : A) (l l' : list A), Permutation l l' → Permutation (x :: l) (x :: l') 
+                Note: this is using =, but we need to use eqV.  So, need to define 
+                a version Permutation parameterized by an equality. 
+                *)
+               admit. 
+             * assert (F : (v :: (X / v0)) =S= (v :: (Y / v))). admit.
+               assert (G : n = length (v :: (X / v0))). admit.
+               assert (I : no_duplicates eqV (v :: (X / v0)) = true). admit.
+               assert (J : no_duplicates eqV (v :: (Y / v)) = true). admit.
+               assert (K := IHn _ _ G I J F).
+               assert (L : PermutationEqv (v0 :: v :: (X / v0)) (v0:: v :: (Y / v))).
+               {
+                 (* use perm_skip *) 
+                 admit. 
+               }
+               assert (M : PermutationEqv (v :: X) (v0 :: v :: (X / v0))). admit.
+               assert (N : PermutationEqv (v0 :: v :: (Y / v)) (v0 :: Y)). admit.
+               assert (O := perm_eqv_trans _ _ _ M L).
+               exact (perm_eqv_trans _ _ _ O N). 
+  Admitted.
+  
+  
   
   Lemma equal_sets_are_permuted_lists : ∀ X Y,  X =S= Y -> Permutation (de X) (de Y).  
   Proof. intros X Y A.
@@ -392,21 +514,20 @@ end.
   Qed. 
 
 
-    Lemma big_plus_set_ignore_cons (f : V -> R) :
+  Lemma big_plus_set_ignore_cons (f : V -> R) :
     ∀ a X,  a ∈ X -> 
       ⨁_{a :: X} f =r= ⨁_{X} f. 
-    Proof. intros a X A.
+  Proof. intros a X A.
            unfold big_plus_set.
            apply uop_duplicate_elim_lemma_3 in A.
            rewrite A. apply refR. 
-    Qed. 
+  Qed. 
 
   Lemma big_plus_set_distributes_over_union
     (plusID : bop_is_id R eqR plus zero)
     (g : V -> R)
     (cong_g : ∀ i j, eqV i j = true -> (g i) =r= (g j)):
-    ∀ X Y : finite_set V, 
-       (⨁_{X} g) ⊕ (⨁_{Y} g) =r= ⨁_{X ∪ Y} g. 
+    ∀ X Y,  (⨁_{X} g) ⊕ (⨁_{Y} g) =r= ⨁_{X ∪ Y} g. 
   Proof. induction X; intro Y.
          - unfold big_plus_set at 1. simpl.
            unfold big_plus. simpl.

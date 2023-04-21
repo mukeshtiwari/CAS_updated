@@ -84,18 +84,16 @@ CAS=\
    coq/po/minset_subset.v \
    coq/po/set_lte.v \
    coq/po/dual.v \
-   coq/tr/properties.v \
-   coq/tr/structures.v \
-   coq/tr/left/from_sg.v \
-   coq/tr/left/plus_one.v \
-   coq/tr/left/cons.v \
-   coq/tr/left/singleton.v \
-   coq/tr/left/insert.v \
-   coq/tr/left/lift.v \
-   coq/tr/left/product.v \
-   coq/tr/left/add_ann.v  \
-   coq/tr/left/sum.v  \
-   coq/tr/left/choice_product.v  \
+   coq/ltr/properties.v \
+   coq/ltr/structures.v \
+   coq/ltr/classify.v \
+   coq/ltr/cast.v \
+   coq/ltr/cons.v \
+   coq/ltr/lift.v \
+   coq/ltr/no_left_zero_plus.v \
+   coq/rtr/properties.v \
+   coq/sg_ltr/properties.v \
+   coq/sg_rtr/properties.v \
    coq/bs/properties.v \
    coq/bs/structures.v \
    coq/bs/theory.v \
@@ -142,7 +140,9 @@ CAS=\
    coq/algorithms/matrix_definition.v \
    coq/algorithms/matrix_algorithms.v \
    coq/algorithms/matrix_addition.v \
-   coq/algorithms/matrix_multiplication.v \
+   coq/algorithms/rtr_matrix_multiplication.v \
+   coq/algorithms/ltr_matrix_multiplication.v \
+   coq/algorithms/bs_matrix_multiplication.v \
    coq/algorithms/weighted_path.v \
    coq/algorithms/dijkstra/general.v \
    coq/algorithms/wrapper.v 

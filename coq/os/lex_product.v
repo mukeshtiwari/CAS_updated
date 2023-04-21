@@ -22,8 +22,6 @@ Require Import CAS.coq.sg.or.
 Require Import CAS.coq.os.properties.
 Require Import CAS.coq.os.structures.
 
-Check equiv. 
-
 Definition bop_qo_left_cancellative (S : Type) (lte : brel S) (b : binary_op S)
     := ∀ s t u : S, equiv lte (b s t) (b s u) = true -> (equiv lte t u = true) + (incomp lte t u = true).
 

@@ -30,9 +30,8 @@ Section Compute.
     end.
 
 
-    (* note: this does not work well as a bottom-up combinator 
-       over bi-semigroups sincre requires same 
-       additive component. 
+ (* Note : ltr_choice_product could be derived from more basic 
+   combinators. 
 
     Definition ltr_co_pair
       {A B C : Type }
@@ -72,7 +71,15 @@ Section Compute.
     (g : ltr_type C D) :         (* C -> D -> D *)
     ltr_type (A + C) (B * D) :=  (* (A + C) -> (B * D) -> (B * D) *) 
       ltr_co_pair (ltr_left_product f) (ltr_right_product g). 
-  
+
+
+    However, the ltr_co_pair combinator does not 
+    work well as as a bottom-up combinator for semigroup transforms. 
+    Why? Suppose (S1, L1, +_1, |1>) and (S2, L2, +_2, |2>) 
+    are semigroup transforms and we want to combine them so 
+    that the new multiplicative operation is 
+    "ltr_co_pair |1> |2>". Then we have to make sure that S1=S2, 
+     which is difficult. 
     *)
 
 End Compute.   
@@ -253,6 +260,7 @@ Lemma ltr_choice_product_not_left_cancellative_right
 End Theory.
 
 Section ACAS.
+
 
 (*
 Definition ltr_cons_proofs (S : Type) (eq : brel S) (s : S) (eqvP : eqv_proofs S eq) :

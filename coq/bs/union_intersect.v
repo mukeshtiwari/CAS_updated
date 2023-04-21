@@ -529,7 +529,6 @@ Definition bs_intersect_union_with_zero_properties {S : Type} (c : cas_constant)
 bs_add_zero_properties c
   (bs_intersect_union_properties (eqv_witness eqv)).
 
-Print bs_intersect_union_properties. 
 
 Definition bs_union_intersect_with_one {S : Type} (c : cas_constant)
   (eqv : @eqv S) : @bs (with_constant (finite_set S)) :=
@@ -544,8 +543,6 @@ let rS := eqv_eq eqv in
 ; bs_props        := bs_union_intersect_with_one_properties c eqv
 ; bs_ast          := Ast_bs_add_one (c, Ast_union_intersect (eqv_ast eqv))
 |}.
-
-Check (fun S : Type => @bs_intersect_union_with_zero_properties S). 
 
 Definition bs_intersect_union_with_zero {S : Type} (c : cas_constant)
   (eqv : @eqv S) : @bs (with_constant (finite_set S)) :=

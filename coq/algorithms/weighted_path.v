@@ -10,16 +10,17 @@ From CAS Require Import
   coq.eqv.nat
   coq.eqv.product   
   coq.sg.properties
-  coq.tr.properties
-  coq.st.properties    
+  coq.ltr.properties
+  coq.sg_ltr.properties    
   coq.sg.and
   coq.sg.union  
   coq.algorithms.list_congruences
   coq.algorithms.big_plus
   coq.algorithms.matrix_definition
   coq.algorithms.matrix_algorithms
-  coq.algorithms.matrix_addition  
-  coq.algorithms.matrix_multiplication. 
+  coq.algorithms.matrix_addition
+  coq.algorithms.bs_matrix_multiplication
+  coq.algorithms.ltr_matrix_multiplication. 
 
 
 Section Computation.
@@ -78,8 +79,8 @@ Variables
   (idP : bop_is_id R eqR plus zero)
 
   (ltr : ltr_type L R)    
-  (ltr_cong : ltr_congruence L R eqL eqR ltr)
-  (ann : ltr_is_ann L R eqR ltr zero)
+  (ltr_cong : A_ltr_congruence eqL eqR ltr)
+  (ann : A_ltr_is_ann eqR ltr zero)
 .
       
   Definition is_eqR a b       := eqR a b = true.
@@ -462,7 +463,7 @@ Qed.
 
   Lemma fold_right_label_list_congruence
         (f : L → R → R)
-        (f_cong : ltr_congruence L R eqL eqR f) : 
+        (f_cong : A_ltr_congruence eqL eqR f) : 
       ∀ (l₁ l₂ : label_list) (v : R), (l₁ =ll= l₂) → fold_right f v l₁ =r= fold_right f v l₂.
     Proof. induction l₁;  destruct l₂. 
          + intros v A. compute. apply refR. 
@@ -608,13 +609,12 @@ Qed.
      fun a => fun p => a :: p. 
 
    Lemma ltr_extend_path_congruence :
-     ltr_congruence weighted_arc
-                    weighted_path
+     A_ltr_congruence 
                     eq_weighted_arc
                     eq_weighted_path
                     ltr_extend_path.
-   Proof. unfold ltr_congruence in ltr_cong.
-          unfold ltr_congruence.
+   Proof. unfold A_ltr_congruence in ltr_cong.
+          unfold A_ltr_congruence.
           intros l1 l2.
           induction s1 as [ | [[i j] l] s1];
           induction s2 as [ | [[i' j'] l'] s2];
@@ -634,13 +634,12 @@ Qed.
      left_matrix_exponentiation zeroP oneP plusP ltr_extend_paths n (path_adjacency_arcs m) k.
 
    Lemma ltr_extend_paths_congruence :
-     ltr_congruence weighted_arc
-                    weighted_path_set
+     A_ltr_congruence 
                     eq_weighted_arc
                     eq_weighted_path_set
                     ltr_extend_paths.
-   Proof. unfold ltr_congruence in ltr_cong.
-          unfold ltr_congruence. 
+   Proof. unfold A_ltr_congruence in ltr_cong.
+          unfold A_ltr_congruence. 
           intros l1 l2 s1 s2 A B.
           unfold eq_weighted_path_set. 
           unfold ltr_extend_paths.
@@ -1102,7 +1101,7 @@ Qed.
   Qed. 
          
   Lemma LW_over_extend_paths
-    (LD : slt_distributive eqR plus ltr) 
+    (LD : A_sg_ltr_distributive eqR plus ltr) 
     (m : functional_matrix L) 
     (i q : nat) : 
    ∀ (X : weighted_path_set),
@@ -1275,7 +1274,7 @@ Qed.
 Admitted.             
   
  Lemma LWP_distributes_over_left_matrix_mul
-   (LD : slt_distributive eqR plus ltr) 
+   (LD : A_sg_ltr_distributive eqR plus ltr) 
    (m : functional_matrix L) (n : nat)
    (P : functional_matrix weighted_path_set): 
     LWP[ A[ m ] *[| n |]> P ] =M= (m *[ n ]> LWP[ P ]).
@@ -1388,7 +1387,7 @@ Qed.
   (*Unset Printing Notations.*)
   
   Lemma LWP_distributes_over_left_exponentiation_base_case
-       (LD : slt_distributive eqR plus ltr) 
+       (LD : A_sg_ltr_distributive eqR plus ltr) 
        (m : functional_matrix L) (cL : CongL m) (n : nat) :  
     LWP[ A[ m ] *[| n |]> [IP] ] =M= (m *[ n ]> [I]).
   Proof.  
@@ -1490,7 +1489,7 @@ Qed.
     Qed. 
     
   Lemma LWP_distributes_over_left_exponentiation
-       (LD : slt_distributive eqR plus ltr) 
+       (LD : A_sg_ltr_distributive eqR plus ltr) 
        (m : functional_matrix L) (n : nat)
        (cL : CongL m) : 
        ∀ k, LWP[ A[ m ] *[| n |]> (Pk[ m , k, n ]) ] =M= (m *[ n ]> LWP[ Pk[ m , k, n ] ]).
@@ -1590,7 +1589,7 @@ Qed.
   Qed. 
 
   Lemma  base_case_of_fundamental_theorem_on_paths_of_length_k
-       (LD : slt_distributive eqR plus ltr) : 
+       (LD : A_sg_ltr_distributive eqR plus ltr) : 
         ∀ m n, LWP[ Pk[ m, 1, n ] ] =M= ((m *[ n ]> LWP[ Pk[ m, 0, n ] ])).
   Proof. intros m n. 
          unfold matrix_of_k_length_paths.         
@@ -1599,7 +1598,7 @@ Qed.
   Qed.
 
   Theorem fundamental_theorem_on_paths_of_length_k
-         (LD : slt_distributive eqR plus ltr)                 
+         (LD : A_sg_ltr_distributive eqR plus ltr)                 
          (m : functional_matrix L) (cL : CongL m) (n : nat) : 
     ∀ k, LWP[ Pk[ m , k + 1, n ] ]
           =M=
@@ -1692,7 +1691,7 @@ Qed.
   (* *)
     
   Lemma matrix_path_equation
-        (LD : slt_distributive eqR plus ltr)        
+        (LD : A_sg_ltr_distributive eqR plus ltr)        
         (m : functional_matrix L) (cong : CongL m) :
     ∀n k,  Mk[m, k, n] =M= LWP[ Pk[ m , k, n ] ].
   Proof. intros n k. induction k; simpl. 
@@ -1734,7 +1733,7 @@ Qed.
   Qed.
 
   Lemma shift_left_sum_of_matrix_powers
-        (LD : slt_distributive eqR plus ltr) 
+        (LD : A_sg_ltr_distributive eqR plus ltr) 
         (n : nat) (m : functional_matrix L) (cong : CongL m) :
            ∀ k, Mk{ m, S k, n} =M= ((m *[ n ]> Mk{ m, k, n}) +M [I]).
   Proof. induction k.     
@@ -1819,7 +1818,7 @@ Qed.
   Qed. 
   
   Lemma left_sum_of_matrix_powers_is_equal_to_left_matrix_iteration
-        (LD : slt_distributive eqR plus ltr) 
+        (LD : A_sg_ltr_distributive eqR plus ltr) 
         (n : nat) (m : functional_matrix L) (cong : CongL m) :
            ∀ k, Mk{ m, k , n } =M= Mk<{ m, k , n }>. 
   Proof. induction k.     
@@ -1865,7 +1864,7 @@ Qed.
   Qed.          
   
   Lemma left_sum_of_matrix_powers_to_k_is_equal_to_weight_of_paths_of_length_at_most_k
-        (LD : slt_distributive eqR plus ltr) 
+        (LD : A_sg_ltr_distributive eqR plus ltr) 
         (n : nat) (m : functional_matrix L) (cong : CongL m):
            ∀ k, Mk{ m, k , n } =M= LWP[ Pk{ m , k , n } ].
   Proof. induction k; simpl.
@@ -1942,8 +1941,7 @@ Qed.
          filter is_elementary_weighted_path (ltr_extend_paths a X).
 
    Lemma ltr_extend_elementary_paths_congruence :
-     ltr_congruence weighted_arc
-                    weighted_path_set
+     A_ltr_congruence
                     eq_weighted_arc
                     eq_weighted_path_set
                     ltr_extend_elementary_paths.
@@ -2041,7 +2039,7 @@ Admitted.
 
             
   Lemma LW_cons_loop 
-    (abs : slt_absorptive eqR plus ltr) : 
+    (abs : A_sg_ltr_absorptive eqR plus ltr) : 
     ∀ (X : weighted_path_set) (p : weighted_path),
       is_elementary_weighted_path p = false → LW[ p :: X ] =r= LW[ X ].
   Proof. intros X p A.
@@ -2052,8 +2050,8 @@ Admitted.
 
     
   Lemma LW_over_extend_elementary_paths
-    (LD : slt_distributive eqR plus ltr)
-    (abs : slt_absorptive eqR plus ltr)
+    (LD : A_sg_ltr_distributive eqR plus ltr)
+    (abs : A_sg_ltr_absorptive eqR plus ltr)
     (m : functional_matrix L)
     (i q : nat) : 
     ∀ (X : weighted_path_set),
@@ -2143,7 +2141,7 @@ Admitted.
             * apply bop_and_false_elim in A.
               destruct A as [A | A].
               -- admit. (* a extended will have a loop 
-                           Need : (abs : slt_absorptive _ _ eqR plus ltr) : 
+                           Need : (abs : A_sg_ltr_absorptive _ _ eqR plus ltr) : 
                            (in_list brel_eq_nat (map arc_target a) i) = true -> 
                              (m i q |> LW[ X ]) =r= (m i q |> LW[ X ]). 
                         *) 
@@ -2158,8 +2156,8 @@ Admitted.
 
   
  Lemma LWP_distributes_over_left_matrix_mul_v2 (* bad names? generalize to one proof? *) 
-   (LD : slt_distributive eqR plus ltr)
-   (abs : slt_absorptive eqR plus ltr)
+   (LD : A_sg_ltr_distributive eqR plus ltr)
+   (abs : A_sg_ltr_absorptive eqR plus ltr)
    (m : functional_matrix L) (n : nat)
    (P : functional_matrix weighted_path_set): 
     LWP[ A[ m ] *[E n E]> P ] =M= (m *[ n ]> LWP[ P ]).
@@ -2272,8 +2270,8 @@ Qed.
 
 
    Lemma main1 (m : functional_matrix L) (n : nat) (m_cong : CongL m)
-     (LD : slt_distributive eqR plus ltr)
-     (abs : slt_absorptive eqR plus ltr):
+     (LD : A_sg_ltr_distributive eqR plus ltr)
+     (abs : A_sg_ltr_absorptive eqR plus ltr):
      ∀ k, LWP[ Pk[ m , k , n ] ] =M= LWP[ EPk[ m , k , n ] ]. 
    Proof. induction k.
           - apply matrixR_equality_reflexive.
@@ -2313,8 +2311,8 @@ Qed.
 
  
    Lemma main2 (m : functional_matrix L) (m_cong : CongL m) (n : nat)
-     (LD : slt_distributive eqR plus ltr)
-     (abs : slt_absorptive eqR plus ltr):
+     (LD : A_sg_ltr_distributive eqR plus ltr)
+     (abs : A_sg_ltr_absorptive eqR plus ltr):
      ∀ k, LWP[ Pk{ m, k, n } ] =M= LWP[ EPk{ m, k, n } ]. 
    Proof. induction k.
           - apply base2.
@@ -2334,8 +2332,8 @@ Qed.
    Qed.
    
   Lemma left_sum_of_matrix_powers_to_k_is_equal_to_weight_of_elementary_paths_of_length_at_most_k
-    (LD : slt_distributive eqR plus ltr)
-    (abs : slt_absorptive eqR plus ltr)
+    (LD : A_sg_ltr_distributive eqR plus ltr)
+    (abs : A_sg_ltr_absorptive eqR plus ltr)
     (n : nat) (m : functional_matrix L) (cong : CongL m):
     ∀ k, Mk{ m, k , n } =M= LWP[ EPk{ m , k , n } ].
   Proof. intro k.

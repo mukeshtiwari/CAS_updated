@@ -264,8 +264,6 @@ Section Verify.
 
   Variable (S : Type).
 
-  Print A_bs_exists_id_ann_decidable. 
-  
   Lemma correct_classify_bs_CS (A : @A_bs_CS S) : 
   classify_bs_CS (A2C_bs_CS A)
   =

@@ -7,7 +7,7 @@ From CAS Require Import
      coq.eqv.nat
      coq.eqv.list
      coq.sg.properties
-     coq.tr.properties
+     coq.ltr.properties
      coq.algorithms.list_congruences     
      coq.algorithms.matrix_definition
      coq.algorithms.big_plus.     
@@ -199,7 +199,7 @@ Section Theory.
     (symL : brel_symmetric L eqL)
     (trnL : brel_transitive L eqL)
     (congrP : bop_congruence R eqR plus)
-    (congrLTR : ltr_congruence L R eqL eqR ltr)
+    (congrLTR : A_ltr_congruence eqL eqR ltr)
     . 
 
 

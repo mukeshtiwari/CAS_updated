@@ -86,9 +86,9 @@ Require Import CAS.coq.st.left.add_zero.
 Require Import CAS.coq.st.left.plus_times.*)
 Require Import CAS.coq.algorithms.dijkstra.general. 
 Require Import CAS.coq.algorithms.wrapper. 
-(* from coq/tr/left*)
+(* from coq/tr/left
 Require Import CAS.coq.tr.left.add_ann.
-
+*)
 (*Require Import CAS.coq.algorithm.Mat.*) 
 
 Require Extraction.
@@ -237,8 +237,8 @@ Extraction "Cas.ml"
    mcas_right_sum_left_sum  
 
  *)
-   (* transform tr/left *)
-   mcas_ltr_add_ann
+   (* transform tr/left 
+   mcas_ltr_add_ann *)
    (* order semirgroups 
    mcas_os_from_bs_left
    mcas_os_from_sg_right

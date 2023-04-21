@@ -7,9 +7,11 @@ Require Import CAS.coq.eqv.nat.
 
 Require Import CAS.coq.bs.min_plus.
 
-Require Import CAS.coq.tr.left.plus_one.
-Require Import CAS.coq.st.properties.
-Require Import CAS.coq.st.structures.
+Require Import CAS.coq.ltr.properties.
+Require Import CAS.coq.ltr.structures.
+Require Import CAS.coq.ltr.
+Require Import CAS.coq.sg_ltr.properties.
+Require Import CAS.coq.sg_ltr.structures.
 Require Import CAS.coq.sg.cast_up
   CAS.coq.sg.min.
 From Coq Require Import Lia String.

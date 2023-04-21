@@ -292,6 +292,18 @@ Proof. induction X. intros Y a [L | R].
              apply bop_or_intro. right. apply IHX. right. exact R. 
 Defined. 
 
+Lemma in_set_concat_false_intro : ∀ (X Y : finite_set S) (a : S),
+     in_set r (X ++ Y) a = false →  (in_set r X a = false) * (in_set r Y a = false). 
+Proof. intros X Y a A. split.
+       - case_eq(in_set r X a); intro B; auto.
+         assert (C := in_set_concat_intro X Y a (inl B)).
+         rewrite C in A. congruence.
+       - case_eq(in_set r Y a); intro B; auto.
+         assert (C := in_set_concat_intro X Y a (inr B)).
+         rewrite C in A. congruence. 
+Qed. 
+
+
 Lemma in_set_concat_elim : ∀ (X Y : finite_set S) (a : S),
       in_set r (X ++ Y) a = true → (in_set r X a = true) + (in_set r Y a = true). 
 Proof. induction X. 
