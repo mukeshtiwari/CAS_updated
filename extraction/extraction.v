@@ -33,22 +33,22 @@ Require Import CAS.coq.sg.minset_union.
 Require Import CAS.coq.sg.lift.
 Require Import CAS.coq.sg.minset_lift.
 
-Require Import CAS.coq.po.cast_up.
-Require Import CAS.coq.po.add_bottom.
-Require Import CAS.coq.po.add_top.
-Require Import CAS.coq.po.from_sg.
-Require Import CAS.coq.po.product.
-Require Import CAS.coq.po.trivial.
-Require Import CAS.coq.po.lex.
+Require Import CAS.coq.or.cast_up.
+Require Import CAS.coq.or.add_bottom.
+Require Import CAS.coq.or.add_top.
+Require Import CAS.coq.or.from_sg.
+Require Import CAS.coq.or.product.
+Require Import CAS.coq.or.trivial.
+Require Import CAS.coq.or.lex.
 
 (* 
-Require Import CAS.coq.po.lte_nat. (* why is this not from_sg_left sg_min?*)
+Require Import CAS.coq.or.lte_nat. (* why is this not from_sg_left sg_min?*)
 
-Require Import CAS.coq.po.length.
-Require Import CAS.coq.po.po_to_qo.
+Require Import CAS.coq.or.length.
+Require Import CAS.coq.or.po_to_qo.
 
-Require Import CAS.coq.po.left_sum. 
-Require Import CAS.coq.po.right_sum. 
+Require Import CAS.coq.or.left_sum. 
+Require Import CAS.coq.or.right_sum. 
 
 *) 
 
@@ -75,19 +75,19 @@ Require Import CAS.coq.bs.cast.
 Require Import CAS.coq.bs.minset_union_lift.
 Require Import CAS.coq.bs.minset_lift_union.
 (* Require Import CAS.coq.bs.dual.*)
-Require Import CAS.coq.os.from_bs_left.
-Require Import CAS.coq.os.from_sg.
-Require Import CAS.coq.os.trivial. 
-(*Require Import CAS.coq.st.cast_up.
-Require Import CAS.coq.st.left.min_plus_one.
-Require Import CAS.coq.st.left.llex_product.
-Require Import CAS.coq.st.left.union_insert. 
-Require Import CAS.coq.st.left.add_zero.
-Require Import CAS.coq.st.left.plus_times.*)
+Require Import CAS.coq.or_sg.from_bs_left.
+Require Import CAS.coq.or_sg.from_sg.
+Require Import CAS.coq.or_sg.trivial. 
+(*Require Import CAS.coq.sg_ltr.cast_up.
+Require Import CAS.coq.sg_ltr.left.min_plus_one.
+Require Import CAS.coq.sg_ltr.llex_product.
+Require Import CAS.coq.sg_ltr.union_insert. 
+Require Import CAS.coq.sg_ltr.add_zero.
+Require Import CAS.coq.sg_ltr.plus_times.*)
 Require Import CAS.coq.algorithms.dijkstra.general. 
 Require Import CAS.coq.algorithms.wrapper. 
-(* from coq/tr/left
-Require Import CAS.coq.tr.left.add_ann.
+(* from coq/ltr
+Require Import CAS.coq.ltr.add_ann.
 *)
 (*Require Import CAS.coq.algorithm.Mat.*) 
 

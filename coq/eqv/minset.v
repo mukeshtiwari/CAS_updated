@@ -14,10 +14,10 @@ Require Import CAS.coq.eqv.set.
 Require Import CAS.coq.eqv.list.
 Require Import CAS.coq.eqv.reduce. 
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.theory.
-Require Import CAS.coq.po.cast_up. 
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.theory.
+Require Import CAS.coq.or.cast_up. 
 
 Require Import CAS.coq.sg.union. 
 

@@ -1,8 +1,8 @@
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.common.ast.
 
-Require Import CAS.coq.os.properties.
-Require Import CAS.coq.os.structures.
+Require Import CAS.coq.or_sg.properties.
+Require Import CAS.coq.or_sg.structures.
 
 
 Section ACAS. 

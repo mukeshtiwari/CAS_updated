@@ -16,9 +16,9 @@ Require Import CAS.coq.sg.and.
 Require Import CAS.coq.sg.cast_up.
 Require Import CAS.coq.sg.classify. 
 
-Require Import CAS.coq.po.from_sg. 
+Require Import CAS.coq.or.from_sg. 
 
-Require Import CAS.coq.os.theory.
+
 
 
 (*** OUTLINE 

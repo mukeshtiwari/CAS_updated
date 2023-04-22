@@ -9,8 +9,8 @@ Require Import CAS.coq.eqv.set.
 
 Require Import CAS.coq.sg.union. 
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
 
 Section Computation.
   

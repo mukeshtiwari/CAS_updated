@@ -12,9 +12,9 @@ Require Import CAS.coq.eqv.set.
 Require Import CAS.coq.eqv.reduce. 
 Require Import CAS.coq.eqv.minset.
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.theory.
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.theory.
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
@@ -31,9 +31,9 @@ Require Import CAS.coq.bs.theory.
 Require Import CAS.coq.bs.reduce.
 Require Import CAS.coq.bs.union_lift. 
 
-Require Import CAS.coq.os.properties.
-Require Import CAS.coq.os.structures.
-Require Import CAS.coq.os.theory. 
+Require Import CAS.coq.or_sg.properties.
+Require Import CAS.coq.or_sg.structures.
+Require Import CAS.coq.or_sg.theory. 
 
 
 

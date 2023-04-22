@@ -68,22 +68,22 @@ CAS=\
    coq/sg/reduce.v \
    coq/sg/manger_llex.v \
    coq/sg/manger_product.v \
-   coq/po/properties.v \
-   coq/po/theory.v \
-   coq/po/structures.v \
-   coq/po/classify.v \
-   coq/po/cast_up.v \
-   coq/po/trivial.v \
-   coq/po/add_bottom.v \
-   coq/po/from_sg.v \
-   coq/po/add_top.v \
-   coq/po/product.v \
-   coq/po/length.v \
-   coq/po/lex.v \
-   coq/po/subset.v \
-   coq/po/minset_subset.v \
-   coq/po/set_lte.v \
-   coq/po/dual.v \
+   coq/or/properties.v \
+   coq/or/theory.v \
+   coq/or/structures.v \
+   coq/or/classify.v \
+   coq/or/cast_up.v \
+   coq/or/trivial.v \
+   coq/or/add_bottom.v \
+   coq/or/from_sg.v \
+   coq/or/add_top.v \
+   coq/or/product.v \
+   coq/or/length.v \
+   coq/or/lex.v \
+   coq/or/subset.v \
+   coq/or/minset_subset.v \
+   coq/or/set_lte.v \
+   coq/or/dual.v \
    coq/ltr/properties.v \
    coq/ltr/structures.v \
    coq/ltr/classify.v \
@@ -122,14 +122,14 @@ CAS=\
    coq/bs/minset_union_lift.v \
    coq/bs/minset_lift_union.v \
    coq/bs/union_union.v \
-   coq/os/properties.v \
-   coq/os/structures.v \
-   coq/os/theory.v \
-   coq/os/cast_up.v \
-   coq/os/from_sg.v \
-   coq/os/from_bs_left.v \
-   coq/os/trivial.v \
-   coq/os/lex_product.v \
+   coq/or_sg/properties.v \
+   coq/or_sg/structures.v \
+   coq/or_sg/theory.v \
+   coq/or_sg/cast_up.v \
+   coq/or_sg/from_sg.v \
+   coq/or_sg/from_bs_left.v \
+   coq/or_sg/trivial.v \
+   coq/or_sg/lex_product.v \
    coq/uop/properties.v \
    coq/uop/product.v \
    coq/uop/left_sum.v \

@@ -1,7 +1,7 @@
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.sg.properties.
-Require Import CAS.coq.po.properties.
+Require Import CAS.coq.or.properties.
 
 Close Scope nat. 
 

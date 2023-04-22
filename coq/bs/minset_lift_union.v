@@ -14,10 +14,10 @@ Require Import CAS.coq.eqv.minset.
 
 Require Import CAS.coq.uop.properties.
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.theory.
-Require Import CAS.coq.po.set_lte. 
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.theory.
+Require Import CAS.coq.or.set_lte. 
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
@@ -33,9 +33,9 @@ Require Import CAS.coq.bs.theory.
 Require Import CAS.coq.bs.reduce. 
 Require Import CAS.coq.bs.minset_union_lift.  (* for bounded proofs. *) 
 
-Require Import CAS.coq.os.properties.
-Require Import CAS.coq.os.structures.
-Require Import CAS.coq.os.theory. 
+Require Import CAS.coq.or_sg.properties.
+Require Import CAS.coq.or_sg.structures.
+Require Import CAS.coq.or_sg.theory. 
 
 
 (* should move this to po as a combinator! *) 

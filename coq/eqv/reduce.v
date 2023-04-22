@@ -3,7 +3,7 @@ Require Import CAS.coq.common.ast.
 Require Import CAS.coq.common.data.
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
-Require Import CAS.coq.po.properties.
+Require Import CAS.coq.or.properties.
 Require Import CAS.coq.uop.properties. 
 Require Import CAS.coq.eqv.theory.
 

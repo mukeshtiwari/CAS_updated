@@ -7,9 +7,9 @@ Require Import CAS.coq.eqv.set.
 Require Import CAS.coq.eqv.minset.
 Require Import CAS.coq.eqv.reduce. 
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.subset. 
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.subset. 
 
 Require Import CAS.coq.sg.and.
 Require Import CAS.coq.sg.or. 

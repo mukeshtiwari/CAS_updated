@@ -2,8 +2,8 @@ Require Import Coq.Lists.List.
 Require Import Coq.Strings.String.
 Require Import CAS.coq.common.compute.
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.trivial.
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.trivial.
 
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.product.

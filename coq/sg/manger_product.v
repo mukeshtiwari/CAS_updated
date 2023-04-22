@@ -18,7 +18,7 @@ Require Import CAS.coq.sg.manger_llex.
 Require Import CAS.coq.eqv.nat. 
 Require Import CAS.coq.sg.min.
 Require Import CAS.coq.sg.plus.
-Require Import CAS.coq.po.from_sg. 
+Require Import CAS.coq.or.from_sg. 
 
 
 (*

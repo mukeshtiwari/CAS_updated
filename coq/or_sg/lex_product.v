@@ -7,10 +7,10 @@ Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
 Require Import CAS.coq.eqv.product.
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.theory.
-Require Import CAS.coq.po.lex. 
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.theory.
+Require Import CAS.coq.or.lex. 
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
@@ -19,8 +19,8 @@ Require Import CAS.coq.sg.product.
 Require Import CAS.coq.sg.and.
 Require Import CAS.coq.sg.or. 
 
-Require Import CAS.coq.os.properties.
-Require Import CAS.coq.os.structures.
+Require Import CAS.coq.or_sg.properties.
+Require Import CAS.coq.or_sg.structures.
 
 Definition bop_qo_left_cancellative (S : Type) (lte : brel S) (b : binary_op S)
     := ∀ s t u : S, equiv lte (b s t) (b s u) = true -> (equiv lte t u = true) + (incomp lte t u = true).

@@ -7,7 +7,7 @@ Require Import CAS.coq.theory.set.
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.theory. 
 
-Require Import CAS.coq.po.properties.
+Require Import CAS.coq.or.properties.
 
 Require Import CAS.coq.sg.and.
 Require Import CAS.coq.sg.or. 

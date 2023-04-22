@@ -22,18 +22,17 @@ Require Import CAS.coq.sg.reduce.
 Require Import CAS.coq.sg.cast_up.
 Require Import CAS.coq.sg.classify.
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.cast_up. 
-Require Import CAS.coq.po.theory.
-Require Import CAS.coq.po.subset.
-Require Import CAS.coq.po.minset_subset.
-Require Import CAS.coq.po.dual.
-Require Import CAS.coq.po.from_sg. 
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.cast_up. 
+Require Import CAS.coq.or.theory.
+Require Import CAS.coq.or.subset.
+Require Import CAS.coq.or.minset_subset.
+Require Import CAS.coq.or.dual.
+Require Import CAS.coq.or.from_sg. 
 
-Require Import CAS.coq.os.properties.
-(*Require Import CAS.coq.os.structures. *) 
-Require Import CAS.coq.os.theory. 
+Require Import CAS.coq.or_sg.properties.
+Require Import CAS.coq.or_sg.theory. 
 
 Section Computation.
   

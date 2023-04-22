@@ -7,17 +7,17 @@ Require Import CAS.coq.common.ast.
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.trivial.
-Require Import CAS.coq.po.cast_up. 
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.trivial.
+Require Import CAS.coq.or.cast_up. 
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.structures.
 Require Import CAS.coq.sg.cast_up. 
 
-Require Import CAS.coq.os.properties.
-Require Import CAS.coq.os.structures.
+Require Import CAS.coq.or_sg.properties.
+Require Import CAS.coq.or_sg.structures.
 
 
 

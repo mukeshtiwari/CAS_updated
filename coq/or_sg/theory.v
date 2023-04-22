@@ -3,15 +3,15 @@ Require Import CAS.coq.common.compute.
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.theory.
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.theory.
-Require Import CAS.coq.po.dual.
-Require Import CAS.coq.po.from_sg.
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.theory.
+Require Import CAS.coq.or.dual.
+Require Import CAS.coq.or.from_sg.
 
 Require Import CAS.coq.sg.properties.
 Require Import CAS.coq.sg.theory. 
 
-Require Import CAS.coq.os.properties.
+Require Import CAS.coq.or_sg.properties.
 
 
 

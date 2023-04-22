@@ -9,10 +9,10 @@ Require Import CAS.coq.eqv.structures.
 Require Import CAS.coq.eqv.add_constant.
 Require Import CAS.coq.eqv.sum. 
 
-Require Import CAS.coq.po.properties.
-Require Import CAS.coq.po.structures.
-Require Import CAS.coq.po.cast_up.
-Require Import CAS.coq.po.classify. 
+Require Import CAS.coq.or.properties.
+Require Import CAS.coq.or.structures.
+Require Import CAS.coq.or.cast_up.
+Require Import CAS.coq.or.classify. 
 
 Section Compute.
 

@@ -1,7 +1,6 @@
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.sg.properties.
-Require Import CAS.coq.po.from_sg. 
-Require Import CAS.coq.os.properties.
+
 
 Section ACAS. 
 

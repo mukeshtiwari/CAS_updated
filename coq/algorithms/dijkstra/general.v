@@ -68,12 +68,14 @@ From CAS Require Import
   coq.eqv.nat
   coq.eqv.list
   coq.eqv.product  
-  coq.po.properties
-  coq.po.from_sg
+  coq.or.properties
+  coq.or.from_sg
+  coq.rtr.properties
   coq.sg.properties
   coq.sg.theory
-  coq.os.properties (* for bop_is_glb *)   
-  coq.os.theory     (* for bop_is_glb_wrt_lte_left *) 
+  coq.or_sg.properties (* for bop_is_glb *)   
+  coq.or_sg.theory     (* for bop_is_glb_wrt_lte_left *)
+  coq.sg_rtr.properties 
   coq.sg.min
   coq.sg.or
   coq.sg.and
@@ -82,15 +84,7 @@ From CAS Require Import
   coq.algorithms.matrix_algorithms     (* just for def of big_plus ? *)   
   coq.algorithms.bs_matrix_multiplication (* just for def of I ? *)
   .
-
-
-(* move these! *)
-Definition srt_absorptive {L S : Type} (r : brel S) (add : binary_op S) (rtr : rtr_type L S)  
-  := ∀ (l : L) (s : S), r s (add s (rtr s l)) = true.
-
-Definition rtr_congruence (L S : Type) (eqL : brel L) (eqS : brel S) (rtr : rtr_type L S) := 
-   ∀ (l1 l2 : L) (s1 s2 : S) , eqL l1 l2 = true -> eqS s1 s2 = true -> eqS (rtr s1 l1) (rtr s2 l2) = true.
-
+  
 Section Computation.
   Open Scope nat_scope.   
   
@@ -462,8 +456,8 @@ Section Theory.
     (sel  :  bop_selective S eqS plus)   
     (zeroId   : bop_is_id S eqS plus zero)
     (oneAnn   : bop_is_ann S eqS plus one)
-    (cong_rtr   : rtr_congruence L S eqL eqS rtr)
-    (absorb   : srt_absorptive eqS plus rtr)
+    (cong_rtr   : A_rtr_congruence eqL eqS rtr)
+    (absorb   : A_sg_rtr_absorptive eqS plus rtr)
     (m : Node -> Node -> L)
     (n : nat)
     (i : Node)
