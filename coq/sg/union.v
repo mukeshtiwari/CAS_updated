@@ -3,8 +3,6 @@ Require Import Coq.Bool.Bool.
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.common.ast.
 
-Require Import CAS.coq.theory.set. 
-
 Require Import CAS.coq.uop.properties.
 
 Require Import CAS.coq.eqv.properties.

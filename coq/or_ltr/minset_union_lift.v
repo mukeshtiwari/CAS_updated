@@ -15,7 +15,6 @@ Require Import CAS.coq.st.structures.
 
 Require Import CAS.coq.theory.facts.
 Require Import CAS.coq.theory.subset. 
-Require Import CAS.coq.theory.in_set.
 Require Import CAS.coq.theory.order. (* for below, equiv, ... *)
 
 Require Import CAS.coq.eqv.set.

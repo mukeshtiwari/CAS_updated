@@ -2,12 +2,11 @@ Require Import Coq.Arith.Arith.
 
 Require Import CAS.coq.common.compute.
 
-Require Import CAS.coq.theory.set. 
-
 Require Import CAS.coq.uop.properties.
 
 Require Import CAS.coq.eqv.properties.
-Require Import CAS.coq.eqv.theory. 
+Require Import CAS.coq.eqv.theory.
+Require Import CAS.coq.eqv.set. 
 
 Require Import CAS.coq.sg.properties.
 

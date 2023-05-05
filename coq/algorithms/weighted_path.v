@@ -3,7 +3,6 @@ From Coq Require Import
 Import ListNotations.
 From CAS Require Import
   coq.common.compute
-  coq.theory.set
   coq.eqv.properties
   coq.eqv.list
   coq.eqv.set
@@ -643,18 +642,21 @@ Qed.
           intros l1 l2 s1 s2 A B.
           unfold eq_weighted_path_set. 
           unfold ltr_extend_paths.
-          apply brel_set_map_congruence.
+          apply (map_set_congruence _ _ eq_weighted_path eq_weighted_path). 
+          - exact (eq_weighted_path_reflexive). 
+          - exact (eq_weighted_path_symmetric). 
+          - exact (eq_weighted_path_transitive).
           - exact (eq_weighted_path_reflexive). 
           - exact (eq_weighted_path_symmetric). 
           - exact (eq_weighted_path_transitive). 
           - intros s t C.
             apply ltr_extend_path_congruence; auto.
-            apply eq_weighted_arc_reflexive. 
           - intros s t C.
             apply ltr_extend_path_congruence; auto.
             apply eq_weighted_arc_reflexive. 
           - intros s t C.
             apply ltr_extend_path_congruence; auto.
+            apply eq_weighted_arc_reflexive. 
           - exact B.
    Qed. 
 
@@ -810,12 +812,13 @@ Qed.
       ∀ X, CongP X → CongR (LWP[ X ]).
   Proof. intros X cong. intros i j i' j' A B.
          apply big_plus_set_congruence; auto.
-         - apply eq_weighted_path_congruence. 
          - apply eq_weighted_path_reflexive. 
          - apply eq_weighted_path_symmetric. 
          - apply eq_weighted_path_transitive. 
          - exact eq_weighted_path. 
          - apply left_weight_of_path_congruence.
+         - apply left_weight_of_path_congruence.
+         - apply left_weight_of_path_congruence.           
   Qed. 
 
   Lemma IP_congruence : CongP ([IP]).
@@ -834,11 +837,12 @@ Qed.
     ∀ X Y, eq_weighted_path_set X Y = true → LW[ X ] =r= LW[ Y ].
    Proof. intros X Y A.
           apply big_plus_set_congruence; auto.
-         - apply eq_weighted_path_congruence. 
          - apply eq_weighted_path_reflexive. 
          - apply eq_weighted_path_symmetric. 
          - apply eq_weighted_path_transitive. 
          - exact eq_weighted_path. 
+         - apply left_weight_of_path_congruence.
+         - apply left_weight_of_path_congruence.
          - apply left_weight_of_path_congruence.
   Qed.           
 
@@ -967,19 +971,20 @@ Qed.
  Qed.
 
 
- Lemma LW_distributes_over_path_plus 
-       (X Y : functional_matrix weighted_path_set): 
+ Lemma LW_distributes_over_path_plus
+   (idemP : bop_idempotent R eqR plus) 
+   (X Y : functional_matrix weighted_path_set): 
           ∀ i j, LW[ (X i j) +P (Y i j) ] =r= LW[ X i j ] + LW[ Y i j ]. 
  Proof. intros i j. apply symR. 
         apply big_plus_set_distributes_over_union; auto.
-         - apply eq_weighted_path_congruence. 
          - apply eq_weighted_path_reflexive. 
          - apply eq_weighted_path_symmetric. 
          - apply eq_weighted_path_transitive. 
          - apply left_weight_of_path_congruence.
   Qed. 
 
- Lemma LWP_distributes_over_matrix_add : 
+ Lemma LWP_distributes_over_matrix_add
+   (idemP : bop_idempotent R eqR plus) :  
             ∀ X Y, LWP[ X +PM Y ] =M= LWP[ X ] +M LWP[ Y ]. 
  Proof. intros X Y i j. unfold matrix_add.
         apply LW_distributes_over_path_plus; auto. 
@@ -1864,6 +1869,7 @@ Qed.
   Qed.          
   
   Lemma left_sum_of_matrix_powers_to_k_is_equal_to_weight_of_paths_of_length_at_most_k
+    (idemP : bop_idempotent R eqR plus) 
         (LD : A_sg_ltr_distributive eqR plus ltr) 
         (n : nat) (m : functional_matrix L) (cong : CongL m):
            ∀ k, Mk{ m, k , n } =M= LWP[ Pk{ m , k , n } ].
@@ -1909,7 +1915,7 @@ Qed.
            assert (F : (LWP[ Pk{ m, k, n} +PM Pk[ m, S k, n] ])
                        =M=
                        LWP[ Pk{ m, S k, n} ]).
-              apply LWP_congruence; auto.  
+           apply LWP_congruence; auto.           
            exact (trnM _ _ _ (trnM _ _ _ (trnM _ _ _ (trnM _ _ _ A B) C) D) F).
   Qed.
 
@@ -2311,6 +2317,7 @@ Qed.
 
  
    Lemma main2 (m : functional_matrix L) (m_cong : CongL m) (n : nat)
+     (idemP : bop_idempotent R eqR plus) 
      (LD : A_sg_ltr_distributive eqR plus ltr)
      (abs : A_sg_ltr_absorptive eqR plus ltr):
      ∀ k, LWP[ Pk{ m, k, n } ] =M= LWP[ EPk{ m, k, n } ]. 
@@ -2320,8 +2327,8 @@ Qed.
             assert (B := unfold_left_sum_of_elementary_path_powers n m k). 
             apply LWP_congruence in A; auto.
             apply LWP_congruence in B; auto.
-            assert (C := LWP_distributes_over_matrix_add (Pk{ m, k, n}) (Pk[ m, S k, n])).
-            assert (D := LWP_distributes_over_matrix_add (EPk{ m, k, n}) (EPk[ m, S k, n])).             
+            assert (C := LWP_distributes_over_matrix_add idemP (Pk{ m, k, n}) (Pk[ m, S k, n])).
+            assert (D := LWP_distributes_over_matrix_add idemP (EPk{ m, k, n}) (EPk[ m, S k, n])).             
             assert (E := matrixR_equality_transitive _ _ _ A C).
             assert (F := matrixR_equality_transitive _ _ _ B D).
             assert (G := main1 m n m_cong LD abs (S k)).
@@ -2331,14 +2338,15 @@ Qed.
             exact (matrixR_equality_transitive _ _ _ I F). 
    Qed.
    
-  Lemma left_sum_of_matrix_powers_to_k_is_equal_to_weight_of_elementary_paths_of_length_at_most_k
+   Lemma left_sum_of_matrix_powers_to_k_is_equal_to_weight_of_elementary_paths_of_length_at_most_k
+     (idemP : bop_idempotent R eqR plus) 
     (LD : A_sg_ltr_distributive eqR plus ltr)
     (abs : A_sg_ltr_absorptive eqR plus ltr)
     (n : nat) (m : functional_matrix L) (cong : CongL m):
     ∀ k, Mk{ m, k , n } =M= LWP[ EPk{ m , k , n } ].
   Proof. intro k.
-         assert (A := left_sum_of_matrix_powers_to_k_is_equal_to_weight_of_paths_of_length_at_most_k LD n m cong k). 
-         assert (B := main2 m cong n LD abs k).
+         assert (A := left_sum_of_matrix_powers_to_k_is_equal_to_weight_of_paths_of_length_at_most_k idemP LD n m cong k). 
+         assert (B := main2 m cong n idemP LD abs k).
          exact (matrixR_equality_transitive _ _ _ A B).
   Qed. 
             

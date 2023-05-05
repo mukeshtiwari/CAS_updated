@@ -56,7 +56,6 @@
 
 Require Import
   List
-  Sorting.Permutation
   Coq.Init.Datatypes.
 
 Import ListNotations. 
@@ -2205,38 +2204,56 @@ Admitted.
 
      *)
 
-
+(*
+    Lemma dijkstra_permutation_lemma_general :
+    ∀ f pl l ,
+    PermutationEqv _ eqN l (map snd pl) -> 
+    PermutationEqv _ eqS_N pl (map (λ q : Node, (visited_to_map S f pl q, q)) l). 
+    Proof. intro f. induction pl as [ | [w q] pl']; intros l A; simpl.
+           - admit.
+           - simpl in A. 
+*) 
   Lemma dijkstra_permutation_lemma_general :
     ∀ f pl l ,
-    Permutation l (map snd pl) -> 
-    Permutation pl 
-               (map (λ q : Node, (visited_to_map S f pl q, q)) l). 
+    PermutationEqv _ eqN l (map snd pl) -> 
+    PermutationEqv _ eqS_N pl (map (λ q : Node, (visited_to_map S f pl q, q)) l). 
   Proof. intro f. induction pl as [ | [w q] pl'];
            induction l as [ | q' l']; simpl; intro A; try auto. 
-         - apply Permutation_sym in A.
-           apply Permutation_nil_cons in A. elim A. 
-         - apply Permutation_nil_cons in A. elim A. 
+         - apply perm_eqv_nil.
+         - apply PermutationEqv_symmetric in A; auto. 
+           apply PermutationEqv_nil_cons in A. elim A; auto.
+           apply brel_eq_nat_symmetric. 
+         - apply PermutationEqv_nil_cons in A. elim A. 
          - admit. 
   Admitted.
 
   Lemma test (k : nat) :
-    Permutation (list_enum k) (map snd (visited S (dijkstra_k_steps S L eqS one plus rtr m k i (nat_pred k)))).
+    PermutationEqv _ eqN (list_enum k) (map snd (visited S (dijkstra_k_steps S L eqS one plus rtr m k i (nat_pred k)))).
   Proof. induction k.
          - simpl. admit.
          - simpl. admit.
   Admitted.            
 
   Lemma list_enum_permutation_lemma :
-    Permutation (list_enum n) (map snd (visited S DR)). 
+    PermutationEqv _ eqN (list_enum n) (map snd (visited S DR)). 
   Proof. unfold DR. unfold dijkstra_raw.
          apply test.
   Qed. 
   
   Lemma dijkstra_permutation_lemma :
-    Permutation
+    PermutationEqv _ eqS_N
       (visited S DR)
       (map (λ q, (D q, q)) (list_enum n)).
-  Proof. unfold D, DR. unfold dijkstra. 
+  Proof. unfold D, DR. unfold dijkstra.
+(*
+
+  PermutationEqv (visited S (dijkstra_raw S L eqS one plus rtr m n i))
+                 (map (λ q : Node, (visited_to_map S (λ _ : Node, zero) (visited S (dijkstra_raw S L eqS one plus rtr m n i)) q, q)) 
+                      (list_enum n))
+
+
+*) 
+         
          apply dijkstra_permutation_lemma_general.
          apply list_enum_permutation_lemma. 
   Qed. 
@@ -2245,8 +2262,15 @@ Admitted.
      (⨁ (λ '(w', q), w' <| m q j) (visited S DR))
      =S= 
      (⨁ (λ '(w', q), w' <| m q j) (map (λ q, (D q, q)) (list_enum n))).
-  Proof. apply big_plus_permutation; auto. 
-         apply dijkstra_permutation_lemma. 
+  Proof. apply (big_plus_permutation _ _ eqS refS symS trnS eqS_N); auto.
+         - apply eqS_N_reflexive.
+         - intros [w q] [w' q'] Z.
+           apply brel_product_elim in Z; auto.
+           destruct Z as [Z Z']. 
+           apply cong_rtr; auto. 
+           + apply cong_m; auto.
+             apply brel_eq_nat_reflexive. 
+         - apply dijkstra_permutation_lemma.
   Qed.
   
   Lemma dijkstra_big_plus_equation (j : Node) : 

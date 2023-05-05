@@ -12,7 +12,7 @@ Record A_ltr_properties {L S : Type} (eqL : brel L) (eqS : brel S) (ltr : ltr_ty
 {
   A_ltr_props_congruence     : A_ltr_congruence eqL eqS ltr    
 ; A_ltr_props_is_right_d     : A_ltr_is_right_decidable eqS ltr
-(*; A_ltr_props_constant_d     : A_ltr_constant_decidable eqS ltr  *) 
+; A_ltr_props_constant_d     : A_ltr_constant_decidable eqS ltr 
 ; A_ltr_props_cancellative_d : A_ltr_cancellative_decidable eqS ltr
 }.
 
@@ -30,7 +30,7 @@ Record A_ltr {L S : Type} :=
 
 End ACAS.
 
-Section MACAS.
+Section AMCAS.
 
 Inductive A_below_ltr {L S : Type} := 
 | A_Below_ltr_top          : @A_ltr L S -> @A_below_ltr L S
@@ -41,13 +41,14 @@ Inductive A_ltr_mcas {L S : Type} :=
 | A_MCAS_ltr              : @A_below_ltr L S -> @A_ltr_mcas L S
 .  
 
-End MACAS.   
+End AMCAS.   
 
 Section CAS. 
 
 Record ltr_properties {L S : Type} := 
 {
-  ltr_props_is_right_d     : @ltr_is_right_decidable L S 
+  ltr_props_is_right_d     : @ltr_is_right_decidable L S
+; ltr_props_constant_d     : @ltr_constant_decidable L S                                                      
 ; ltr_props_cancellative_d : @ltr_cancellative_decidable L S 
 }.
 
@@ -86,7 +87,9 @@ Definition P2C_ltr_properties {L S : Type} (eqL : brel L) (eqS : brel S) (ltr : 
     (P : A_ltr_properties eqL eqS ltr)  (wL : L) (wS : S) : @ltr_properties L S := 
 {|
   ltr_props_is_right_d          :=
-    p2c_ltr_is_right_decidable eqS ltr (A_ltr_props_is_right_d eqL eqS ltr P) wL wS 
+    p2c_ltr_is_right_decidable eqS ltr (A_ltr_props_is_right_d eqL eqS ltr P) wL wS
+; ltr_props_constant_d :=
+    p2c_ltr_constant_decidable eqS ltr (A_ltr_props_constant_d eqL eqS ltr P) wL wS                               
 ; ltr_props_cancellative_d :=
     p2c_ltr_cancellative_decidable eqS ltr (A_ltr_props_cancellative_d eqL eqS ltr P) wL wS
 |}.

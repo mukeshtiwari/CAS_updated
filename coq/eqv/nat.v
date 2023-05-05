@@ -91,12 +91,14 @@ Definition eqv_proofs_eq_nat : eqv_proofs nat brel_eq_nat (* (uop_id nat) *)
    |}. 
 
 
+Definition brel_eq_nat_witness := 0.
+Definition brel_eq_nat_new := S. 
 Definition A_eqv_nat : A_eqv nat
 := {| 
       A_eqv_eq     := brel_eq_nat 
     ; A_eqv_proofs := eqv_proofs_eq_nat
-    ; A_eqv_witness     := 0
-    ; A_eqv_new         := S
+    ; A_eqv_witness     := brel_eq_nat_witness
+    ; A_eqv_new         := brel_eq_nat_new 
     ; A_eqv_not_trivial := brel_eq_nat_not_trivial
     ; A_eqv_exactly_two_d   := inr (brel_nat_not_exactly_two)                              
     ; A_eqv_data   := λ n, DATA_nat n 

@@ -146,8 +146,7 @@ Definition brel_at_least_three (S : Type) (r : brel S)
 
 
 (* Needed for ann of union and id of intersect.  
-   Using lists rather than sets to avoid circular dependencies 
-   (coq/theory/set.v imports the current file). 
+   Using lists rather than sets to avoid circular dependencies (what??). 
    In future : could make this even more lazy ....
 *)
 Definition carrier_is_finite (S : Type) (r : brel S) := {f : unit -> list S & ∀ (s : S),  in_list r (f tt) s = true}.

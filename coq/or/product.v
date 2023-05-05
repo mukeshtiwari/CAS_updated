@@ -4,11 +4,10 @@ Require Import Coq.Strings.String.
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.common.ast.
 
-Require Import CAS.coq.theory.set. 
-
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
 Require Import CAS.coq.eqv.theory.
+Require Import CAS.coq.eqv.set.
 Require Import CAS.coq.eqv.product. (* some properties proved here *) 
 Require Import CAS.coq.eqv.minset.  (* for bottoms *) 
 

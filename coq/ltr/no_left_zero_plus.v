@@ -82,13 +82,9 @@ Proof. intro s.  exists 0. unfold ltr_no_left_zero_plus_op.
        reflexivity. 
 Defined. 
 
-(*
-Lemma ltr_no_left_zero_plus_not_left_constant : 
-A_ltr_not_left_constant brel_eq_nat ltr_no_left_zero_plus_op. 
-Proof. exists (0, (0, S 0)). compute. 
-       reflexivity. 
-Defined. 
-*) 
+Lemma ltr_no_left_zero_plus_not_constant : 
+A_ltr_not_constant brel_eq_nat ltr_no_left_zero_plus_op. 
+Proof. exists (0, (0, S 0)). compute. reflexivity. Defined. 
 
 End Theory.
 
@@ -99,6 +95,7 @@ Definition A_ltr_no_left_zero_plus_properties :
 {|
   A_ltr_props_congruence     := ltr_no_left_zero_plus_congruence 
 ; A_ltr_props_is_right_d     := inr ltr_no_left_zero_plus_not_is_right
+; A_ltr_props_constant_d     := inr ltr_no_left_zero_plus_not_constant
 ; A_ltr_props_cancellative_d := inl ltr_no_left_zero_plus_cancellative
 |}.
 
@@ -129,7 +126,8 @@ Section CAS.
 Definition ltr_no_left_zero_plus_properties :
     @ltr_properties nat nat := 
 {|
-  ltr_props_is_right_d     := inr (LTR_not_is_right (0, 0)) 
+  ltr_props_is_right_d     := inr (LTR_not_is_right (0, 0))
+; ltr_props_constant_d     := inr (LTR_not_constant (0, (0, S 0)))                                  
 ; ltr_props_cancellative_d := inl (LTR_cancellative (0, 0))
 |}.
 
@@ -163,14 +161,14 @@ Section Verify.
 Theorem correct_ltr_no_left_zero_plus_properties :
   ltr_no_left_zero_plus_properties
   =
-  P2C_ltr_properties _ _ _ A_ltr_no_left_zero_plus_properties 0 0. 
+  P2C_ltr_properties _ _ _ A_ltr_no_left_zero_plus_properties brel_eq_nat_witness brel_eq_nat_witness. 
 Proof. reflexivity. Qed. 
 
 Theorem correct_ltr_no_left_zero_plus :
   ltr_no_left_zero_plus
   =
   A2C_ltr A_ltr_no_left_zero_plus.
-Proof. unfold ltr_no_left_zero_plus, A_ltr_no_left_zero_plus, A2C_ltr; simpl. 
+Proof. unfold ltr_no_left_zero_plus, A_ltr_no_left_zero_plus, A2C_ltr; simpl.
        rewrite <- correct_ltr_no_left_zero_plus_properties.
        unfold p2c_ltr_not_exists_id, p2c_ltr_not_exists_ann.
        reflexivity. Qed. 

@@ -1,6 +1,6 @@
 Require Import CAS.coq.common.compute.
+Require Import CAS.coq.eqv.set.
 
-Require Import CAS.coq.theory.set.
 
 (* Note that some of the order-related properties are
   in brel_properties (such as reflexivity, transitivity)

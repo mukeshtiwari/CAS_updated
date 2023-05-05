@@ -3,7 +3,6 @@ From Coq Require Import
 Import ListNotations.
 From CAS Require Import
   coq.common.compute
-  coq.theory.set
   coq.eqv.properties
   coq.eqv.nat
   coq.eqv.set
@@ -56,6 +55,28 @@ Lemma fold_right_congruence
                exact (cong _ _ _ _ J C). 
  Qed.
 
+ Lemma fold_left_congruence 
+          (A B : Type)
+          (eqA : brel A)
+          (eqB : brel B)
+          (f g : A → B → A)
+          (cong : ∀ b b' a a', eqB b b' = true -> eqA a a' = true -> eqA (f a b) (g a' b') = true): 
+  ∀ (l l' : list B) (a a' : A),
+    (eqA a a'= true) ->
+      (brel_list eqB l l' = true) ->
+        eqA (fold_left f l a) (fold_left g l' a') = true.
+ Proof. induction l as [ | h l] ; intros l' a a' I J. 
+          + destruct l'.
+            ++ compute. exact I. 
+            ++ compute in J. congruence.
+          + destruct l'.
+            ++ compute in J. congruence.
+            ++ simpl.
+               apply brel_list_cons_elim in J.
+               destruct J as [J K].
+               assert (C := cong _ _ _ _ J I). 
+               exact (IHl l' _ _ C K).
+ Qed.
 
  (* congruence wrt set equality *) 
 

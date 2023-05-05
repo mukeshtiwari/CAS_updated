@@ -20,7 +20,6 @@ Require Import CAS.coq.eqv.theory.
 Require Import CAS.coq.eqv.add_constant. 
 Require Import CAS.coq.eqv.set.
 Require Import CAS.coq.eqv.sum.
-Require Import CAS.coq.theory.set. 
 Require Import CAS.coq.sg.properties. 
 Require Import CAS.coq.sg.union.
 Require Import CAS.coq.sg.or. 

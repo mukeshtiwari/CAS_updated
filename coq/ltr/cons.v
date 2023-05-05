@@ -65,21 +65,22 @@ Proof. unfold A_ltr_not_exists_ann, ltr_cons_op. unfold A_ltr_not_is_ann.
        intro l. exists wS. apply list_cons_not_ann. 
 Defined.
  
- (*
- Lemma A_ltr_cons_not_constant : A_ltr_not_left_constant (brel_list eq) ltr_cons. 
- Proof. exists (wS, (nil, wS :: nil)). compute. rewrite (ref wS). reflexivity. Defined.
- *) 
+Lemma A_ltr_cons_not_constant : A_ltr_not_constant (brel_list eq) ltr_cons_op. 
+Proof. exists (wS, (nil, wS :: nil)). compute. rewrite (ref wS). reflexivity. Defined.
+
  
 End Theory.
 
 Section ACAS.
 
-  Definition A_ltr_cons_properties {S : Type} (eq : brel S) (wS : S) (eqvP : eqv_proofs S eq) :
+  Definition A_ltr_cons_properties {S : Type}
+    (eq : brel S) (wS : S) (eqvP : eqv_proofs S eq) :
     A_ltr_properties eq (brel_list eq) ltr_cons_op :=
     {|
-       A_ltr_props_congruence     := A_ltr_cons_congruence S eq
-     ; A_ltr_props_is_right_d     := inr (A_ltr_cons_not_is_right S eq wS)
-     ; A_ltr_props_cancellative_d := inl (A_ltr_cons_cancellative S eq)
+      A_ltr_props_congruence     := A_ltr_cons_congruence S eq
+    ; A_ltr_props_is_right_d     := inr (A_ltr_cons_not_is_right S eq wS)
+    ; A_ltr_props_constant_d     := inr (A_ltr_cons_not_constant S eq wS (A_eqv_reflexive _ _ eqvP))                                        
+    ; A_ltr_props_cancellative_d := inl (A_ltr_cons_cancellative S eq)
     |}. 
 
   Definition A_ltr_cons {S : Type} (A : A_eqv S) : @A_ltr S (list S) :=
@@ -114,8 +115,9 @@ Section CAS.
   Definition ltr_cons_properties {S : Type} (wS : S) :
     @ltr_properties S (list S) :=
     {|
-       ltr_props_is_right_d     := inr (LTR_not_is_right (wS, nil))
-     ; ltr_props_cancellative_d := inl (LTR_cancellative (wS, nil))
+      ltr_props_is_right_d     := inr (LTR_not_is_right (wS, nil))
+    ; ltr_props_constant_d     := inr (LTR_not_constant (wS, (nil, wS :: nil)))                                      
+    ; ltr_props_cancellative_d := inl (LTR_cancellative (wS, nil))
     |}. 
 
   Definition ltr_cons {S : Type} (A : @eqv S) : @ltr S (list S) :=

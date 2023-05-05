@@ -12,8 +12,6 @@ Require Import Coq.Strings.String.
 Open Scope string_scope.
 Import ListNotations.
 
-Require Import CAS.coq.theory.set. 
-
 Open Scope list.
 
 

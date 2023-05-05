@@ -5,8 +5,6 @@ Require Import CAS.coq.common.compute.
 Require Import CAS.coq.common.ast.
 Require Import CAS.coq.common.data.
 
-Require Import CAS.coq.theory.set. 
-
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
 Require Import CAS.coq.eqv.theory.
@@ -19,9 +17,10 @@ Require Import CAS.coq.or.structures.
 Require Import CAS.coq.or.theory.
 Require Import CAS.coq.or.cast_up. 
 
-Require Import CAS.coq.sg.union. 
+Require Import CAS.coq.sg.union.
 
 Require Import CAS.coq.uop.properties.
+
 
 
 Section Computation. 
@@ -1091,7 +1090,7 @@ Proof. unfold uop_congruence.
 Qed. 
 
 
-
+(**** TRY TO PROVE THIS FROME EQV.REDUCE!!! *****************) 
 Lemma brel_minset_congruence : brel_congruence (finite_set S) (brel_minset rS lteS) (brel_minset rS lteS).
 Proof. unfold brel_congruence.
        intros X1 Y1 X2 Y2 A B. 
@@ -1895,6 +1894,17 @@ End Theory.
 
 Section ACAS.
 
+(* can we use eqv/reduce.v? 
+
+A_eqv_reduce
+     : ∀ (S : Type) 
+         (eqvS : structures.A_eqv S) 
+         (r : unary_op S) 
+         (f : S → S),
+         brel_not_trivial S (brel_reduce (structures.A_eqv_eq S eqvS) r) f
+         → brel_exactly_two_decidable S (brel_reduce (structures.A_eqv_eq S eqvS) r)
+           → carrier_is_finite_decidable S (brel_reduce (structures.A_eqv_eq S eqvS) r) → ast.cas_eqv_ast → structures.A_eqv S
+*)   
 
 Definition eqv_proofs_brel_minset_from_qo
   (S : Type)

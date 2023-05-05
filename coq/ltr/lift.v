@@ -1,6 +1,5 @@
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.common.ast.
-Require Import CAS.coq.theory.set. (* for uop_duplicate_elim *)
 Require Import CAS.coq.uop.properties.
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
@@ -157,19 +156,20 @@ Proof. destruct annP as [ann P].
        assert (A := P l). rewrite A. rewrite (sym _ _ A). reflexivity. 
 Defined.
 
-(*
-Lemma ltr_lift_not_left_constant :
-      ltr_not_left_constant L (finite_set S) (brel_set eqS) (ltr_lift eqS ltr) .
+Lemma ltr_lift_not_constant :
+      A_ltr_not_constant (brel_set eqS) (ltr_lift_op eqS ltr) .
 Proof. exists (wL, (nil, wS ::nil)). compute. reflexivity. Defined.
-*) 
+
 End Theory.
 
 Section ACAS.
+
 
 Definition A_ltr_lift_properties {L S : Type} 
   (eqL : brel L) (eqS : brel S)
   (ltr : ltr_type L S)
   (eqvL : eqv_proofs L eqL) (eqvS : eqv_proofs S eqS)
+  (wL : L) (wS : S) 
   (ltrP : A_ltr_properties eqL eqS ltr) :
   A_ltr_properties eqL (brel_set eqS) (ltr_lift_op eqS ltr) :=
 let refL := A_eqv_reflexive _ _ eqvL in
@@ -180,6 +180,8 @@ let ltr_cong := A_ltr_props_congruence _ _ _ ltrP in
 {|
   A_ltr_props_congruence          :=
     A_ltr_lift_congruence L S eqL eqS refL ref sym trn ltr ltr_cong
+; A_ltr_props_constant_d :=
+    inr (ltr_lift_not_constant L S eqS wL wS ltr) 
 ; A_ltr_props_cancellative_d :=
     match A_ltr_props_cancellative_d _ _ _ ltrP with
     | inl  lc => inl(A_ltr_lift_cancellative L S eqL eqS refL ref sym trn ltr ltr_cong lc)
@@ -197,6 +199,8 @@ let eqvS := A_ltr_carrier A in
 let eqvL := A_ltr_label A in     
 let eqS := A_eqv_eq _ eqvS in
 let eqL := A_eqv_eq _ eqvL in
+let wL  := A_eqv_witness _ eqvL in
+let wS  := A_eqv_witness _ eqvS in 
 let eqvSP := A_eqv_proofs _ eqvS in
 let eqvLP := A_eqv_proofs _ eqvL in
 let refL := A_eqv_reflexive _ _ eqvLP in
@@ -216,7 +220,7 @@ let ltr_cong := A_ltr_props_congruence _ _ _ ltrP in
     | inr nidP => inr (A_ltr_lift_not_exists_id L S eqS ltr nidP)
     end
 ; A_ltr_exists_ann_d := inl (A_ltr_lift_exists_ann L S eqS ltr)
-; A_ltr_props        := A_ltr_lift_properties eqL eqS ltr eqvLP eqvSP ltrP 
+; A_ltr_props        := A_ltr_lift_properties eqL eqS ltr eqvLP eqvSP wL wS ltrP 
 ; A_ltr_ast          := Cas_ast ("left_transform_lift", [])  (*Ast_ltr_lift (A_left_transform_ast _ _ A)*) 
 |}.
 
@@ -240,7 +244,7 @@ End AMCAS.
 Section CAS.
 
 Definition ltr_lift_properties {L S : Type}
-  (ltrP : @ltr_properties L S) :
+  (ltrP : @ltr_properties L S) (wL : L) (wS : S):
   @ltr_properties L (finite_set S) := 
 {|
   ltr_props_cancellative_d :=
@@ -249,7 +253,9 @@ Definition ltr_lift_properties {L S : Type}
         inl(LTR_cancellative (l, set_witness s))
     | inr (LTR_not_cancellative (l, (s, s'))) =>
         inr(LTR_not_cancellative (l, (s :: nil, s' :: nil)))
-    end                                                               
+    end
+; ltr_props_constant_d :=
+    inr (LTR_not_constant (wL, (nil, wS ::nil))) 
 ; ltr_props_is_right_d          :=
     match ltr_props_is_right_d ltrP with
     | inl (LTR_is_right (l, s))  =>
@@ -261,17 +267,21 @@ Definition ltr_lift_properties {L S : Type}
 
 
 Definition ltr_lift {L S : Type} (A : @ltr L S) :=
+let eqvS := ltr_carrier A in 
+let eqvL := ltr_label A in
+let wS   := eqv_witness eqvS in 
+let wL   := eqv_witness eqvL in 
 {|
-  ltr_carrier      := eqv_set (ltr_carrier A)
-; ltr_label        := ltr_label A
-; ltr_ltr          := ltr_lift_op (eqv_eq (ltr_carrier A)) (ltr_ltr A)
+  ltr_carrier      := eqv_set eqvS 
+; ltr_label        := eqvL
+; ltr_ltr          := ltr_lift_op (eqv_eq eqvS) (ltr_ltr A)
 ; ltr_exists_id_d  :=
     match ltr_exists_id_d A with
     | inl idP  => inl idP 
     | inr (LTR_not_exists_id l) => inr (LTR_not_exists_id l)
     end
 ; ltr_exists_ann_d := inl (LTR_exists_ann nil)
-; ltr_props        := ltr_lift_properties (ltr_props A) 
+; ltr_props        := ltr_lift_properties (ltr_props A) wL wS 
 ; ltr_ast          := Cas_ast ("left_transform_lift", [])  (*Ast_ltr_lift (left_transform_ast _ _ A)*) 
 |}.
   
@@ -306,10 +316,10 @@ Lemma correct_ltr_lift_properties
   P2C_ltr_properties
     eqL (brel_set eqS) 
     (ltr_lift_op eqS ltr) 
-    (A_ltr_lift_properties eqL eqS ltr eqvL eqvS ltrP)
+    (A_ltr_lift_properties eqL eqS ltr eqvL eqvS wL wS ltrP)
     wL (set_witness wS)
   = 
-  ltr_lift_properties (P2C_ltr_properties eqL eqS ltr ltrP wL wS). 
+  ltr_lift_properties (P2C_ltr_properties eqL eqS ltr ltrP wL wS) wL wS. 
 Proof. destruct ltrP. unfold ltr_lift_properties,
          A_ltr_lift_properties, P2C_ltr_properties; simpl.
        destruct A_ltr_props_cancellative_d as [ lc | [[s [t u]] [P Q]]];

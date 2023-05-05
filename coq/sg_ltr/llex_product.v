@@ -12,25 +12,18 @@ Require Import CAS.coq.sg.and.
 Require Import CAS.coq.sg.product.
 Require Import CAS.coq.sg.theory.
 
-Require Import CAS.coq.tr.properties.
-Require Import CAS.coq.tr.structures. 
-Require Import CAS.coq.tr.left.product. 
+Require Import CAS.coq.ltr.properties.
+Require Import CAS.coq.ltr.structures. 
+Require Import CAS.coq.ltr.product. 
 
-Require Import CAS.coq.st.properties.
-Require Import CAS.coq.st.structures.
-Require Import CAS.coq.st.cast_up. 
+Require Import CAS.coq.sg_ltr.properties.
+Require Import CAS.coq.sg_ltr.structures.
+Require Import CAS.coq.sg_ltr.cast.
+Require Import CAS.coq.sg_ltr.classify.
+
 From Coq Require Import String List.
 Local Open Scope string_scope.
 Import ListNotations.
-
-
-
-
-
-(* why? *) 
-Definition ltr_weak_congruence (L S : Type) (rS : brel S) (lt : ltr_type L S) := 
-   ∀ (l : L) (s1 s2 : S), rS s1 s2 = true -> rS (lt l s1) (lt l s2) = true.
-
 
 Section Theory.
 
@@ -75,17 +68,12 @@ Variable refLT : brel_reflexive LT eqLT.
 Variable a_conS : bop_congruence S eqS addS.
 Variable a_conT : bop_congruence T eqT addT.
 
-(*
-Variable m_conS : ltr_weak_congruence LS S rS mulS.
-Variable m_conT : ltr_weak_congruence LT T rT mulT. 
- *)
 
 Variable m_conS : ltr_congruence LS S eqLS eqS ltrS.
 Variable m_conT : ltr_congruence LT T eqLT eqT ltrT.
 
 Variable a_commS : bop_commutative S eqS addS.
 Variable a_idemS : bop_idempotent S eqS addS.
-
 
 Notation "a =S b"  := (eqS a b = true) (at level 15).
 Notation "a =T b"  := (eqT a b = true) (at level 15).
@@ -96,15 +84,15 @@ Notation "a |T> b"  := (ltrT a b) (at level 15).
 
 Notation "a <*> b" := (brel_product a b) (at level 15).
 Notation "a [+] b" := (bop_llex argT eqS a b) (at level 15).
-Notation "a [*] b" := (ltr_product a b) (at level 15).
+Notation "a [*] b" := (ltr_product_op a b) (at level 15).
 
 (* Note : this is a minor modification of the proof from bs/llex_product.v .... *) 
-Lemma slt_llex_product_distributive
-      (selS_or_annT : bop_selective S eqS addS + ltr_is_ann LT T eqT ltrT argT)      
-      (ldS : slt_distributive eqS addS ltrS)
-      (ldT : slt_distributive eqT addT ltrT) 
-      (D : ((ltr_left_cancellative LS S eqS ltrS) + (ltr_left_constant LT T eqT ltrT))): 
-             slt_distributive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Lemma sg_ltr_llex_product_distributive
+      (selS_or_annT : bop_selective S eqS addS + A_ltr_is_ann eqT ltrT argT)      
+      (ldS : A_sg_ltr_distributive eqS addS ltrS)
+      (ldT : A_sg_ltr_distributive eqT addT ltrT) 
+      (D : ((A_ltr_cancellative eqS ltrS) + (A_ltr_constant eqT ltrT))): 
+  A_sg_ltr_distributive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
 Proof. intros [s1 t1] [s2 t2] [s3 t3].
        unfold ltr_product, bop_llex, brel_product. 
        apply andb_true_intro. split.  

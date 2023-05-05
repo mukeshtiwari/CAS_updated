@@ -17,7 +17,19 @@ Definition A_ltr_not_cancellative {L S : Type} (rS : brel S) (lt : ltr_type L S)
 Definition A_ltr_cancellative_decidable  {L S : Type} (rS : brel S) (lt : ltr_type L S) 
    := (A_ltr_cancellative rS lt) + (A_ltr_not_cancellative rS lt). 
 Definition A_ltr_is_right {L S : Type} (rS : brel S) (lt : ltr_type L S) 
-    := ∀ (l : L) (s : S), rS (lt l s) s = true. 
+  := ∀ (l : L) (s : S), rS (lt l s) s = true.
+
+
+Definition A_ltr_constant {L S : Type} (rS : brel S) (lt : ltr_type L S) 
+    := ∀ (l : L) (s1 s2 : S), rS (lt l s1) (lt l s2) = true. 
+
+Definition A_ltr_not_constant {L S : Type} (rS : brel S) (lt : ltr_type L S) 
+   := { z : L * (S * S) & match z with (l, (s1, s2)) => rS (lt l s1) (lt l s2) = false  end }. 
+
+Definition A_ltr_constant_decidable  {L S : Type} (rS : brel S) (lt : ltr_type L S) 
+   := (A_ltr_constant rS lt) + (A_ltr_not_constant rS lt). 
+
+
 
 Definition A_ltr_not_is_right {L S : Type} (rS : brel S) (lt : ltr_type L S) 
     := { z : L * S & match z with (l, s) =>  rS (lt l s) s = false end }. 
@@ -79,15 +91,6 @@ Definition A_ltr_right_cancellative_decidable  {L S : Type} (rL : brel L) (rS : 
 
 (* Condensed ("constant") *) 
 
-Definition A_ltr_constant {L S : Type} (rS : brel S) (lt : ltr_type L S) 
-    := ∀ (l : L) (s1 s2 : S), rS (lt l s1) (lt l s2) = true. 
-
-Definition A_ltr_not_constant {L S : Type} (rS : brel S) (lt : ltr_type L S) 
-   := { z : L * (S * S) & match z with (l, (s1, s2)) => rS (lt l s1) (lt l s2) = false  end }. 
-
-Definition A_ltr_constant_decidable  {L S : Type} (rS : brel S) (lt : ltr_type L S) 
-   := (ltr_constant L S rS lt) + (ltr_not_constant L S rS lt). 
-
 
 Definition A_ltr_right_constant {L S : Type} (rS : brel S) (lt : ltr_type L S) 
     := ∀ (l1 l2 : L) (s : S), rS (lt l1 s) (lt l2 s) = true.            
@@ -113,8 +116,18 @@ Inductive  ltr_not_cancellative {L S : Type} :=
 Definition ltr_cancellative_decidable {L S : Type} := 
    (@ltr_cancellative L S)
    +
-   (@ltr_not_cancellative L S). 
+     (@ltr_not_cancellative L S).
 
+Inductive ltr_constant {L S : Type} := 
+| LTR_constant : (L * S) -> @ltr_constant L S. 
+
+Inductive  ltr_not_constant {L S : Type} := 
+| LTR_not_constant : (L * (S * S)) -> @ltr_not_constant L S. 
+
+Definition ltr_constant_decidable {L S : Type} := 
+   (@ltr_constant L S)
+   +
+   (@ltr_not_constant L S). 
 
 Inductive ltr_is_right {L S : Type} := 
 | LTR_is_right : (L * S) -> @ltr_is_right L S. 
@@ -176,6 +189,29 @@ Definition p2c_ltr_cancellative_decidable
   match p with 
   | inl c  => inl (p2c_ltr_cancellative _ _ c wL wS)
   | inr nc => inr (p2c_ltr_not_cancellative _ _ nc)
+  end.
+
+
+Definition p2c_ltr_constant
+    {L S : Type} (eqS : brel S) (ltr : ltr_type L S) 
+    (p : A_ltr_constant eqS ltr) (wL : L) (wS : S) :
+      @ltr_constant L S := 
+  LTR_constant (wL, wS). 
+
+
+Definition p2c_ltr_not_constant
+    {L S : Type} (eqS : brel S) (ltr : ltr_type L S) 
+    (p : A_ltr_not_constant eqS ltr) :
+      @ltr_not_constant L S := 
+  LTR_not_constant (projT1 p). 
+
+Definition p2c_ltr_constant_decidable
+    {L S : Type} (eqS : brel S) (ltr : ltr_type L S) 
+    (p : A_ltr_constant_decidable eqS ltr) (wL : L) (wS : S) :
+         @ltr_constant_decidable L S := 
+  match p with 
+  | inl c  => inl (p2c_ltr_constant _ _ c wL wS)
+  | inr nc => inr (p2c_ltr_not_constant _ _ nc)
   end.
 
 

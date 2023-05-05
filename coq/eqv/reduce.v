@@ -121,40 +121,6 @@ Lemma reduced_equality_transitive_iff (r_idem  : uop_idempotent S eq r) :
          compute. apply trnS. 
 Qed.          
 
-  
-(*
-Lemma brel_reduce_antisymmetric : 
-    brel_antisymmetric S eq eq  →
-    brel_antisymmetric S (brel_reduce eq r) (brel_reduce eq r). 
-Proof. unfold brel_antisymmetric. unfold brel_reduce. 
-       intros asymS s t H1 H2.
-       apply asymS; auto. 
-Defined.
-
-Lemma brel_reduce_not_antisymmetric : 
-    uop_congruence S eq r →        
-    uop_injective S eq r →    
-    brel_not_antisymmetric S eq eq  →
-    brel_not_antisymmetric S (brel_reduce eq r) (brel_reduce eq r). 
-Proof. unfold brel_not_antisymmetric. unfold brel_reduce. 
-       intros cong injS [[s t] [[H1 H2] H3]].
-       exists (s, t).
-       split. split. apply cong; auto. apply cong; auto.
-       case_eq(eq (r s) (r t)); intro J.
-          apply injS in J. rewrite J in H3. discriminate H3.
-          reflexivity.
-Defined. 
-
-Lemma brel_reduce_not_trivial (f : S -> S) :
-  (∀ x : S, eq (r x) (r (f x)) = false) ->  
-  brel_not_trivial S (brel_reduce eq r) f. 
-Proof. intros H x. compute. 
-       split.
-       apply H.
-       apply (brel_symmetric_implies_dual _ _ symS _ _ (H x)). 
-Qed.
-*) 
-
 End Theory.
 
 Section ACAS.
@@ -205,7 +171,12 @@ Section CAS.
 
 
 Definition eqv_reduce {S : Type}
-      (r : S -> S) (f : S -> S) (ex2 : @check_exactly_two S) (fin : @check_is_finite S)  (eqvS : @eqv S) (ast : cas_eqv_ast) : @eqv S
+  (r : S -> S)
+  (f : S -> S)
+  (ex2 : @check_exactly_two S)
+  (fin : @check_is_finite S)
+  (eqvS : @eqv S)
+  (ast : cas_eqv_ast) : @eqv S
 := 
   let eq := eqv_eq eqvS in
   let s := eqv_witness eqvS in

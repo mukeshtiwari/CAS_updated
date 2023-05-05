@@ -19,7 +19,6 @@ BASE=\
    coq/common/ast.v \
    coq/common/data.v \
    coq/theory/arithmetic.v \
-   coq/theory/set.v \
    coq/theory/lattice_theory.v \
    coq/theory/semilattice_theory.v \
 
@@ -90,9 +89,14 @@ CAS=\
    coq/ltr/cast.v \
    coq/ltr/cons.v \
    coq/ltr/lift.v \
+   coq/ltr/product.v \
    coq/ltr/no_left_zero_plus.v \
    coq/rtr/properties.v \
    coq/sg_ltr/properties.v \
+   coq/sg_ltr/structures.v \
+   coq/sg_ltr/classify.v \
+   coq/sg_ltr/cast.v \
+   coq/sg_ltr/min_plus.v \
    coq/sg_rtr/properties.v \
    coq/bs/properties.v \
    coq/bs/structures.v \

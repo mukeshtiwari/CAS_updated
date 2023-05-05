@@ -4,13 +4,10 @@ Require Import Coq.Lists.List.
 Require Import CAS.coq.common.compute.
 Require Import CAS.coq.common.ast.
 
-Require Import CAS.coq.theory.set.
-
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures.
 Require Import CAS.coq.eqv.theory.
 Require Import CAS.coq.eqv.set.
-Require Import CAS.coq.theory.set.
 Require Import CAS.coq.eqv.reduce. 
 Require Import CAS.coq.eqv.minset.
 
