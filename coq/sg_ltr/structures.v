@@ -111,13 +111,42 @@ Record A_sg_ltr {L S : Type} :=
 ; A_sg_ltr_ast             : cas_ast
 }.
 
+Record A_sg_ltr_S {L S : Type} :=
+{
+  A_sg_ltr_S_carrier        : A_eqv S
+; A_sg_ltr_S_label          : A_eqv L
+; A_sg_ltr_S_plus           : binary_op S  
+; A_sg_ltr_S_ltr            : ltr_type L S (* L -> (S -> S) *)
+; A_sg_ltr_S_plus_props     : sg_CS_proofs S
+                              (A_eqv_eq S A_sg_ltr_S_carrier)
+                              A_sg_ltr_S_plus                           
+; A_sg_ltr_S_ltr_props      :  A_ltr_properties
+                               (A_eqv_eq L A_sg_ltr_S_label)                                 
+                               (A_eqv_eq S A_sg_ltr_S_carrier) 
+                               A_sg_ltr_S_ltr
+; A_sg_ltr_S_id_ann_props_d  : A_sg_ltr_exists_id_ann_decidable 
+                                (A_eqv_eq S A_sg_ltr_S_carrier) 
+                                A_sg_ltr_S_plus  
+                                A_sg_ltr_S_ltr 
+; A_sg_ltr_S_props           : A_sg_ltr_properties 
+                               (A_eqv_eq S A_sg_ltr_S_carrier) 
+                               A_sg_ltr_S_plus 
+                               A_sg_ltr_S_ltr
+; A_sg_ltr_S_ast             : cas_ast
+}.
+
 
 End ACAS.
 
-Section AMCAS.                                                    
+Section AMCAS.
+
+Inductive A_below_sg_ltr_S {L S : Type} := 
+| A_Below_sg_ltr_S_top        : @A_sg_ltr_S L S -> @A_below_sg_ltr_S L S
+.
 
 Inductive A_below_sg_ltr {L S : Type} := 
-| A_Below_sg_ltr_top          : @A_sg_ltr L S -> @A_below_sg_ltr L S
+| A_Below_sg_ltr_top          : @A_sg_ltr L S         -> @A_below_sg_ltr L S
+| A_Below_sg_ltr_sg_ltr_S     : @A_below_sg_ltr_S L S -> @A_below_sg_ltr L S                                                                 
 .
 
 Inductive A_sg_ltr_mcas {L S : Type} := 
@@ -154,14 +183,33 @@ Record sg_ltr {L S : Type} :=
 ; sg_ltr_ast             : cas_ast
 }.
 
+
+Record sg_ltr_S {L S : Type} :=
+{
+  sg_ltr_S_carrier        : @eqv S
+; sg_ltr_S_label          : @eqv L
+; sg_ltr_S_plus           : @binary_op S  
+; sg_ltr_S_ltr            : @ltr_type L S 
+; sg_ltr_S_plus_props     : @sg_CS_certificates S
+; sg_ltr_S_ltr_props      : @ltr_properties L S
+; sg_ltr_S_id_ann_props_d  : @sg_ltr_exists_id_ann_decidable L S
+; sg_ltr_S_props           : @sg_ltr_properties L S
+; sg_ltr_S_ast             : cas_ast
+}.
+
   
     
 End CAS.
 
 Section MCAS.
 
+Inductive below_sg_ltr_S {L S : Type} := 
+| Below_sg_ltr_S_top        : @sg_ltr_S L S -> @below_sg_ltr_S L S
+.
+  
 Inductive below_sg_ltr {L S : Type} := 
-| Below_sg_ltr_top          : @sg_ltr L S -> @below_sg_ltr L S
+| Below_sg_ltr_top          : @sg_ltr L S         -> @below_sg_ltr L S
+| Below_sg_ltr_sg_ltr_S     : @below_sg_ltr_S L S -> @below_sg_ltr L S                                                                                                                            
 .
 
 Inductive sg_ltr_mcas {L S : Type} := 
@@ -208,10 +256,33 @@ Section Translation.
       ; sg_ltr_ast               := A_sg_ltr_ast  A
     |}.
 
+  Definition A2C_sg_ltr_S {L S : Type} 
+    (A : @A_sg_ltr_S L S) : @sg_ltr_S L S :=
+    let wL := A_eqv_witness _ (A_sg_ltr_S_label A) in
+    let wS := A_eqv_witness _ (A_sg_ltr_S_carrier A) in     
+    {|
+        sg_ltr_S_carrier           := A2C_eqv _ (A_sg_ltr_S_carrier A)
+      ; sg_ltr_S_label             := A2C_eqv _ (A_sg_ltr_S_label A)
+      ; sg_ltr_S_plus              := A_sg_ltr_S_plus A
+      ; sg_ltr_S_ltr               := A_sg_ltr_S_ltr A
+      ; sg_ltr_S_plus_props        := P2C_sg_CS _ _ (A_sg_ltr_S_plus_props A)
+      ; sg_ltr_S_ltr_props         := P2C_ltr_properties _ _ _ (A_sg_ltr_S_ltr_props A) wL wS 
+      ; sg_ltr_S_id_ann_props_d    := @p2c_sg_ltr_exists_id_ann_decidable L S _ _ _ (A_sg_ltr_S_id_ann_props_d A) 
+      ; sg_ltr_S_props             := @P2C_sg_ltr_properties _ _ _ _ _ (A_sg_ltr_S_props A) wL wS 
+      ; sg_ltr_S_ast               := A_sg_ltr_S_ast  A
+    |}.
+
+
+  Definition A2C_below_sg_ltr_S {L S : Type} (A : @A_below_sg_ltr_S L S) :=
+    match A with 
+    | A_Below_sg_ltr_S_top B => Below_sg_ltr_S_top (A2C_sg_ltr_S B) 
+    end.
+  
 
   Definition A2C_below_sg_ltr {L S : Type} (A : @A_below_sg_ltr L S) : @below_sg_ltr L S :=
   match A with
-  | A_Below_sg_ltr_top B => Below_sg_ltr_top (A2C_sg_ltr B)
+  | A_Below_sg_ltr_top B      => Below_sg_ltr_top (A2C_sg_ltr B)
+  | A_Below_sg_ltr_sg_ltr_S B => Below_sg_ltr_sg_ltr_S (A2C_below_sg_ltr_S B)
   end. 
 
   Definition A2C_mcas_sg_ltr {L S : Type} (A : @A_sg_ltr_mcas L S) : @sg_ltr_mcas L S :=

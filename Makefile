@@ -97,6 +97,8 @@ CAS=\
    coq/sg_ltr/classify.v \
    coq/sg_ltr/cast.v \
    coq/sg_ltr/min_plus.v \
+   coq/sg_ltr/union_lift.v \
+   coq/sg_ltr/llex_product.v \
    coq/sg_rtr/properties.v \
    coq/bs/properties.v \
    coq/bs/structures.v \

@@ -74,6 +74,33 @@ Definition A_sg_ltr_exists_id_ann_equal {L S : Type} (r : brel S) (b : binary_op
 Definition A_sg_ltr_exists_id_ann_not_equal {L S : Type} (r : brel S) (b : binary_op S) (ltr : L -> (S -> S)) 
   := { z : S * S & match z with (i, a) => (bop_is_id S r b i) * (A_ltr_is_ann r ltr a) * (r i a = false) end}.
 
+
+Definition A_extract_exist_id_from_sg_ltr_exists_id_ann_equal
+  {L S : Type} (r : brel S) (add : binary_op S) (ltr : ltr_type L S)
+  (P : A_sg_ltr_exists_id_ann_equal r add ltr) : bop_exists_id S r add := 
+  existT (λ x : S, bop_is_id S r add x) (projT1 P) (fst (projT2 P)).
+
+Definition A_extract_exist_ann_from_sg_ltr_exists_id_ann_equal
+  {L S : Type} (r : brel S) (add : binary_op S) (ltr : ltr_type L S)
+  (P : A_sg_ltr_exists_id_ann_equal r add ltr) : A_ltr_exists_ann r ltr := 
+  existT (λ x : S, A_ltr_is_ann r ltr x) (projT1 P) (snd (projT2 P)).
+
+Definition A_extract_exist_id_from_sg_ltr_exists_id_ann_not_equal
+  {L S : Type} (r : brel S) (add : binary_op S) (ltr : ltr_type L S)
+  (P : A_sg_ltr_exists_id_ann_not_equal r add ltr) : bop_exists_id S r add :=
+  match P with
+  existT _ (i, a) p =>     
+     existT (λ x : S, bop_is_id S r add x) i (fst (fst p))
+  end. 
+
+Definition A_extract_exist_ann_from_sg_ltr_exists_id_ann_not_equal
+  {L S : Type} (r : brel S) (add : binary_op S) (ltr : ltr_type L S)
+  (P : A_sg_ltr_exists_id_ann_not_equal r add ltr) : A_ltr_exists_ann r ltr := 
+  match P with
+  existT _ (i, a) p =>     
+     existT (λ x : S, A_ltr_is_ann r ltr x) a (snd (fst p))
+  end. 
+
 Inductive A_sg_ltr_exists_id_ann_decidable {L S : Type} (eq : brel S) (b : binary_op S) (ltr : L -> (S -> S))  : Type :=
 
 | A_SG_LTR_Id_Ann_None      : (bop_not_exists_id S eq b) * (A_ltr_not_exists_ann eq ltr) -> A_sg_ltr_exists_id_ann_decidable eq b ltr 
@@ -233,7 +260,10 @@ Section Translation.
          | A_SG_LTR_Id_Ann_None_Ann _ _ _ (_, Q) => SG_LTR_Id_Ann_None_Ann (projT1 Q)
          | A_SG_LTR_Id_Ann_Equal _ _ _ Q         => SG_LTR_Id_Ann_Equal (projT1 Q)
          | A_SG_LTR_Id_Ann_Not_Equal _ _ _ Q     => SG_LTR_Id_Ann_Not_Equal (projT1 Q)
-         end. 
+         end.
+
+
+    
 
 End Translation.
 

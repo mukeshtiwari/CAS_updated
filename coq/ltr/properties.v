@@ -16,9 +16,6 @@ Definition A_ltr_not_cancellative {L S : Type} (rS : brel S) (lt : ltr_type L S)
 
 Definition A_ltr_cancellative_decidable  {L S : Type} (rS : brel S) (lt : ltr_type L S) 
    := (A_ltr_cancellative rS lt) + (A_ltr_not_cancellative rS lt). 
-Definition A_ltr_is_right {L S : Type} (rS : brel S) (lt : ltr_type L S) 
-  := ∀ (l : L) (s : S), rS (lt l s) s = true.
-
 
 Definition A_ltr_constant {L S : Type} (rS : brel S) (lt : ltr_type L S) 
     := ∀ (l : L) (s1 s2 : S), rS (lt l s1) (lt l s2) = true. 
@@ -29,7 +26,8 @@ Definition A_ltr_not_constant {L S : Type} (rS : brel S) (lt : ltr_type L S)
 Definition A_ltr_constant_decidable  {L S : Type} (rS : brel S) (lt : ltr_type L S) 
    := (A_ltr_constant rS lt) + (A_ltr_not_constant rS lt). 
 
-
+Definition A_ltr_is_right {L S : Type} (rS : brel S) (lt : ltr_type L S) 
+  := ∀ (l : L) (s : S), rS (lt l s) s = true.
 
 Definition A_ltr_not_is_right {L S : Type} (rS : brel S) (lt : ltr_type L S) 
     := { z : L * S & match z with (l, s) =>  rS (lt l s) s = false end }. 

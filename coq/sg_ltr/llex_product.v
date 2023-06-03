@@ -1,5 +1,6 @@
 Require Import Coq.Bool.Bool.
 Require Import CAS.coq.common.compute.
+From Coq Require Import String.
 
 Require Import CAS.coq.eqv.properties.
 Require Import CAS.coq.eqv.structures. 
@@ -11,6 +12,7 @@ Require Import CAS.coq.sg.llex.
 Require Import CAS.coq.sg.and. 
 Require Import CAS.coq.sg.product.
 Require Import CAS.coq.sg.theory.
+Require Import CAS.coq.sg.cast_up.
 
 Require Import CAS.coq.ltr.properties.
 Require Import CAS.coq.ltr.structures. 
@@ -22,7 +24,6 @@ Require Import CAS.coq.sg_ltr.cast.
 Require Import CAS.coq.sg_ltr.classify.
 
 From Coq Require Import String List.
-Local Open Scope string_scope.
 Import ListNotations.
 
 Section Theory.
@@ -69,8 +70,8 @@ Variable a_conS : bop_congruence S eqS addS.
 Variable a_conT : bop_congruence T eqT addT.
 
 
-Variable m_conS : ltr_congruence LS S eqLS eqS ltrS.
-Variable m_conT : ltr_congruence LT T eqLT eqT ltrT.
+Variable m_conS : A_ltr_congruence eqLS eqS ltrS.
+Variable m_conT : A_ltr_congruence eqLT eqT ltrT.
 
 Variable a_commS : bop_commutative S eqS addS.
 Variable a_idemS : bop_idempotent S eqS addS.
@@ -127,7 +128,7 @@ Proof. intros [s1 t1] [s2 t2] [s3 t3].
            assert (F2 := a_idemS (s1 |S> s2)). 
            assert (F3 := m_conS _ _ _ _ (refLS s1) F1). 
            assert (F4 := a_conS _ _ _ _ (refS (s1 |S> s2)) F3). apply symS in F2.
-           assert (F5 := trnS _ _ _ F2 F4). 
+           assert (F5 :=trnS _ _ _ F2 F4). 
            rewrite F5 in H4. discriminate H4.
          + assert (F1 := ldS s1 s2 s3).
            assert (F2 := m_conS _ _ _ _ (refLS s1) H1). apply symS in F1. 
@@ -191,13 +192,20 @@ Proof. intros [s1 t1] [s2 t2] [s3 t3].
 Qed. 
 
 
-Lemma slt_llex_product_not_distributive_v1 : 
-      slt_not_distributive eqS addS ltrS → slt_not_distributive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
-Proof. intros [ [s1 [s2 s3 ] ] nld ]. exists ((s1, wLT), ((s2, wT), (s3, wT))); simpl. rewrite nld. simpl. reflexivity. Defined. 
+Lemma sg_ltr_llex_product_not_distributive_v1 
+  (ND : A_sg_ltr_not_distributive eqS addS ltrS) :
+  A_sg_ltr_not_distributive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Proof. destruct ND as [ [s1 [s2 s3 ] ] nld ].
+       exists ((s1, wLT), ((s2, wT), (s3, wT))); simpl.
+       rewrite nld; simpl.
+       reflexivity.
+Defined. 
 
-Lemma slt_llex_product_not_distributive_v2 (dS : slt_distributive eqS addS ltrS): 
-  slt_not_distributive eqT addT ltrT → slt_not_distributive  (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
-Proof. intros [ [t1 [t2 t3 ] ] nld ].
+Lemma sg_ltr_llex_product_not_distributive_v2
+  (dS : A_sg_ltr_distributive eqS addS ltrS)
+  (ndT : A_sg_ltr_not_distributive eqT addT ltrT) :
+  A_sg_ltr_not_distributive  (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
+Proof. destruct ndT as [ [t1 [t2 t3 ] ] nld ].
        exists ((wLS, t1), ((wS, t2), (wS, t3))); simpl.        
        unfold brel_product, llex_p2.
        apply bop_and_false_intro. right. 
@@ -210,11 +218,10 @@ Proof. intros [ [t1 [t2 t3 ] ] nld ].
        exact nld. 
 Defined.
 
-
 (* see cases 1-4 in the proof below *) 
 
-Definition A_witness_slt_llex_product_not_left_distributive
-      (selS_or_id_annT : bop_selective S eqS addS + (bop_is_id T eqT addT argT * ltr_is_ann LT T eqT ltrT argT))
+Definition A_witness_sg_ltr_llex_product_not_distributive
+      (selS_or_id_annT : bop_selective S eqS addS + (bop_is_id T eqT addT argT * A_ltr_is_ann eqT ltrT argT))
       (s1 : LS) (s2 s3 : S)
       (t1 : LT) (t2 t3 : T)
 := if (eqS (s2 +S s3) s2) 
@@ -243,14 +250,14 @@ Definition A_witness_slt_llex_product_not_left_distributive
              end.   
 
 
-Lemma slt_llex_product_not_distributive_v3
+Lemma sg_ltr_llex_product_not_distributive_v3
       (a_commT : bop_commutative T eqT addT) (*NB*)
-      (selS_or_id_annT : bop_selective S eqS addS + (bop_is_id T eqT addT argT * ltr_is_ann LT T eqT ltrT argT))
-      (ldS : slt_distributive eqS addS ltrS)
-      (ldT : slt_distributive eqT addT ltrT) : 
-      ltr_not_left_cancellative LS S eqS ltrS →
-      ltr_not_left_constant LT T eqT ltrT → 
-         slt_not_distributive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
+      (selS_or_id_annT : bop_selective S eqS addS + (bop_is_id T eqT addT argT * A_ltr_is_ann eqT ltrT argT))
+      (ldS : A_sg_ltr_distributive eqS addS ltrS)
+      (ldT : A_sg_ltr_distributive eqT addT ltrT) : 
+      A_ltr_not_cancellative eqS ltrS →
+      A_ltr_not_constant eqT ltrT → 
+         A_sg_ltr_not_distributive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
 Proof. intros [ [s1 [s2 s3 ] ] [E N] ] [ [t1 [ t2 t3 ]] F].
        (* to understand the cases below, assume we have done this: 
           
@@ -258,8 +265,8 @@ Proof. intros [ [s1 [s2 s3 ] ] [E N] ] [ [t1 [ t2 t3 ]] F].
 
           In each of the four cases pick a, b, and c to make that case work. 
         *)
-       exists(A_witness_slt_llex_product_not_left_distributive selS_or_id_annT s1 s2 s3 t1 t2 t3). 
-       unfold A_witness_slt_llex_product_not_left_distributive. 
+       exists(A_witness_sg_ltr_llex_product_not_distributive selS_or_id_annT s1 s2 s3 t1 t2 t3). 
+       unfold A_witness_sg_ltr_llex_product_not_distributive. 
        unfold ltr_product, brel_product, bop_llex.        
        case_eq(eqS s2 (s2 +S s3)); intro H2; 
        case_eq(eqS (s1 |S> s2) ((s1 |S> s2) +S (s1 |S> s3))); intro H4; simpl. 
@@ -466,7 +473,7 @@ Defined.
    <-> (absorptive(S) * anti_left(mulS)) + (absorptive(S) * absorptive(T))
    where anti_left(mulS) = ∀ s t : S, eqS s (mulS s t) = false
 
- slt_strictly_absorptive: 
+ sg_ltr_strictly_absorptive: 
   ∀ (l : L) (s : S),
     (eqS s (add s (ltr l s)) = true) * (eqS (ltr l s) (add s (ltr l s)) = false)
 
@@ -475,10 +482,10 @@ Defined.
       eqS s (add s (ltr l s)) = true) * (∀ s t : S, eqS s (mulS s t) = false)
  *)
 
-Lemma slt_llex_product_absorptive : 
-      (slt_strictly_absorptive eqS addS ltrS) +  
-      ((slt_absorptive eqS addS ltrS) * (slt_absorptive eqT addT ltrT)) → 
-         slt_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
+Lemma sg_ltr_llex_product_absorptive : 
+      (A_sg_ltr_strictly_absorptive eqS addS ltrS) +  
+      ((A_sg_ltr_absorptive eqS addS ltrS) * (A_sg_ltr_absorptive eqT addT ltrT)) → 
+         A_sg_ltr_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
 Proof. intros [sabsS | [absS absT]].
        + intros [lS lT] [s t].
          destruct (sabsS lS s) as [A B]. compute. 
@@ -495,16 +502,16 @@ Proof. intros [sabsS | [absS absT]].
          ++ apply refT. 
 Qed. 
 
-Lemma slt_llex_product_not_absorptive_left : 
-      slt_not_absorptive eqS addS ltrS → 
-         slt_not_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Lemma sg_ltr_llex_product_not_absorptive_left : 
+      A_sg_ltr_not_absorptive eqS addS ltrS → 
+         A_sg_ltr_not_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
 Proof. intros [ [s1 s2] P ]. exists ((s1, wLT), (s2, wT)). simpl. rewrite P. simpl. reflexivity. Defined. 
 
 
-Lemma slt_llex_product_not_absorptive_right : 
-      (slt_not_strictly_absorptive eqS addS ltrS) *  
-      ((slt_absorptive eqS addS ltrS) * (slt_not_absorptive eqT addT ltrT)) → 
-         slt_not_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
+Lemma sg_ltr_llex_product_not_absorptive_right : 
+      (A_sg_ltr_not_strictly_absorptive eqS addS ltrS) *  
+      ((A_sg_ltr_absorptive eqS addS ltrS) * (A_sg_ltr_not_absorptive eqT addT ltrT)) → 
+         A_sg_ltr_not_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
 Proof. intros [[[lS s] A] [absS [[lT t] B]]]; compute.
        assert (C := absS lS s).
        exists ((lS, lT), (s, t)). rewrite C.
@@ -522,10 +529,10 @@ Defined.
 
 
 
-Lemma slt_llex_product_strictly_absorptive : 
-      (slt_strictly_absorptive eqS addS ltrS) +  
-      ((slt_absorptive eqS addS ltrS) * (slt_strictly_absorptive eqT addT ltrT)) → 
-         slt_strictly_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
+Lemma sg_ltr_llex_product_strictly_absorptive : 
+      (A_sg_ltr_strictly_absorptive eqS addS ltrS) +  
+      ((A_sg_ltr_absorptive eqS addS ltrS) * (A_sg_ltr_strictly_absorptive eqT addT ltrT)) → 
+         A_sg_ltr_strictly_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
 Proof. intros [sabsS | [absS sabsT]].
        + intros [lS lT] [s t].
          destruct (sabsS lS s) as [A B]. split; compute. 
@@ -550,16 +557,16 @@ Proof. intros [sabsS | [absS sabsT]].
 Qed.
 
 
-Lemma slt_llex_product_not_strictly_absorptive_left : 
-      slt_not_absorptive eqS addS ltrS → 
-         slt_not_strictly_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Lemma sg_ltr_llex_product_not_strictly_absorptive_left : 
+      A_sg_ltr_not_absorptive eqS addS ltrS → 
+         A_sg_ltr_not_strictly_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
 Proof. intros [ [s1 s2] P ]. exists ((s1, wLT), (s2, wT)). simpl. rewrite P. simpl. left. reflexivity. Defined. 
 
 
-Lemma slt_llex_product_not_strictly_absorptive_right : 
-      (slt_not_strictly_absorptive eqS addS ltrS) *  
-      ((slt_absorptive eqS addS ltrS) * (slt_not_strictly_absorptive eqT addT ltrT)) → 
-         slt_not_strictly_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
+Lemma sg_ltr_llex_product_not_strictly_absorptive_right : 
+      (A_sg_ltr_not_strictly_absorptive eqS addS ltrS) *  
+      ((A_sg_ltr_absorptive eqS addS ltrS) * (A_sg_ltr_not_strictly_absorptive eqT addT ltrT)) → 
+         A_sg_ltr_not_strictly_absorptive (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT).
 Proof. intros [[[lS s] A] [absS [[lT t] B]]]; compute.
        assert (C := absS lS s).
        exists ((lS, lT), (s, t)). rewrite C.
@@ -569,7 +576,55 @@ Proof. intros [[[lS s] A] [absS [[lT t] B]]]; compute.
         destruct B as [B | B].
          ++ left. apply symS in A. rewrite A. exact B. 
          ++ rewrite (symS _ _ A). right. exact B.
-Defined.            
+Defined.
+
+
+Lemma A_sg_ltr_llex_product_exists_id_ann_equal : 
+      A_sg_ltr_exists_id_ann_equal eqS addS ltrS → 
+      A_sg_ltr_exists_id_ann_equal eqT addT ltrT → 
+      A_sg_ltr_exists_id_ann_equal (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Proof. intros [iS [piS paS]]  [iT [piT paT]].
+       exists (iS, iT). split.
+       - apply bop_llex_is_id; auto.
+       - apply ltr_product_is_ann; auto. 
+Defined.
+
+Lemma A_sg_ltr_llex_product_exists_id_ann_not_equal_v1 : 
+      A_sg_ltr_exists_id_ann_not_equal eqS addS ltrS →  
+      A_sg_ltr_exists_id_ann_equal eqT addT ltrT → 
+      A_sg_ltr_exists_id_ann_not_equal (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Proof. intros [[iS aS] [[piS paS] iS_not_aS]]  [iT [piT paT]].
+       exists ((iS, iT), (aS, iT)). split.
+       - split.
+         + apply bop_llex_is_id; auto.
+         + apply ltr_product_is_ann; auto. 
+       - compute. rewrite iS_not_aS. reflexivity. 
+Defined. 
+
+Lemma A_sg_ltr_llex_product_exists_id_ann_not_equal_v2: 
+      A_sg_ltr_exists_id_ann_equal eqS addS ltrS →   
+      A_sg_ltr_exists_id_ann_not_equal eqT addT ltrT → 
+      A_sg_ltr_exists_id_ann_not_equal (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Proof. intros [iS [piS paS]]  [[iT aT] [[piT paT] iT_not_aT]].
+       exists ((iS, iT), (iS, aT)). split.
+       - split.
+         + apply bop_llex_is_id; auto.
+         + apply ltr_product_is_ann; auto.
+       - compute. rewrite iT_not_aT.
+         rewrite (refS iS). reflexivity. 
+Defined.
+
+Lemma A_sg_ltr_llex_product_exists_id_ann_not_equal_v3 : 
+      A_sg_ltr_exists_id_ann_not_equal eqS addS ltrS →   
+      A_sg_ltr_exists_id_ann_not_equal eqT addT ltrT → 
+      A_sg_ltr_exists_id_ann_not_equal (eqS <*> eqT) (addS [+] addT) (ltrS [*] ltrT). 
+Proof. intros [[iS aS] [[piS paS] iS_not_aS]]  [[iT aT] [[piT paT] iT_not_aT]].
+       exists ((iS, iT), (aS, aT)). split.
+       - split.
+         + apply bop_llex_is_id; auto.
+         + apply ltr_product_is_ann; auto. 
+       - compute. rewrite iS_not_aS. reflexivity. 
+Defined. 
 
 End Theory. 
 
@@ -583,6 +638,14 @@ Variables (LS S LT T : Type)
           (eqLT : brel LT)
           (eqS : brel S)
           (eqT : brel T)
+          (conS : brel_congruence _ eqS eqS)
+          (refS : brel_reflexive _ eqS)
+          (symS : brel_symmetric _ eqS)
+          (trnS : brel_transitive _ eqS)
+          (conT : brel_congruence _ eqT eqT)          
+          (refT : brel_reflexive _ eqT)
+          (symT : brel_symmetric _ eqT)
+          (trnT : brel_transitive _ eqT)          
           (argT : T)
           (wLS : LS)
           (wLT : LT)                     
@@ -601,21 +664,21 @@ Variables (LS S LT T : Type)
           (ltrT : ltr_type LT T)
           (a_congS : bop_congruence S eqS addS)
           (a_congT : bop_congruence T eqT addT)
-          (ltr_congS : ltr_congruence LS S eqLS eqS ltrS).                     
+          (ltr_congS : A_ltr_congruence eqLS eqS ltrS).                     
 
-Definition slt_llex_product_distributive_decide
+Definition A_sg_ltr_llex_product_distributive_decide
            (a_commT : bop_commutative T eqT addT) 
            (selS_or_id_annT : 
               bop_selective S eqS addS + 
-              (bop_is_id T eqT addT argT * ltr_is_ann LT T eqT ltrT argT))
-           (LDS_d : slt_distributive_decidable eqS addS ltrS)
-           (LDT_d : slt_distributive_decidable eqT addT ltrT)
-           (LCS_d : ltr_left_cancellative_decidable LS S eqS ltrS)
-           (LKT_d : ltr_left_constant_decidable LT T eqT ltrT): 
-  slt_distributive_decidable
+              (bop_is_id T eqT addT argT * A_ltr_is_ann eqT ltrT argT))
+           (LDS_d : A_sg_ltr_distributive_decidable eqS addS ltrS)
+           (LDT_d : A_sg_ltr_distributive_decidable eqT addT ltrT)
+           (LCS_d : A_ltr_cancellative_decidable eqS ltrS)
+           (LKT_d : A_ltr_constant_decidable eqT ltrT): 
+  A_sg_ltr_distributive_decidable
              (brel_product eqS eqT)
              (bop_llex argT eqS addS addT)
-             (ltr_product ltrS ltrT) :=
+             (ltr_product_op ltrS ltrT) :=
 let congS := A_eqv_congruence _ _ eqvS in   
 let refS := A_eqv_reflexive _ _ eqvS in 
 let symS := A_eqv_symmetric _ _ eqvS in
@@ -634,647 +697,311 @@ match LDS_d with
 | inl LDS  =>
   match LDT_d with
   | inl LDT  =>
-    match LCS_d with
-    | inl LCS  => inl (slt_llex_product_distributive LS S LT T eqLS eqS eqT argT addS addT ltrS ltrT congS refS symS trnS refT trnT refLS a_congS ltr_congS idemS selS_or_annT LDS LDT (inl LCS))
+      match LCS_d with
+      | inl LCS  =>
+          inl (sg_ltr_llex_product_distributive LS S LT T eqLS eqS eqT argT addS addT ltrS ltrT congS refS symS trnS refT trnT refLS a_congS ltr_congS idemS selS_or_annT LDS LDT (inl LCS))
     | inr nLCS =>
       match LKT_d with
-      | inl LKT  => inl (slt_llex_product_distributive LS S LT T eqLS eqS eqT argT addS addT ltrS ltrT congS refS symS trnS refT trnT refLS a_congS ltr_congS idemS selS_or_annT LDS LDT (inr LKT))
-      | inr nLKT => inr (slt_llex_product_not_distributive_v3 LS S LT T eqLS eqS eqT argT addS addT ltrS ltrT refS symS trnS refT symT trnT refLS a_congS a_congT ltr_congS idemS commT selS_or_id_annT LDS LDT nLCS nLKT) 
+      | inl LKT  => inl (sg_ltr_llex_product_distributive LS S LT T eqLS eqS eqT argT addS addT ltrS ltrT congS refS symS trnS refT trnT refLS a_congS ltr_congS idemS selS_or_annT LDS LDT (inr LKT))
+      | inr nLKT => inr (sg_ltr_llex_product_not_distributive_v3 LS S LT T eqLS eqS eqT argT addS addT ltrS ltrT refS symS trnS refT symT trnT refLS a_congS a_congT ltr_congS idemS commT selS_or_id_annT LDS LDT nLCS nLKT) 
       end 
     end 
-  | inr nLDT => inr (slt_llex_product_not_distributive_v2 LS S LT T eqLS eqS eqT argT wS wLS addS addT ltrS ltrT symS trnS refLS ltr_congS idemS LDS nLDT)    
+  | inr nLDT => inr (@sg_ltr_llex_product_not_distributive_v2 LS S LT T eqLS eqS eqT argT wS wLS addS addT ltrS ltrT symS trnS refLS ltr_congS idemS LDS nLDT)    
   end 
-| inr nLDS => inr (slt_llex_product_not_distributive_v1 LS S LT T eqS eqT argT wT wLT addS addT ltrS ltrT nLDS) 
+| inr nLDS => inr (@sg_ltr_llex_product_not_distributive_v1 LS S LT T eqS eqT argT wT wLT addS addT ltrS ltrT nLDS) 
 end.     
 
 
-Definition slt_llex_product_absorptive_decide
-           (sabsS_d : slt_strictly_absorptive_decidable eqS addS ltrS)
-           (absS_d : slt_absorptive_decidable eqS addS ltrS)
-           (absT_d : slt_absorptive_decidable eqT addT ltrT) :
-  slt_absorptive_decidable
+Definition A_sg_ltr_llex_product_absorptive_decide
+           (sabsS_d : A_sg_ltr_strictly_absorptive_decidable eqS addS ltrS)
+           (absS_d : A_sg_ltr_absorptive_decidable eqS addS ltrS)
+           (absT_d : A_sg_ltr_absorptive_decidable eqT addT ltrT) :
+  A_sg_ltr_absorptive_decidable
              (brel_product eqS eqT)
              (bop_llex argT eqS addS addT)
-             (ltr_product ltrS ltrT) :=
+             (ltr_product_op ltrS ltrT) :=
 let refS := A_eqv_reflexive _ _ eqvS in 
 let symS := A_eqv_symmetric _ _ eqvS in
 let trnS := A_eqv_transitive _ _ eqvS in
 let refT := A_eqv_reflexive _ _ eqvT in 
 match sabsS_d with
-| inl sabsS  => inl(slt_llex_product_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inl sabsS))
+| inl sabsS  => inl(sg_ltr_llex_product_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inl sabsS))
 | inr nsabsS =>
   match absS_d with
   | inl absS  =>
     match absT_d with
-    | inl absT  => inl(slt_llex_product_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inr (absS, absT)))
-    | inr nabsT => inr(slt_llex_product_not_absorptive_right LS S LT T eqS eqT argT addS addT ltrS ltrT symS trnS idemS (nsabsS, (absS, nabsT)))
+    | inl absT  => inl(sg_ltr_llex_product_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inr (absS, absT)))
+    | inr nabsT => inr(sg_ltr_llex_product_not_absorptive_right LS S LT T eqS eqT argT addS addT ltrS ltrT symS trnS idemS (nsabsS, (absS, nabsT)))
     end 
-  | inr nabsS => inr (slt_llex_product_not_absorptive_left LS S LT T eqS eqT argT wT wLT addS addT ltrS ltrT nabsS)
+  | inr nabsS => inr (sg_ltr_llex_product_not_absorptive_left LS S LT T eqS eqT argT wT wLT addS addT ltrS ltrT nabsS)
   end
 end.     
 
-Definition slt_llex_product_strictly_absorptive_decide
-           (sabsS_d : slt_strictly_absorptive_decidable eqS addS ltrS)
-           (absS_d : slt_absorptive_decidable eqS addS ltrS)
-           (absT_d : slt_strictly_absorptive_decidable eqT addT ltrT) :
-  slt_strictly_absorptive_decidable
+Definition A_sg_ltr_llex_product_strictly_absorptive_decide
+           (sabsS_d : A_sg_ltr_strictly_absorptive_decidable eqS addS ltrS)
+           (absS_d : A_sg_ltr_absorptive_decidable eqS addS ltrS)
+           (absT_d : A_sg_ltr_strictly_absorptive_decidable eqT addT ltrT) :
+  A_sg_ltr_strictly_absorptive_decidable
              (brel_product eqS eqT)
              (bop_llex argT eqS addS addT)
-             (ltr_product ltrS ltrT) :=    
+             (ltr_product_op ltrS ltrT) :=    
 let refS := A_eqv_reflexive _ _ eqvS in 
 let symS := A_eqv_symmetric _ _ eqvS in
 let trnS := A_eqv_transitive _ _ eqvS in
 let refT := A_eqv_reflexive _ _ eqvT in  
 match sabsS_d with
-| inl sabsS  => inl(slt_llex_product_strictly_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inl sabsS))
+| inl sabsS  => inl(sg_ltr_llex_product_strictly_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inl sabsS))
 | inr nsabsS =>
   match absS_d with
   | inl absS  =>
     match absT_d with
-    | inl absT  => inl(slt_llex_product_strictly_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inr (absS, absT)))
-    | inr nabsT => inr(slt_llex_product_not_strictly_absorptive_right LS S LT T eqS eqT argT addS addT ltrS ltrT symS (nsabsS, (absS, nabsT)))
+    | inl absT  => inl(sg_ltr_llex_product_strictly_absorptive LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT (inr (absS, absT)))
+    | inr nabsT => inr(sg_ltr_llex_product_not_strictly_absorptive_right LS S LT T eqS eqT argT addS addT ltrS ltrT symS (nsabsS, (absS, nabsT)))
     end 
-  | inr nabsS => inr (slt_llex_product_not_strictly_absorptive_left LS S LT T eqS eqT argT wT wLT addS addT ltrS ltrT nabsS)
+  | inr nabsS => inr (sg_ltr_llex_product_not_strictly_absorptive_left LS S LT T eqS eqT argT wT wLT addS addT ltrS ltrT nabsS)
   end
 end.
 
-Definition slt_llex_product_proofs
-           (a_commT : bop_commutative T eqT addT) 
-           (selS_or_id_annT : bop_selective S eqS addS + (bop_is_id T eqT addT argT * ltr_is_ann LT T eqT ltrT argT))
-           (QS : left_transform_proofs LS S eqS eqLS ltrS)
-           (QT : left_transform_proofs LT T eqT eqLT ltrT)           
-           (PS : slt_proofs eqS addS ltrS)
-           (PT : slt_proofs eqT addT ltrT) : 
-  slt_proofs 
-             (brel_product eqS eqT)
-             (bop_llex argT eqS addS addT)
-             (ltr_product ltrS ltrT) :=
-let DS_d := A_slt_distributive_d _ _ _ PS in
-let DT_d := A_slt_distributive_d _ _ _ PT in
-let CS_d := A_left_transform_left_cancellative_d _ _ _ _ _ QS in
-let KT_d := A_left_transform_left_constant_d _ _ _ _ _ QT in
-let asbS_d := A_slt_absorptive_d _ _ _ PS in
-let asbT_d := A_slt_absorptive_d _ _ _ PT in
-let sasbS_d := A_slt_strictly_absorptive_d _ _ _ PS in
-let sasbT_d := A_slt_strictly_absorptive_d _ _ _ PT in
+
+
+Definition A_sg_ltr_llex_product_proofs_exists_id_ann_decidable 
+    (idaS_d : A_sg_ltr_exists_id_ann_decidable eqS addS ltrS)
+    (idaT_d : A_sg_ltr_exists_id_ann_decidable eqT addT ltrT) : 
+    A_sg_ltr_exists_id_ann_decidable
+      (brel_product eqS eqT)
+      (bop_llex argT eqS addS addT) 
+      (ltr_product_op ltrS ltrT) :=
+  let idST idS idT   := bop_llex_exists_id S T eqS eqT addS addT symS argT refT idS idT in 
+  let nidST_l nidS   := bop_llex_not_exists_id_left S T eqS eqT addS addT argT nidS in
+  let nidST_r nidT   := bop_llex_not_exists_id_right S T eqS eqT addS addT symS argT nidT in
+  let annST annS annT := ltr_product_exists_ann LS S LT T eqS ltrS eqT ltrT annS annT in  
+  let nannST_l nannS := ltr_product_not_exists_ann_left LS S LT T eqS ltrS eqT wLT ltrT nannS in
+  let nannST_r nannT := ltr_product_not_exists_ann_right LS S LT T eqS wLS ltrS eqT ltrT nannT in
+  let extract_idS1 id_ann_eqS := A_extract_exist_id_from_sg_ltr_exists_id_ann_equal eqS addS ltrS id_ann_eqS in
+  let extract_idS2 id_ann_not_eqS := A_extract_exist_id_from_sg_ltr_exists_id_ann_not_equal eqS addS ltrS id_ann_not_eqS in                             
+  let extract_idT1 id_ann_eqT := A_extract_exist_id_from_sg_ltr_exists_id_ann_equal eqT addT ltrT id_ann_eqT in
+  let extract_idT2 id_ann_not_eqT := A_extract_exist_id_from_sg_ltr_exists_id_ann_not_equal eqT addT ltrT id_ann_not_eqT in
+  let extract_annS1 id_ann_eqS := A_extract_exist_ann_from_sg_ltr_exists_id_ann_equal eqS addS ltrS id_ann_eqS in
+  let extract_annS2 id_ann_not_eqS := A_extract_exist_ann_from_sg_ltr_exists_id_ann_not_equal eqS addS ltrS id_ann_not_eqS in                             
+  let extract_annT1 id_ann_eqT := A_extract_exist_ann_from_sg_ltr_exists_id_ann_equal eqT addT ltrT id_ann_eqT in
+  let extract_annT2 id_ann_not_eqT := A_extract_exist_ann_from_sg_ltr_exists_id_ann_not_equal eqT addT ltrT id_ann_not_eqT in                           
+  match idaS_d with
+  | A_SG_LTR_Id_Ann_None _ _ _ (nidS, nannS) =>
+      A_SG_LTR_Id_Ann_None _ _ _ (nidST_l nidS, nannST_l nannS)      
+  | A_SG_LTR_Id_Ann_Id_None _ _ _ (idS, nannS) =>
+       match idaT_d with 
+       | A_SG_LTR_Id_Ann_None _ _ _ (nidT, nannT) =>
+           A_SG_LTR_Id_Ann_None _ _ _ (nidST_r nidT, nannST_l nannS)      
+       | A_SG_LTR_Id_Ann_Id_None _ _ _ (idT, nannT) =>
+           A_SG_LTR_Id_Ann_Id_None _ _ _ (idST idS idT, nannST_l nannS)      
+       | A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidT, annT) =>
+           A_SG_LTR_Id_Ann_None _ _ _ (nidST_r nidT, nannST_l nannS)      
+       | A_SG_LTR_Id_Ann_Equal _ _ _ id_ann_eqT =>
+           A_SG_LTR_Id_Ann_Id_None _ _ _ (idST idS (extract_idT1 id_ann_eqT),  nannST_l nannS)
+       | A_SG_LTR_Id_Ann_Not_Equal _ _ _ id_ann_not_eqT =>
+           A_SG_LTR_Id_Ann_Id_None _ _ _ (idST idS (extract_idT2 id_ann_not_eqT),  nannST_l nannS)
+       end       
+  | A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidS, annS) =>
+       match idaT_d with 
+       | A_SG_LTR_Id_Ann_None _ _ _ (nidT, nannT) =>
+           A_SG_LTR_Id_Ann_None _ _ _ (nidST_l nidS, nannST_r nannT)
+       | A_SG_LTR_Id_Ann_Id_None _ _ _ (idT, nannT) => 
+           A_SG_LTR_Id_Ann_None _ _ _ (nidST_l nidS, nannST_r nannT)
+       | A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidT, annT) =>
+           A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidST_l nidS, annST annS annT) 
+       | A_SG_LTR_Id_Ann_Equal _ _ _ id_ann_eqT =>
+           A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidST_l nidS, annST annS (extract_annT1 id_ann_eqT)) 
+       | A_SG_LTR_Id_Ann_Not_Equal _ _ _ id_ann_not_eqT =>
+           A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidST_l nidS, annST annS (extract_annT2 id_ann_not_eqT)) 
+       end      
+  | A_SG_LTR_Id_Ann_Equal _ _ _ id_ann_eqS =>
+       match idaT_d with 
+       | A_SG_LTR_Id_Ann_None _ _ _ (nidT, nannT) =>
+           A_SG_LTR_Id_Ann_None _ _ _ (nidST_r nidT, nannST_r nannT)           
+       | A_SG_LTR_Id_Ann_Id_None _ _ _ (idT, nannT) =>
+           A_SG_LTR_Id_Ann_Id_None _ _ _ (idST (extract_idS1 id_ann_eqS) idT, nannST_r nannT)                      
+       | A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidT, annT) =>
+           A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidST_r nidT, annST (extract_annS1 id_ann_eqS) annT)                      
+       | A_SG_LTR_Id_Ann_Equal _ _ _ id_ann_eqT =>
+           A_SG_LTR_Id_Ann_Equal _ _ _ (@A_sg_ltr_llex_product_exists_id_ann_equal LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT id_ann_eqS id_ann_eqT)
+       | A_SG_LTR_Id_Ann_Not_Equal _ _ _ id_ann_not_eqT =>
+           A_SG_LTR_Id_Ann_Not_Equal _ _ _ (@A_sg_ltr_llex_product_exists_id_ann_not_equal_v2 LS S LT T eqS eqT argT addS addT ltrS ltrT refS symS refT id_ann_eqS id_ann_not_eqT)           
+       end       
+  | A_SG_LTR_Id_Ann_Not_Equal _ _ _ id_ann_not_eqS =>
+       match idaT_d with 
+       | A_SG_LTR_Id_Ann_None _ _ _ (nidT, nannT) =>
+           A_SG_LTR_Id_Ann_None _ _ _ (nidST_r nidT, nannST_r nannT)                      
+       | A_SG_LTR_Id_Ann_Id_None _ _ _ (idT, nannT) =>
+           A_SG_LTR_Id_Ann_Id_None _ _ _ (idST (extract_idS2 id_ann_not_eqS) idT, nannST_r nannT)                                 
+       | A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidT, annT) =>
+           A_SG_LTR_Id_Ann_None_Ann _ _ _ (nidST_r nidT, annST (extract_annS2 id_ann_not_eqS) annT)                                 
+       | A_SG_LTR_Id_Ann_Equal _ _ _ id_ann_eqT =>
+           A_SG_LTR_Id_Ann_Not_Equal _ _ _ (@A_sg_ltr_llex_product_exists_id_ann_not_equal_v1 LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT id_ann_not_eqS id_ann_eqT)                      
+       | A_SG_LTR_Id_Ann_Not_Equal _ _ _ id_ann_not_eqT =>
+           A_SG_LTR_Id_Ann_Not_Equal _ _ _ (@A_sg_ltr_llex_product_exists_id_ann_not_equal_v3 LS S LT T eqS eqT argT addS addT ltrS ltrT symS refT id_ann_not_eqS id_ann_not_eqT)
+    end 
+  end. 
+
+End Decide.
+
+
+Section Proofs.
+
+
+  Variables
+    (LS S LT T : Type)
+    (eqLS : brel LS)
+    (wLS : LS)       
+    (eqS  : brel S)
+    (wS : S) 
+    (eqLT : brel LT)
+    (wLT : LT)
+    (eqT : brel T)
+    (wT : T)
+    (eqvLSP : eqv_proofs LS eqLS) 
+    (eqvSP  : eqv_proofs S eqS) 
+    (eqvTP  : eqv_proofs T eqT)
+    (addS : binary_op S)
+    (addT : binary_op T)
+    (addSP : sg_CS_proofs S eqS addS)
+    (addTP : sg_C_proofs T eqT addT)     
+    (ltrS : ltr_type LS S)
+    (ltrT : ltr_type LT T)
+    (QS : A_ltr_properties eqLS eqS ltrS)
+    (QT : A_ltr_properties eqLT eqT ltrT)           
+    (PS : A_sg_ltr_properties eqS addS ltrS)
+    (PT : A_sg_ltr_properties eqT addT ltrT).
+
+Definition A_sg_ltr_llex_product_properties_selective_version : 
+  A_sg_ltr_properties
+    (brel_product eqS eqT)
+    (bop_llex wT eqS addS addT)
+    (ltr_product_op ltrS ltrT) :=
+let congS := A_sg_CS_congruence _ _ _ addSP in   
+let selS := A_sg_CS_selective _ _ _ addSP in
+let idemS := bop_selective_implies_idempotent _ eqS addS selS in
+let congT := A_sg_C_congruence _ _ _ addTP in   
+let commT := A_sg_C_commutative _ _ _ addTP in
+let cong_ltrS := A_ltr_props_congruence _ _ _ QS in 
+let DS_d := A_sg_ltr_distributive_d _ _ _ PS in
+let DT_d := A_sg_ltr_distributive_d _ _ _ PT in
+let CS_d := A_ltr_props_cancellative_d _ _ _ QS in
+let KT_d := A_ltr_props_constant_d _ _ _ QT in
+let asbS_d := A_sg_ltr_absorptive_d _ _ _ PS in
+let asbT_d := A_sg_ltr_absorptive_d _ _ _ PT in
+let sasbS_d := A_sg_ltr_strictly_absorptive_d _ _ _ PS in
+let sasbT_d := A_sg_ltr_strictly_absorptive_d _ _ _ PT in
 {|
-  A_slt_distributive_d          := slt_llex_product_distributive_decide commT selS_or_id_annT DS_d DT_d CS_d KT_d 
-; A_slt_absorptive_d            := slt_llex_product_absorptive_decide sasbS_d asbS_d asbT_d
-; A_slt_strictly_absorptive_d   := slt_llex_product_strictly_absorptive_decide sasbS_d asbS_d sasbT_d
+  A_sg_ltr_distributive_d          :=
+    A_sg_ltr_llex_product_distributive_decide
+      LS S LT T eqLS eqS eqT wT wLS wLT wS wT eqvLSP eqvSP eqvTP addS addT idemS 
+      commT ltrS ltrT congS congT cong_ltrS commT (inl selS) DS_d DT_d CS_d KT_d
+; A_sg_ltr_absorptive_d            :=
+    A_sg_ltr_llex_product_absorptive_decide LS S LT T eqS eqT wT wLT
+      wT eqvSP eqvTP addS addT idemS ltrS ltrT sasbS_d asbS_d asbT_d
+; A_sg_ltr_strictly_absorptive_d   :=
+    A_sg_ltr_llex_product_strictly_absorptive_decide LS S LT T eqS eqT wT wLT
+      wT eqvSP eqvTP addS addT ltrS ltrT sasbS_d asbS_d sasbT_d
 |}.
 
-
-Definition bops_llex_product_proofs_exists_id_ann_decide :
-    forall (L₁ S₁ L₂ S₂ : Type)
-      (l₁ : L₁)
-      (l₂ : L₂)
-      (s₁ : S₁)
-      (s₂ : S₂)
-      (brelL₁ : brel L₁)
-      (brelL₂ : brel L₂) 
-      (brelS₁ : brel S₁)
-      (brelS₂ : brel S₂)
-      (eqv_proofL₁ : eqv_proofs L₁ brelL₁)
-      (eqv_proofL₂ : eqv_proofs L₂ brelL₂)
-      (eqv_proofS₁ : eqv_proofs S₁ brelS₁)
-      (eqv_proofS₂ : eqv_proofs S₂ brelS₂)
-      (bopS₁ : binary_op S₁)
-      (bopS₂ : binary_op S₂)
-      (ltr₁ : ltr_type L₁ S₁)
-      (ltr₂ : ltr_type L₂ S₂),
-    slt_exists_id_ann_decidable brelS₁ bopS₁ ltr₁ ->
-    slt_exists_id_ann_decidable brelS₂ bopS₂ ltr₂ ->
-    slt_exists_id_ann_decidable
-      (brel_product brelS₁ brelS₂)
-      (bop_llex s₂ brelS₁ bopS₁ bopS₂) 
-      (ltr_product ltr₁ ltr₂).
-  Proof.
-    intros * ? ? ? ? ? ? ? ? 
-      Ha Hb Hc Hd ? ? ? ? H.
-    refine 
-    (match H with
-      | SLT_Id_Ann_Proof_None _ _ _ (pa, pb) => fun Hlt => _ 
-      | SLT_Id_Ann_Proof_Id_None _ _ _ (pa, pb) => fun Hlt => 
-          match Hlt with 
-          | SLT_Id_Ann_Proof_None _ _ _ (qa, qb)  => _ 
-          | SLT_Id_Ann_Proof_Id_None _ _ _ (qa, qb) => _ 
-          | SLT_Id_Ann_Proof_None_Ann _ _ _ (qa, qb) => _
-          | SLT_Id_Ann_Proof_Equal _ _ _ q  => _ 
-          | SLT_Id_Ann_Proof_Not_Equal _ _ _ q => _
-          end
-      | SLT_Id_Ann_Proof_None_Ann _ _ _ (pa, pb) => fun Hlt => 
-          match Hlt with 
-          | SLT_Id_Ann_Proof_None _ _ _ (qa, qb) => _ 
-          | SLT_Id_Ann_Proof_Id_None _ _ _ (qa, qb) => _ 
-          | SLT_Id_Ann_Proof_None_Ann _ _ _ (qa, qb) => _
-          | SLT_Id_Ann_Proof_Equal _ _ _ q => _ 
-          | SLT_Id_Ann_Proof_Not_Equal _ _ _ q => _
-          end
-      | SLT_Id_Ann_Proof_Equal _ _ _ p => fun Hlt => 
-          match Hlt with 
-          | SLT_Id_Ann_Proof_None _ _ _ (qa, qb) => _ 
-          | SLT_Id_Ann_Proof_Id_None _ _ _ (qa, qb) => _ 
-          | SLT_Id_Ann_Proof_None_Ann _ _ _ (qa, qb) => _
-          | SLT_Id_Ann_Proof_Equal _ _ _ q => _ 
-          | SLT_Id_Ann_Proof_Not_Equal _ _ _ q => _
-          end
-      | SLT_Id_Ann_Proof_Not_Equal _ _ _ p => fun Hlt => 
-          match Hlt with 
-          | SLT_Id_Ann_Proof_None _ _ _ (qa, qb) => _ 
-          | SLT_Id_Ann_Proof_Id_None _ _ _ (qa, qb) => _ 
-          | SLT_Id_Ann_Proof_None_Ann _ _ _ (qa, qb) => _
-          | SLT_Id_Ann_Proof_Equal _ _ _ q  => _ 
-          | SLT_Id_Ann_Proof_Not_Equal _ _ _ q => _
-          end
-      end).
-      + clear p. 
-        eapply SLT_Id_Ann_Proof_None; split.
-        eapply bop_llex_not_exists_id_left.
-        exact pa.
-        eapply ltr_product_not_exists_ann_left.
-        exact l₂.
-        exact pb.
-      + clear p; clear p0.
-        eapply SLT_Id_Ann_Proof_None; split.
-        eapply bop_llex_not_exists_id_right.
-        destruct Hc; try assumption.
-        exact qa.
-        eapply ltr_product_not_exists_ann_left.
-        exact l₂.
-        exact pb.
-      + clear p; clear p0.
-        eapply SLT_Id_Ann_Proof_Id_None; split.
-        eapply bop_llex_exists_id; 
-        destruct Hc, Hd; try assumption.
-        eapply ltr_product_not_exists_ann_left.
-        exact l₂.
-        exact pb.
-      + clear p; clear p0.
-        eapply SLT_Id_Ann_Proof_None; split.
-        eapply bop_llex_not_exists_id_right;
-        destruct Hc; try assumption.
-        eapply ltr_product_not_exists_ann_left.
-        exact l₂.
-        exact pb.
-      + clear p.
-        eapply SLT_Id_Ann_Proof_Id_None; split.
-        destruct q as (x & p₁ & p₂).
-        eapply bop_llex_exists_id;
-        destruct Hc, Hd; try assumption.
-        exists x; exact p₁.
-        eapply ltr_product_not_exists_ann_left.
-        exact l₂.
-        exact pb.
-      + clear p.
-        eapply SLT_Id_Ann_Proof_Id_None; split.
-        destruct q as ((x, y) & (p₁, p₂) & p₃).
-        eapply bop_llex_exists_id;
-        destruct Hc, Hd; try assumption.
-        exists x; exact p₁.
-        eapply ltr_product_not_exists_ann_left.
-        exact l₂.
-        exact pb.
-      + clear p; clear p0.
-        eapply SLT_Id_Ann_Proof_None; split.
-        eapply bop_llex_not_exists_id_right;
-        destruct Hc; try assumption.
-        eapply ltr_product_not_exists_ann_right.
-        exact l₁.
-        exact qb.
-      + clear p; clear p0.
-        eapply SLT_Id_Ann_Proof_None; split.
-        eapply bop_llex_not_exists_id_left;
-        destruct Hc; try assumption.
-        eapply ltr_product_not_exists_ann_right.
-        exact l₁.
-        exact qb. 
-      + clear p; clear p0.
-        eapply SLT_Id_Ann_Proof_None_Ann; split.
-        eapply bop_llex_not_exists_id_left;
-        destruct Hc; try assumption.
-        eapply ltr_product_exists_ann;
-        try assumption.
-      + clear p.
-        eapply SLT_Id_Ann_Proof_None_Ann; split.
-        eapply bop_llex_not_exists_id_left;
-        destruct Hc; try assumption.
-        eapply ltr_product_exists_ann;
-        try assumption.
-        destruct q as (x & p₁ & p₂).
-        exists x; exact p₂.
-      + clear p.
-        eapply SLT_Id_Ann_Proof_None_Ann; split.
-        eapply bop_llex_not_exists_id_left;
-        destruct Hc; try assumption.
-        eapply ltr_product_exists_ann;
-        try assumption.
-        destruct q as ((x, y) & (p₁, p₂) & p₃).
-        exists y; exact p₂.
-      + clear p0.
-        destruct p as (x & p₁ & p₂).
-        eapply SLT_Id_Ann_Proof_None; split.
-        eapply bop_llex_not_exists_id_right;
-        destruct Hc; try assumption.
-        eapply ltr_product_not_exists_ann_right.
-        exact l₁.
-        exact qb.
-      + clear p0.
-        destruct p as (x & p₁ & p₂).
-        eapply SLT_Id_Ann_Proof_Id_None; split.
-        eapply bop_llex_exists_id;
-        destruct Hc, Hd; try assumption.
-        exists x; exact p₁.
-        eapply ltr_product_not_exists_ann_right.
-        exact l₁.
-        exact qb.
-      + clear p0.
-        destruct p as (x & p₁ & p₂).
-        eapply SLT_Id_Ann_Proof_None_Ann; split.
-        eapply bop_llex_not_exists_id_right;
-        destruct Hc; try assumption.
-        eapply ltr_product_exists_ann;
-        try assumption.
-        exists x; exact p₂.
-      + eapply SLT_Id_Ann_Proof_Equal. 
-        destruct p as (x & p₁ & p₂).
-        destruct q as (y & q₁ & q₂).
-        exists (x, y); split.
-        eapply bop_llex_is_id; 
-        destruct Hc, Hd; 
-        try assumption.
-        eapply ltr_product_is_ann;
-        try assumption.
-      + eapply SLT_Id_Ann_Proof_Not_Equal.
-        unfold slt_exists_id_ann_not_equal.
-        destruct p as (px & p₁ & p₂).
-        destruct q as ((qx, qy) & (q₁, q₂) & q₃).
-        exists ((px, qx), (px, qy)).
-        split.
-        split.
-        eapply bop_llex_is_id;
-        destruct Hc, Hd; 
-        try assumption.
-        eapply ltr_product_is_ann;
-        try assumption.
-        simpl; rewrite q₃; 
-        apply andb_false_r.
-      + clear p0. 
-        eapply SLT_Id_Ann_Proof_None; split.
-        eapply bop_llex_not_exists_id_right;
-        destruct Hc; try assumption.
-        eapply ltr_product_not_exists_ann_right.
-        exact l₁.
-        exact qb.
-      + clear p0.
-        eapply SLT_Id_Ann_Proof_Id_None; split.
-        destruct p as ((x, y) & (p₁, p₂) & p₃).
-        eapply bop_llex_exists_id;
-        destruct Hc, Hd; try assumption.
-        exists x; exact p₁.
-        eapply ltr_product_not_exists_ann_right.
-        exact l₁.
-        exact qb.
-      + clear p0.
-        eapply SLT_Id_Ann_Proof_None_Ann; split.
-        eapply bop_llex_not_exists_id_right;
-        destruct Hc; try assumption.
-        eapply ltr_product_exists_ann;
-        try assumption.
-        unfold ltr_exists_ann.
-        destruct p as ((x, y) & (p₁, p₂) & p₃).
-        exists y; exact p₂.
-      + destruct p as ((px, py) & (p₁, p₂) & p₃).
-        destruct q as (qx & q₁ & q₂).  
-        eapply SLT_Id_Ann_Proof_Not_Equal.
-        unfold slt_exists_id_ann_not_equal.
-        exists ((px, qx), (py, qx)).
-        split.
-        split.
-        eapply bop_llex_is_id;
-        destruct Hc, Hd; 
-        try assumption.
-        eapply ltr_product_is_ann;
-        try assumption.
-        simpl; rewrite p₃; 
-        reflexivity.
-      + eapply SLT_Id_Ann_Proof_Not_Equal. 
-        destruct p as ((px, py) & (p₁, p₂) & p₃).
-        destruct q as ((qx, qy) & (q₁, q₂) & q₃).
-        unfold slt_exists_id_ann_not_equal.
-        exists ((px, qx), (py, qy)).
-        split. 
-        split.
-        eapply bop_llex_is_id;
-        destruct Hc, Hd; 
-        try assumption.
-        eapply ltr_product_is_ann;
-        try assumption.
-        simpl; rewrite p₃; 
-        reflexivity.
-  Defined.
-
-
-End Decide.     
+    
+End Proofs.   
 
 Section Combinators.
 
-
-    Definition A_llex_product_from_A_slt_CS_A_slt_C {L₁ S₁ L₂ S₂: Type} 
-      (A : @A_slt_CS L₁ S₁) (B : @A_slt_C L₂ S₂) : @A_slt (L₁ * L₂) (S₁ * S₂).
-      refine 
+Definition A_sg_ltr_llex_product {LS S LT T: Type} 
+ (A : @A_sg_ltr_S LS S)
+ (B : @A_sg_ltr LT T) : @A_sg_ltr (LS * LT) (S * T) :=
+let eqvS  := A_sg_ltr_S_carrier A in
+let eqvT  := A_sg_ltr_carrier B in
+let eqvLS := A_sg_ltr_S_label A in
+let eqvLT := A_sg_ltr_label B in
+let wS    := A_eqv_witness _ eqvS in
+let nS    := A_eqv_new _ eqvS in
+let ntS   := A_eqv_not_trivial _ eqvS in 
+let wT    := A_eqv_witness _ eqvT in
+let nT    := A_eqv_new _ eqvT in 
+let ntT   := A_eqv_not_trivial _ eqvT in 
+let eqS   := A_eqv_eq _ eqvS in
+let eqT   := A_eqv_eq _ eqvT in
+let eqLS  := A_eqv_eq _ eqvLS in 
+let wLS   := A_eqv_witness _ eqvLS in 
+let eqLT  := A_eqv_eq _ eqvLT in 
+let wLT   := A_eqv_witness _ eqvLT in 
+let addS  := A_sg_ltr_S_plus A in
+let addT  := A_sg_ltr_plus B in
+let ltrS  := A_sg_ltr_S_ltr A in
+let ltrT  := A_sg_ltr_ltr B in
+let eqvSP := A_eqv_proofs _ eqvS in
+let eqvTP := A_eqv_proofs _ eqvT in
+let eqvLSP := A_eqv_proofs _ eqvLS in 
+let addSP := A_sg_ltr_S_plus_props A in 
+let addTP := A_sg_ltr_plus_props B in
+let ltrSP := A_sg_ltr_S_ltr_props A in 
+let ltrTP := A_sg_ltr_ltr_props B in 
+let refS  := A_eqv_reflexive _ _ eqvSP in
+let symS  := A_eqv_symmetric _ _ eqvSP in
+let refT  := A_eqv_reflexive _ _ eqvTP in
+let id_annSP := A_sg_ltr_S_id_ann_props_d A in
+let id_annTP := A_sg_ltr_id_ann_props_d B in 
       {|
-          A_slt_carrier := A_eqv_product _ _ (A_slt_CS_carrier A) (A_slt_C_carrier B)
-        ; A_slt_label := A_eqv_product _ _ (A_slt_CS_label A) (A_slt_C_label B)
-        ; A_slt_plus := bop_llex 
-            (A_eqv_witness _ (A_slt_C_carrier B))
-            (A_eqv_eq _ (A_slt_CS_carrier A)) 
-            (A_slt_CS_plus A) 
-            (A_slt_C_plus B)
-        ; A_slt_trans := ltr_product (A_slt_CS_trans A) (A_slt_C_trans B) 
-        ; A_slt_plus_proofs := sg_llex_proofs S₁ S₂ 
-            (A_eqv_witness _ (A_slt_CS_carrier A))
-            (A_eqv_witness _ (A_slt_C_carrier B))
-            _ 
-            (A_eqv_eq _ (A_slt_CS_carrier A)) 
-            (A_eqv_eq _ (A_slt_C_carrier B)) 
-            (A_eqv_new _ (A_slt_CS_carrier A)) 
-            (A_eqv_not_trivial _ (A_slt_CS_carrier A))
-            (A_eqv_new _ (A_slt_C_carrier B)) 
-            (A_eqv_not_trivial _ (A_slt_C_carrier B))  
-            (A_slt_CS_plus A)
-            (A_slt_C_plus B) 
-            (A_eqv_proofs _ (A_slt_CS_carrier A)) 
-            (A_eqv_proofs _ (A_slt_C_carrier B)) 
-            (A_sg_CS_proofs_to_sg_proofs 
-              (A_eqv_eq _ (A_slt_CS_carrier A))
-              (A_slt_CS_plus A)
-              (A_eqv_witness _ (A_slt_CS_carrier A)) 
-              (A_eqv_new _ (A_slt_CS_carrier A)) 
-              (A_eqv_not_trivial _ (A_slt_CS_carrier A))
-              (A_eqv_proofs _ (A_slt_CS_carrier A))
-              (A_slt_CS_plus_proofs A))
-            (A_sg_C_proofs_to_sg_proofs 
-              (A_eqv_eq _ (A_slt_C_carrier B))
-              (A_slt_C_plus B)
-              (A_eqv_witness _ (A_slt_C_carrier B)) 
-              (A_eqv_new _ (A_slt_C_carrier B)) 
-              (A_eqv_not_trivial _ (A_slt_C_carrier B))
-              (A_eqv_proofs _ (A_slt_C_carrier B))
-              (A_slt_C_plus_proofs B))    
-            (bop_selective_implies_idempotent _ _ _ 
-              (A_sg_CS_selective _ _ _ (A_slt_CS_plus_proofs A))) 
-            (A_sg_CS_commutative _ _ _ (A_slt_CS_plus_proofs A))
-            (inl
-            (A_sg_CS_selective S₁ (A_eqv_eq S₁ (A_slt_CS_carrier A))
-               (A_slt_CS_plus A) (A_slt_CS_plus_proofs A)))                    
-        ; A_slt_trans_proofs := ltr_product_proofs L₁ S₁ L₂ S₂ 
-            (A_eqv_eq _ (A_slt_CS_carrier A)) 
-            (A_eqv_eq _ (A_slt_CS_label A))  
-            (A_eqv_witness _ (A_slt_CS_carrier A))  
-            (A_eqv_witness _ (A_slt_CS_label A))
-            (A_slt_CS_trans A) 
-            (A_eqv_reflexive _ _ (A_eqv_proofs _ (A_slt_CS_carrier A)))
-            (A_eqv_eq _ (A_slt_C_carrier B)) 
-            (A_eqv_eq _ (A_slt_C_label B))  
-            (A_eqv_witness _ (A_slt_C_carrier B))  
-            (A_eqv_witness _ (A_slt_C_label B))
-            (A_slt_C_trans B) 
-            (A_eqv_reflexive _ _ (A_eqv_proofs _ (A_slt_C_carrier B)))
-            (A_slt_CS_trans_proofs A) (A_slt_C_trans_proofs B)
-        ; A_slt_exists_plus_ann_d := bop_llex_exists_ann_decide S₁ S₂ 
-            (A_eqv_witness S₂ (A_slt_C_carrier B))
-            (A_eqv_eq S₁ (A_slt_CS_carrier A)) 
-            (A_eqv_eq S₂ (A_slt_C_carrier B))
-            (A_slt_CS_plus A) (A_slt_C_plus B) 
-            (A_eqv_proofs _ (A_slt_CS_carrier A)) 
-            (A_eqv_proofs _ (A_slt_C_carrier B)) 
-            (A_slt_CS_exists_plus_ann_d A) 
-            (A_slt_C_exists_plus_ann_d B) 
-        ; A_slt_id_ann_proofs_d  := bops_llex_product_proofs_exists_id_ann_decide
-            L₁ S₁ L₂ S₂ 
-            (A_eqv_witness _ (A_slt_CS_label A))  
-            (A_eqv_witness _ (A_slt_C_label B))
-            (A_eqv_witness _ (A_slt_CS_carrier A))  
-            (A_eqv_witness _ (A_slt_C_carrier B))  
-            _ _ _ _ 
-            (A_eqv_proofs _ (A_slt_CS_label A)) 
-            (A_eqv_proofs _ (A_slt_C_label B)) 
-            (A_eqv_proofs _ (A_slt_CS_carrier A))
-            (A_eqv_proofs _ (A_slt_C_carrier B))  
-            _ _ _ _ 
-            (A_slt_CS_id_ann_proofs_d A)
-            (A_slt_C_id_ann_proofs_d B) 
-        ; A_slt_proofs :=   slt_llex_product_proofs L₁ S₁ L₂ S₂ 
-            (A_eqv_eq _ (A_slt_CS_label A)) 
-            (A_eqv_eq _ (A_slt_C_label B))
-            (A_eqv_eq S₁ (A_slt_CS_carrier A)) 
-            (A_eqv_eq S₂ (A_slt_C_carrier B))
-            (A_eqv_witness S₂ (A_slt_C_carrier B)) 
-            (A_eqv_witness _ (A_slt_CS_label A))  
-            (A_eqv_witness _ (A_slt_C_label B))
-            (A_eqv_witness _ (A_slt_CS_carrier A))  
-            (A_eqv_witness _ (A_slt_C_carrier B)) 
-            (A_eqv_proofs _ (A_slt_CS_label A)) 
-            (A_eqv_proofs _ (A_slt_CS_carrier A)) 
-            (A_eqv_proofs _ (A_slt_C_carrier B)) 
-            (A_slt_CS_plus A) 
-            (A_slt_C_plus B) 
-            (bop_selective_implies_idempotent _ _ _ 
-              (A_sg_CS_selective _ _ _ (A_slt_CS_plus_proofs A))) 
-            (A_sg_C_commutative _ _ _ (A_slt_C_plus_proofs B))
-            (A_slt_CS_trans A) 
-            (A_slt_C_trans B) 
-            (A_sg_CS_congruence _ _ _ (A_slt_CS_plus_proofs A))
-            (A_sg_C_congruence _ _ _ (A_slt_C_plus_proofs B)) 
-            (A_left_transform_congruence _ _ _ _ _ (A_slt_CS_trans_proofs A))
-            (A_sg_C_commutative _ _ _ (A_slt_C_plus_proofs B)) 
-            (inl (A_sg_CS_selective _ _ _ (A_slt_CS_plus_proofs A)))
-            (A_slt_CS_trans_proofs A) 
-            (A_slt_C_trans_proofs B)
-            (A_slt_CS_proofs A)
-            (A_slt_C_proofs B)
-        ; A_slt_ast := ast.Cas_ast ("slt_llex_product_CS_C", 
-            [A_slt_CS_ast A; A_slt_C_ast B])
+        A_sg_ltr_carrier :=
+          A_eqv_product _ _ eqvS eqvT
+      ; A_sg_ltr_label :=
+          A_eqv_product _ _ eqvLS eqvLT 
+      ; A_sg_ltr_plus :=
+          bop_llex wT eqS addS addT 
+      ; A_sg_ltr_ltr :=
+          ltr_product_op ltrS ltrT 
+      ; A_sg_ltr_plus_props :=
+          @sg_CS_sg_C_llex_proofs S T wS wT 
+            eqS eqT nS ntS nT ntT addS addT eqvSP eqvTP addSP addTP
+      ; A_sg_ltr_ltr_props :=
+          A_ltr_product_properties LS LT S T 
+             eqS eqLS wS wLS ltrS refS eqT eqLT wT wLT ltrT refT ltrSP ltrTP
+      ; A_sg_ltr_id_ann_props_d :=
+          A_sg_ltr_llex_product_proofs_exists_id_ann_decidable LS S LT T
+            eqS eqT refS symS refT wT wLS wLT addS addT ltrS ltrT
+            id_annSP id_annTP 
+      ; A_sg_ltr_props :=
+          A_sg_ltr_llex_product_properties_selective_version LS S LT T eqLS wLS eqS wS
+            eqLT wLT eqT wT eqvLSP eqvSP eqvTP addS addT addSP addTP ltrS ltrT
+            ltrSP ltrTP (A_sg_ltr_S_props A) (A_sg_ltr_props B)
+      ; A_sg_ltr_ast :=
+          ast.Cas_ast ("sg_ltr_llex_product", 
+              [A_sg_ltr_S_ast A; A_sg_ltr_ast B])
       |}.
-    Defined.
-
-   
-
-    Definition A_llex_product_from_A_slt_CI_A_slt_C_zero_is_ltr_ann 
-      {L₁ S₁ L₂ S₂: Type} (A : @A_slt_CI L₁ S₁) 
-      (B : @A_slt_C_zero_is_ltr_ann L₂ S₂) :  @A_slt (L₁ * L₂) (S₁ * S₂).
-    refine 
-    {|
-          A_slt_carrier := A_eqv_product _ _ 
-            (A_slt_CI_carrier A) (A_slt_C_zero_is_ltr_ann_carrier B)
-        ; A_slt_label := A_eqv_product _ _ 
-            (A_slt_CI_label A) 
-            (A_slt_C_zero_is_ltr_ann_label B)
-        ; A_slt_plus := bop_llex 
-            (projT1 (A_slt_C_zero_is_ltr_ann_id_ann_proofs B))
-            (A_eqv_eq _ (A_slt_CI_carrier A)) 
-            (A_slt_CI_plus A) 
-            (A_slt_C_zero_is_ltr_ann_plus B)                                          
-        ; A_slt_trans  := ltr_product 
-            (A_slt_CI_trans A) 
-            (A_slt_C_zero_is_ltr_ann_trans B)
-        ; A_slt_plus_proofs   := @sg_llex_proofs S₁ S₂ 
-            (A_eqv_witness _ (A_slt_CI_carrier A))
-            (A_eqv_witness _ (A_slt_C_zero_is_ltr_ann_carrier B))
-            (projT1 (A_slt_C_zero_is_ltr_ann_id_ann_proofs B))
-            (A_eqv_eq _ (A_slt_CI_carrier A)) 
-            (A_eqv_eq _ (A_slt_C_zero_is_ltr_ann_carrier B)) 
-            (A_eqv_new _ (A_slt_CI_carrier A)) 
-            (A_eqv_not_trivial _ (A_slt_CI_carrier A))
-            (A_eqv_new _ (A_slt_C_zero_is_ltr_ann_carrier B)) 
-            (A_eqv_not_trivial _ (A_slt_C_zero_is_ltr_ann_carrier B))  
-            (A_slt_CI_plus A)
-            (A_slt_C_zero_is_ltr_ann_plus B) 
-            (A_eqv_proofs _ (A_slt_CI_carrier A)) 
-            (A_eqv_proofs _ (A_slt_C_zero_is_ltr_ann_carrier B)) 
-            (A_sg_CI_proofs_to_sg_proofs 
-              (A_eqv_eq _ (A_slt_CI_carrier A))
-              (A_slt_CI_plus A)
-              (A_eqv_witness _ (A_slt_CI_carrier A)) 
-              (A_eqv_new _ (A_slt_CI_carrier A)) 
-              (A_eqv_not_trivial _ (A_slt_CI_carrier A))
-              (A_eqv_proofs _ (A_slt_CI_carrier A))
-              (A_slt_CI_plus_proofs A))
-            (A_sg_C_proofs_to_sg_proofs 
-              (A_eqv_eq _ (A_slt_C_zero_is_ltr_ann_carrier B))
-              (A_slt_C_zero_is_ltr_ann_plus B)
-              (A_eqv_witness _ (A_slt_C_zero_is_ltr_ann_carrier B)) 
-              (A_eqv_new _ (A_slt_C_zero_is_ltr_ann_carrier B)) 
-              (A_eqv_not_trivial _ (A_slt_C_zero_is_ltr_ann_carrier B))
-              (A_eqv_proofs _ (A_slt_C_zero_is_ltr_ann_carrier B))
-              (A_slt_C_zero_is_ltr_ann_plus_proofs B))    
-            (A_sg_CI_idempotent _ _ _ (A_slt_CI_plus_proofs A)) 
-            (A_sg_CI_commutative _ _ _ (A_slt_CI_plus_proofs A)) 
-            _ 
-                                          
-        ; A_slt_trans_proofs  := ltr_product_proofs L₁ S₁ L₂ S₂ 
-            (A_eqv_eq _ (A_slt_CI_carrier A)) 
-            (A_eqv_eq _ (A_slt_CI_label A))  
-            (A_eqv_witness _ (A_slt_CI_carrier A))  
-            (A_eqv_witness _ (A_slt_CI_label A))
-            (A_slt_CI_trans A) 
-            (A_eqv_reflexive _ _ (A_eqv_proofs _ (A_slt_CI_carrier A)))
-            (A_eqv_eq _ (A_slt_C_zero_is_ltr_ann_carrier B)) 
-            (A_eqv_eq _ (A_slt_C_zero_is_ltr_ann_label B))  
-            (A_eqv_witness _ (A_slt_C_zero_is_ltr_ann_carrier B))  
-            (A_eqv_witness _ (A_slt_C_zero_is_ltr_ann_label B))
-            (A_slt_C_zero_is_ltr_ann_trans B) 
-            (A_eqv_reflexive _ _ (A_eqv_proofs _ (A_slt_C_zero_is_ltr_ann_carrier B)))
-            (A_slt_CI_trans_proofs A) 
-            (A_slt_C_zero_is_ltr_ann_trans_proofs B) 
-        ; A_slt_exists_plus_ann_d := bop_llex_exists_ann_decide S₁ S₂ 
-            (projT1 (A_slt_C_zero_is_ltr_ann_id_ann_proofs B))
-            (A_eqv_eq S₁ (A_slt_CI_carrier A)) 
-            (A_eqv_eq S₂ (A_slt_C_zero_is_ltr_ann_carrier B))
-            (A_slt_CI_plus A) (A_slt_C_zero_is_ltr_ann_plus B) 
-            (A_eqv_proofs _ (A_slt_CI_carrier A)) 
-            (A_eqv_proofs _ (A_slt_C_zero_is_ltr_ann_carrier B)) 
-            (A_slt_CI_exists_plus_ann_d A) 
-            (A_slt_C_zero_is_ltr_ann_exists_plus_ann_d B)                         
-        ; A_slt_id_ann_proofs_d :=  bops_llex_product_proofs_exists_id_ann_decide L₁ S₁ L₂ S₂
-            (A_eqv_witness L₁ (A_slt_CI_label A))
-            (A_eqv_witness L₂ (A_slt_C_zero_is_ltr_ann_label B))
-            (A_eqv_witness S₁ (A_slt_CI_carrier A))
-            (projT1 (A_slt_C_zero_is_ltr_ann_id_ann_proofs B))
-            (A_eqv_eq L₁ (A_slt_CI_label A))
-            (A_eqv_eq L₂ (A_slt_C_zero_is_ltr_ann_label B))
-            (A_eqv_eq S₁ (A_slt_CI_carrier A))
-            (A_eqv_eq S₂ (A_slt_C_zero_is_ltr_ann_carrier B))
-            (A_eqv_proofs L₁ (A_slt_CI_label A))
-            (A_eqv_proofs L₂ (A_slt_C_zero_is_ltr_ann_label B))
-            (A_eqv_proofs S₁ (A_slt_CI_carrier A))
-            (A_eqv_proofs S₂ (A_slt_C_zero_is_ltr_ann_carrier B))
-            (A_slt_CI_plus A) (A_slt_C_zero_is_ltr_ann_plus B)
-            (A_slt_CI_trans A) (A_slt_C_zero_is_ltr_ann_trans B)
-            (A_slt_CI_id_ann_proofs_d A)
-            (SLT_Id_Ann_Proof_Equal
-              (A_eqv_eq S₂ (A_slt_C_zero_is_ltr_ann_carrier B))
-              (A_slt_C_zero_is_ltr_ann_plus B)
-              (A_slt_C_zero_is_ltr_ann_trans B)
-              (A_slt_C_zero_is_ltr_ann_id_ann_proofs B))
-        ; A_slt_proofs := _                       
-        ; A_slt_ast := ast.Cas_ast ("slt_llex_product_CI_C_zero_is_ann", 
-            [A_slt_CI_ast A; A_slt_C_zero_is_ltr_ann_ast B])
-    
-    |}.
-    
-
-    (* I need to go right *)
-    right.
-    destruct B, A_slt_C_zero_is_ltr_ann_plus_proofs,
-    A_slt_C_zero_is_ltr_ann_carrier, A_slt_C_zero_is_ltr_ann_id_ann_proofs; 
-    simpl in *.
-    destruct p as (pa & pb).
-    exact pa.
-    eapply  slt_llex_product_proofs.
-    exact (A_eqv_witness _ (A_slt_CI_label A)).
-    exact (A_eqv_witness _ (A_slt_C_zero_is_ltr_ann_label B)).
-    exact (A_eqv_witness _ (A_slt_CI_carrier A)).
-    exact (A_eqv_witness _ (A_slt_C_zero_is_ltr_ann_carrier B)).
-    exact (A_eqv_proofs _ (A_slt_CI_label A)).
-    exact (A_eqv_proofs _ (A_slt_CI_carrier A)).
-    exact (A_eqv_proofs _ (A_slt_C_zero_is_ltr_ann_carrier B)).
-    exact (A_sg_CI_idempotent _ _ _ (A_slt_CI_plus_proofs A)).
-    exact (A_sg_C_commutative _ _ _ 
-      (A_slt_C_zero_is_ltr_ann_plus_proofs B)).
-    exact (A_sg_CI_congruence _ _ _ (A_slt_CI_plus_proofs A)).
-    exact (A_sg_C_congruence _ _ _ 
-      (A_slt_C_zero_is_ltr_ann_plus_proofs B)).
-    exact (A_left_transform_congruence _ _ _ _ _ 
-      (A_slt_CI_trans_proofs A)).
-    exact (A_sg_C_commutative _ _ _ (A_slt_C_zero_is_ltr_ann_plus_proofs B)).
-    right.
-    destruct B, A_slt_C_zero_is_ltr_ann_plus_proofs,
-    A_slt_C_zero_is_ltr_ann_carrier, A_slt_C_zero_is_ltr_ann_id_ann_proofs; 
-    simpl in *.
-    exact p. 
-    exact (A_slt_CI_trans_proofs A).
-    exact (A_slt_C_zero_is_ltr_ann_trans_proofs B).
-    exact (A_slt_CI_proofs A).
-    exact (A_slt_C_zero_is_ltr_ann_proofs B).
-  Defined.
-  
     
 End Combinators.   
   
 End ACAS.
 
-From Coq Require Import String.
-Open Scope string_scope.
 Section AMCAS.
 
- 
-  Definition A_mcas_slt_llex_product {L₁ S₁ L₂ S₂: Type}
-    (A : @A_slt_mcas L₁ S₁) (B : @A_slt_mcas L₂ S₂) 
-    : @A_slt_mcas (L₁ * L₂) (S₁ * S₂) :=
-    match cast_A_slt_mcas_to_A_slt_CS A with
-    | A_SLT_CS slt₁ => 
-        match cast_A_slt_mcas_to_A_slt_C B with 
-        | A_SLT_C slt₂ => 
-            A_slt_classify_slt (A_llex_product_from_A_slt_CS_A_slt_C slt₁ slt₂)
-        | _ => 
-            A_SLT_Error ["Cannot cast the second componento of A_slt_C"] 
-        end
-    | _  => 
-        match cast_A_slt_mcas_to_A_slt_CI A with  
-        | A_SLT_CI slt₃ => 
-          match cast_A_slt_mcas_to_A_slt_C_zero_is_ltr_ann B with 
-          | A_SLT_C_Zero_Is_Ltr_ann slt₄ => 
-              A_slt_classify_slt 
-                (A_llex_product_from_A_slt_CI_A_slt_C_zero_is_ltr_ann slt₃ slt₄)
-          | _ => 
-             A_SLT_Error ["Cannot cast the second componento of A_slt_C_zero_is_ltr_ann"]
-          end
-        | _ => A_SLT_Error ["Cannot cast up the first component of A_SLT_CS and A_SLT_CI"]
-        end
+  Open Scope string_scope.
+
+  Definition A_sg_ltr_llex_product_below_sg_ltr_S {LS S LT T : Type}
+    (A : @A_below_sg_ltr_S LS S)
+    (B : @A_below_sg_ltr LT T) := 
+    A_classify_sg_ltr (A_sg_ltr_llex_product (A_cast_up_sg_ltr_S A) (A_cast_up_sg_ltr B)).  
+
+  Definition A_mcas_sg_ltr_llex_product {LS S LT T : Type}
+    (A : @A_sg_ltr_mcas LS S)
+    (B : @A_sg_ltr_mcas LT T)  : @A_sg_ltr_mcas (LS * LT) (S * T) :=
+    match A, B with
+    | A_MCAS_sg_ltr A', A_MCAS_sg_ltr B'               =>
+        match A_cast_below_sg_ltr_to_below_sg_ltr_S A' with
+        | Some bcs => A_MCAS_sg_ltr (A_sg_ltr_llex_product_below_sg_ltr_S bcs B')
+        | None     => A_MCAS_sg_ltr_Error ("sg_ltr_llex_product : the additive component of the first argument must be selective." :: nil)
+        end 
+    | A_MCAS_sg_ltr_Error sl1, A_MCAS_sg_ltr_Error sl2 =>
+        A_MCAS_sg_ltr_Error (sl1 ++ sl2)
+    | A_MCAS_sg_ltr_Error sl1, _ =>
+        A_MCAS_sg_ltr_Error sl1
+    | _,  A_MCAS_sg_ltr_Error sl2  =>
+        A_MCAS_sg_ltr_Error sl2
     end.
-    
-    
+
 
 End AMCAS.
 
@@ -1285,20 +1012,16 @@ Section Decide.
 
 Variables (LS S LT T : Type)  
           (argT : T)
-          (wLS : LS)
-          (wLT : LT)                     
-          (wS : S)
-          (wT : T)
           (rS : brel S)
           (rT : brel T)
           (bopS : binary_op S)
           (bopT : binary_op T)
-          (ltr₁ : ltr_type LS S)
-          (ltr₂ : ltr_type LT T).
+          (ltrS : ltr_type LS S)
+          (ltrT : ltr_type LT T).
 
 
   
-  Definition witness_slt_llex_product_not_left_distributive_new 
+  Definition witness_sg_ltr_llex_product_not_left_distributive_new 
     (selS_or_id_annT : @assert_selective S + (@assert_exists_id T * @assert_exists_ann T))
     (s1 : LS) (s2 s3 : S)
     (t1 : LT) (t2 t3 : T)
@@ -1306,962 +1029,594 @@ Variables (LS S LT T : Type)
   then if rS (bopS s2 s3) s3
     then (* can't reach this branch *) 
         ((s1, t1), ((s2, t2), (s3, t3)))
-    else  if rS (ltr₁ s1 s2) (bopS (ltr₁ s1 s2) (ltr₁ s1 s3))
+    else  if rS (ltrS s1 s2) (bopS (ltrS s1 s2) (ltrS s1 s3))
           then (* case 1 *) 
-              if rT (ltr₂ t1 t2) (bopT (ltr₂ t1 t2) (ltr₂ t1  t3))
+              if rT (ltrT t1 t2) (bopT (ltrT t1 t2) (ltrT t1  t3))
               then ((s1, t1), ((s2, t3), (s3, t2)))
               else ((s1, t1), ((s2, t2), (s3, t3)))
           else (* case 2 *) 
               ((s1, t1), ((s2, t2), (s3, t3)))
   else if rS (bopS s2 s3) s3
     then (* case 3 *) 
-        if rT (ltr₂ t1 t3) (bopT (ltr₂ t1 t2) (ltr₂ t1 t3))
+        if rT (ltrT t1 t3) (bopT (ltrT t1 t2) (ltrT t1 t3))
         then ((s1, t1), ((s2, t3), (s3, t2)))
         else ((s1, t1), ((s2, t2), (s3, t3)))
     else (* case 4 *) 
         match selS_or_id_annT with 
         | inl _ => (* can't reach this branch *) 
                   ((s1, t1), ((s2, t2), (s3, t3)))
-        | inr _ => if rT argT (ltr₂ t1 t2)
+        | inr _ => if rT argT (ltrT t1 t2)
                     then ((s1, t1), ((s2, argT), (s3, t3)))
                     else ((s1, t1), ((s2, argT), (s3, t2)))
         end.  
 
 
-
-  
-  Definition slt_llex_product_distributive_certify 
-    (selS_or_id_annT : @assert_selective S + 
-      (@assert_exists_id T * @assert_exists_ann T))    
-    (LDS_d : @check_slt_distributive LS S)
-    (LDT_d : @check_slt_distributive LT T)
-    (LCS_d : @check_ltr_left_cancellative LS S)
-    (LKT_d : @check_ltr_left_constant LT T) : 
-    @check_slt_distributive (LS * LT) (S * T).
-    refine
-      (let selS_or_annT :=
+Definition sg_ltr_llex_product_distributive_decide
+           (wLT : LT) (wT : T) 
+           (selS_or_id_annT : @assert_selective S + 
+                 (@assert_exists_id T * @assert_exists_ann T))    
+           (LDS_d : @sg_ltr_distributive_decidable LS S) 
+           (LDT_d : @sg_ltr_distributive_decidable LT T) 
+           (LCS_d : @ltr_cancellative_decidable LS S) 
+           (LKT_d : @ltr_constant_decidable LT T) : 
+  @sg_ltr_distributive_decidable (LS * LT) (S * T) :=
+let selS_or_annT :=
         match selS_or_id_annT with 
         | inl sel => inl sel 
         | inr (_, is_ann) => inr is_ann 
         end 
-      in
-      match LDS_d with
-      | Certify_Slt_Distributive  =>
-        match LDT_d with
-        | Certify_Slt_Distributive  =>
-          match LCS_d with
-          | Certify_Ltr_Left_Cancellative  => Certify_Slt_Distributive
-          | Certify_Ltr_Not_Left_Cancellative (axx, (ayy, azz)) =>
-            match LKT_d with
-            | Certify_Ltr_Left_Constant  => Certify_Slt_Distributive 
-            | Certify_Ltr_Not_Left_Constant (bxx, (byy, bzz)) =>
-                Certify_Slt_Not_Distributive  
-                (witness_slt_llex_product_not_left_distributive_new 
-                selS_or_id_annT axx ayy azz bxx byy bzz)
-            end 
+in       
+match LDS_d with
+| inl (SG_LTR_Distributive (wLS, wS))  =>
+  match LDT_d with
+  | inl (SG_LTR_Distributive (wLT, wT))  =>
+      match LCS_d with
+      | inl (LTR_cancellative _ )  =>
+          inl (SG_LTR_Distributive  ((wLS, wLT), (wS, wT)))
+      | inr (LTR_not_cancellative (lS, (s1, s2))) =>
+          match LKT_d with
+          | inl (LTR_constant _)  =>
+              inl (SG_LTR_Distributive  ((wLS, wLT), (wS, wT)))
+          | inr (LTR_not_constant (lT, (t1, t2))) =>
+              inr (SG_LTR_Not_Distributive
+                     (witness_sg_ltr_llex_product_not_left_distributive_new 
+                        selS_or_id_annT lS s1 s2 lT t1 t2))
           end 
-        | Certify_Slt_Not_Distributive (cxx, (cyy, czz)) => 
-            Certify_Slt_Not_Distributive (wLS, cxx, (wS, cyy, (wS, czz)))
-        end 
-      | Certify_Slt_Not_Distributive (dxx, (dyy, dzz)) => 
-          Certify_Slt_Not_Distributive (dxx, wLT, (dyy, wT, (dzz, wT)))
-      end).
-    Defined.
-  
-
-  Definition slt_llex_product_absorptive_certify
-    (sabsS_d : @check_slt_strictly_absorptive LS S)
-    (absS_d : @check_slt_absorptive LS S)
-    (absT_d : @check_slt_absorptive LT T) :
-    @check_slt_absorptive (LS * LT) (S * T).
-    refine 
-      match sabsS_d with
-      | Certify_Slt_Strictly_Absorptive  => Certify_Slt_Absorptive
-      | Certify_Slt_Not_Strictly_Absorptive (axx, ayy) =>
-        match absS_d with
-        | Certify_Slt_Absorptive  =>
-          match absT_d with
-          | Certify_Slt_Absorptive   => Certify_Slt_Absorptive  
-          | Certify_Slt_Not_Absorptive (bxx, byy) => 
-              Certify_Slt_Not_Absorptive (axx, bxx, (ayy, byy))
-          end 
-        | Certify_Slt_Not_Absorptive  (cxx, cyy) => 
-            Certify_Slt_Not_Absorptive (cxx, wLT, (cyy, wT)) 
-        end
-      end.
-    Defined. 
+      end 
+  | inr (SG_LTR_Not_Distributive  (l, (t1, t2))) =>
+    inr (SG_LTR_Not_Distributive ((wLS, l), ((wS, t1), (wS, t2))))
+  end 
+| inr (SG_LTR_Not_Distributive  (l, (s1, s2))) =>
+    inr (SG_LTR_Not_Distributive ((l, wLT), ((s1, wT), (s2, wT))))
+end.     
 
 
+Definition sg_ltr_llex_product_absorptive_decide
+  (wLT : LT) (wT : T) 
+  (sabsS_d : @sg_ltr_strictly_absorptive_decidable LS S)
+  (absS_d : @sg_ltr_absorptive_decidable LS S)
+  (absT_d : @sg_ltr_absorptive_decidable LT T) :
+     @sg_ltr_absorptive_decidable (LS * LT) (S * T) := 
+match sabsS_d with
+| inl (SG_LTR_Strictly_Absorptive (l, s) )  =>
+    inl(SG_LTR_Absorptive ((l, wLT), (s, wT)))
+| inr (SG_LTR_Not_Strictly_Absorptive (lS', s') ) =>
+  match absS_d with
+  | inl (SG_LTR_Absorptive (lS, s))   =>
+    match absT_d with
+    | inl (SG_LTR_Absorptive (lT, t))  =>
+        inl(SG_LTR_Absorptive ((lS, lT), (s, t)))
+    | inr (SG_LTR_Not_Absorptive (l, t))=>
+        inr(SG_LTR_Not_Absorptive ((lS', l), (s', t)))
+    end 
+  | inr (SG_LTR_Not_Absorptive (lS, s)) =>
+      inr (SG_LTR_Not_Absorptive ((lS, wLT), (s, wT)))
+  end
+end.     
 
-  Definition slt_llex_product_strictly_absorptive_certify
-    (sabsS_d : @check_slt_strictly_absorptive LS S)
-    (absS_d : @check_slt_absorptive LS S)
-    (absT_d : @check_slt_strictly_absorptive LT T) :
-    @check_slt_strictly_absorptive (LS * LT) (S * T).
-    refine  
-      match sabsS_d with
-      | Certify_Slt_Strictly_Absorptive  => Certify_Slt_Strictly_Absorptive
-      | Certify_Slt_Not_Strictly_Absorptive (axx, ayy) =>
-        match absS_d with
-        | Certify_Slt_Absorptive  => 
-          match absT_d with
-          | Certify_Slt_Strictly_Absorptive  =>  Certify_Slt_Strictly_Absorptive 
-          | Certify_Slt_Not_Strictly_Absorptive (bxx, byy) => 
-              Certify_Slt_Not_Strictly_Absorptive (axx, bxx, (ayy, byy))
-          end 
-        | Certify_Slt_Not_Absorptive (cxx, cyy) => 
-            Certify_Slt_Not_Strictly_Absorptive (cxx, wLT, (cyy, wT))
-        end
-      end.
-  Defined.
-
-
-  Definition slt_llex_product_certs 
-    (selS_or_id_annT : @assert_selective S + 
-      (@assert_exists_id T * @assert_exists_ann T))
-    (QS : @left_transform_certificates LS S)
-    (QT : @left_transform_certificates LT T)           
-    (PS : @slt_certificates LS S)
-    (PT : @slt_certificates LT T) : 
-    @slt_certificates (LS * LT) (S * T) :=
-      let DS_d := slt_distributive_d PS in
-      let DT_d := slt_distributive_d PT in
-      let CS_d := left_transform_left_cancellative_d QS in
-      let KT_d := left_transform_left_constant_d QT in
-      let asbS_d := slt_absorptive_d  PS in
-      let asbT_d := slt_absorptive_d  PT in
-      let sasbS_d := slt_strictly_absorptive_d PS in
-      let sasbT_d := slt_strictly_absorptive_d PT in 
-      {|
-        slt_distributive_d := slt_llex_product_distributive_certify selS_or_id_annT DS_d DT_d CS_d KT_d 
-      ; slt_absorptive_d  := slt_llex_product_absorptive_certify sasbS_d asbS_d asbT_d
-      ; slt_strictly_absorptive_d := slt_llex_product_strictly_absorptive_certify sasbS_d asbS_d sasbT_d
-      |}.
-    
+Definition sg_ltr_llex_product_strictly_absorptive_decide
+  (wLT : LT) (wT : T) 
+  (sabsS_d : @sg_ltr_strictly_absorptive_decidable LS S)
+  (absS_d : @sg_ltr_absorptive_decidable LS S)
+  (absT_d : @sg_ltr_strictly_absorptive_decidable LT T) :
+    @sg_ltr_strictly_absorptive_decidable (LS * LT) (S * T) := 
+match sabsS_d with
+| inl (SG_LTR_Strictly_Absorptive (l, s) )  =>
+    inl(SG_LTR_Strictly_Absorptive ((l, wLT), (s, wT)))
+| inr (SG_LTR_Not_Strictly_Absorptive (lS', s') ) =>
+  match absS_d with
+  | inl (SG_LTR_Absorptive (lS, s))   =>
+    match absT_d with
+    | inl (SG_LTR_Strictly_Absorptive (lT, t))  =>
+        inl(SG_LTR_Strictly_Absorptive ((lS, lT), (s, t)))
+    | inr (SG_LTR_Not_Strictly_Absorptive (l, t))=>
+        inr(SG_LTR_Not_Strictly_Absorptive ((lS', l), (s', t)))
+    end 
+  | inr (SG_LTR_Not_Absorptive (lS, s)) =>
+      inr (SG_LTR_Not_Strictly_Absorptive ((lS, wLT), (s, wT)))
+  end
+end.     
 
 
 
-  
-  Definition bops_llex_product_certs_exists_id_ann_decide {L₁ S₁ L₂ S₂ : Type}:
-    @check_slt_exists_id_ann L₁ S₁ ->
-    @check_slt_exists_id_ann L₂ S₂ ->
-    @check_slt_exists_id_ann (L₁ * L₂) (S₁ * S₂).
-  Proof.
-    intros Ha Hb.
-    refine 
-      (match Ha as Hat return Ha = Hat -> _ with
-      | Certify_SLT_Id_Ann_Proof_None =>  _ 
-      | Certify_SLT_Id_Ann_Proof_Id_None x =>
-          match Hb as Hbt return Hb = Hbt -> _ with 
-          | Certify_SLT_Id_Ann_Proof_None => _ 
-          | Certify_SLT_Id_Ann_Proof_Id_None tx => _ 
-          | Certify_SLT_Id_Ann_Proof_None_Ann tx  => _ 
-          | Certify_SLT_Id_Ann_Proof_Equal tx => _ 
-          | Certify_SLT_Id_Ann_Proof_Not_Equal (tx, ty) => _ 
-          end eq_refl 
-      | Certify_SLT_Id_Ann_Proof_None_Ann x =>
-          match Hb as Hbt return Hb = Hbt -> _ with 
-          | Certify_SLT_Id_Ann_Proof_None => _ 
-          | Certify_SLT_Id_Ann_Proof_Id_None tx => _ 
-          | Certify_SLT_Id_Ann_Proof_None_Ann tx  => _ 
-          | Certify_SLT_Id_Ann_Proof_Equal tx => _ 
-          | Certify_SLT_Id_Ann_Proof_Not_Equal (tx, ty) => _ 
-          end eq_refl
-      | Certify_SLT_Id_Ann_Proof_Equal x =>
-          match Hb as Hbt return Hb = Hbt -> _ with 
-          | Certify_SLT_Id_Ann_Proof_None => _ 
-          | Certify_SLT_Id_Ann_Proof_Id_None tx => _ 
-          | Certify_SLT_Id_Ann_Proof_None_Ann tx  => _ 
-          | Certify_SLT_Id_Ann_Proof_Equal tx => _ 
-          | Certify_SLT_Id_Ann_Proof_Not_Equal (tx, ty) => _ 
-          end eq_refl
-      | Certify_SLT_Id_Ann_Proof_Not_Equal (x, y) =>
-          match Hb as Hbt return Hb = Hbt -> _ with 
-          | Certify_SLT_Id_Ann_Proof_None => _ 
-          | Certify_SLT_Id_Ann_Proof_Id_None tx => _ 
-          | Certify_SLT_Id_Ann_Proof_None_Ann tx  => _ 
-          | Certify_SLT_Id_Ann_Proof_Equal tx => _ 
-          | Certify_SLT_Id_Ann_Proof_Not_Equal (tx, ty) => _ 
-          end eq_refl
-      end eq_refl).
-    + intros ?.
-      eapply Certify_SLT_Id_Ann_Proof_None.
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None.
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Id_None.
-      exact (x, tx).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None.
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Id_None.
-      exact (x, tx).
-    + intros ? ?. 
-      eapply Certify_SLT_Id_Ann_Proof_Id_None.
-      exact (x, tx). (* is this correct? *) 
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None.
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None.
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None_Ann.
-      exact (x, tx).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None_Ann.
-      exact (x, tx).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None_Ann.
-      exact (x, ty). (* ??? is this correct? *)
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None.
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Id_None.
-      exact (x, tx).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None_Ann.
-      exact (x, tx).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Equal.
-      exact (x, tx).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Not_Equal.
-      exact (x, tx, (x, ty)).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None.
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Id_None.
-      exact (x, tx). (* Is this correct? It will be evident in proof *)    
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_None_Ann.
-      exact (y, tx).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Not_Equal.
-      exact (x, tx, (y, tx)).
-    + intros ? ?.
-      eapply Certify_SLT_Id_Ann_Proof_Not_Equal.
-      exact (x, tx, (y, ty)).
-  Defined.
-
+Definition sg_ltr_llex_product_proofs_exists_id_ann_decidable 
+    (idaS_d : @sg_ltr_exists_id_ann_decidable LS S)
+    (idaT_d : @sg_ltr_exists_id_ann_decidable LT T) : 
+    @sg_ltr_exists_id_ann_decidable (LS * LT) (S * T) := 
+  match idaS_d with
+  | SG_LTR_Id_Ann_None => SG_LTR_Id_Ann_None 
+  | SG_LTR_Id_Ann_Id_None idS =>
+       match idaT_d with 
+       | SG_LTR_Id_Ann_None =>
+           SG_LTR_Id_Ann_None  
+       | SG_LTR_Id_Ann_Id_None idT =>
+           SG_LTR_Id_Ann_Id_None (idS, idT)
+       | SG_LTR_Id_Ann_None_Ann _ =>
+           SG_LTR_Id_Ann_None   
+       | SG_LTR_Id_Ann_Equal id_annT =>
+           SG_LTR_Id_Ann_Id_None (idS, id_annT)
+       | SG_LTR_Id_Ann_Not_Equal (idT, annT) =>  
+           SG_LTR_Id_Ann_Id_None (idS, idT)
+       end       
+  | SG_LTR_Id_Ann_None_Ann annS =>
+       match idaT_d with 
+       | SG_LTR_Id_Ann_None  =>
+           SG_LTR_Id_Ann_None  
+       | SG_LTR_Id_Ann_Id_None idT => 
+           SG_LTR_Id_Ann_None 
+       | SG_LTR_Id_Ann_None_Ann annT =>
+           SG_LTR_Id_Ann_None_Ann (annS, annT)
+       | SG_LTR_Id_Ann_Equal id_annT =>
+           SG_LTR_Id_Ann_None_Ann (annS, id_annT)
+       | SG_LTR_Id_Ann_Not_Equal (idT, annT) => 
+           SG_LTR_Id_Ann_None_Ann (annS, annT)
+       end      
+  | SG_LTR_Id_Ann_Equal   id_annS =>
+       match idaT_d with 
+       | SG_LTR_Id_Ann_None =>
+           SG_LTR_Id_Ann_None 
+       | SG_LTR_Id_Ann_Id_None idT =>
+           SG_LTR_Id_Ann_Id_None (id_annS, idT) 
+       | SG_LTR_Id_Ann_None_Ann annT =>
+           SG_LTR_Id_Ann_None_Ann (id_annS, annT)
+       | SG_LTR_Id_Ann_Equal id_annT =>
+           SG_LTR_Id_Ann_Equal  (id_annS, id_annT) 
+       | SG_LTR_Id_Ann_Not_Equal (idT, annT) => 
+           SG_LTR_Id_Ann_Not_Equal ((id_annS, idT), (id_annS, annT)) 
+       end       
+  | SG_LTR_Id_Ann_Not_Equal (idS, annS) =>
+       match idaT_d with 
+       | SG_LTR_Id_Ann_None  =>
+           SG_LTR_Id_Ann_None 
+       | SG_LTR_Id_Ann_Id_None idT =>
+           SG_LTR_Id_Ann_Id_None (idS, idT) 
+       | SG_LTR_Id_Ann_None_Ann annT =>
+           SG_LTR_Id_Ann_None_Ann (annS, annT) 
+       | SG_LTR_Id_Ann_Equal id_annT =>
+           SG_LTR_Id_Ann_Not_Equal ((idS, id_annT), (annS, id_annT))
+       | SG_LTR_Id_Ann_Not_Equal  (idT, annT) =>
+           SG_LTR_Id_Ann_Not_Equal ((idS, idT), (annS, annT))
+    end 
+  end. 
 
 End Decide.       
+
+Section Proofs.
+
+
+  Variables
+    (LS S LT T : Type)
+    (eqS  : brel S)
+    (eqLT : brel LT)
+    (wLT : LT)
+    (eqT : brel T)
+    (wT : T)
+    (addS : binary_op S)
+    (addT : binary_op T)
+    (ltrS : ltr_type LS S)
+    (ltrT : ltr_type LT T)
+    (QS : @ltr_properties LS S)
+    (QT : @ltr_properties LT T)           
+    (PS : @sg_ltr_properties LS S)
+    (PT : @sg_ltr_properties LT T).
+
+
+Definition sg_ltr_llex_product_properties_selective_version : 
+  @sg_ltr_properties (LS * LT) (S * T) := 
+let DS_d := sg_ltr_distributive_d PS in
+let DT_d := sg_ltr_distributive_d  PT in
+let CS_d := ltr_props_cancellative_d QS in
+let KT_d := ltr_props_constant_d QT in
+let asbS_d := sg_ltr_absorptive_d PS in
+let asbT_d := sg_ltr_absorptive_d PT in
+let sasbS_d := sg_ltr_strictly_absorptive_d PS in
+let sasbT_d := sg_ltr_strictly_absorptive_d PT in
+{|
+  sg_ltr_distributive_d          :=
+    sg_ltr_llex_product_distributive_decide
+      LS S LT T wT eqS eqT addS addT ltrS ltrT
+      wLT wT (inl Assert_Selective) DS_d DT_d CS_d KT_d
+; sg_ltr_absorptive_d            :=
+    sg_ltr_llex_product_absorptive_decide LS S LT T wLT wT
+      sasbS_d asbS_d asbT_d
+; sg_ltr_strictly_absorptive_d   :=
+    sg_ltr_llex_product_strictly_absorptive_decide LS S LT T wLT wT
+      sasbS_d asbS_d sasbT_d
+|}.
+
+    
+End Proofs.   
+
+
 Section Combinators.
-   
 
-   
-    Definition llex_product_from_slt_CS_slt_C {L₁ S₁ L₂ S₂: Type} 
-      (A : @slt_CS L₁ S₁) (B : @slt_C L₂ S₂) : @slt (L₁ * L₂) (S₁ * S₂).
-      refine
-        {|
-            slt_carrier := eqv_product (slt_CS_carrier A) (slt_C_carrier B) 
-          ; slt_label := eqv_product (slt_CS_label A) (slt_C_label B)
-          ; slt_plus  :=   bop_llex 
-              (eqv_witness (slt_C_carrier B))
-              (eqv_eq (slt_CS_carrier A)) 
-              (slt_CS_plus A) 
-              (slt_C_plus B)                                          
-          ; slt_trans := ltr_product 
-              (slt_CS_trans A) 
-              (slt_C_trans B) 
-          ; slt_plus_certs := sg_llex_certificates 
-              (eqv_eq (slt_CS_carrier A)) 
-              (eqv_witness (slt_CS_carrier A)) 
-              (eqv_new (slt_CS_carrier A)) 
-              (eqv_witness (slt_C_carrier B)) 
-              (eqv_witness (slt_C_carrier B))
-              (eqv_new (slt_C_carrier B)) 
-              (slt_CS_plus A)
-              (sg_CS_certs_to_sg_certs  
-                (eqv_eq (slt_CS_carrier A))
-                (slt_CS_plus A)
-                (eqv_witness (slt_CS_carrier A))
-                (eqv_new (slt_CS_carrier A))
-                (slt_CS_plus_certs A))
-              (sg_C_certs_to_sg_certs  
-                (eqv_eq (slt_C_carrier B))
-                (slt_C_plus B)
-                (eqv_witness (slt_C_carrier B))
-                (eqv_new (slt_C_carrier B))
-                (slt_C_plus_certs B))
-              Assert_Idempotent
-              (sg_CS_commutative (slt_CS_plus_certs A)) 
-
-          ; slt_trans_certs := ltr_product_certs 
-              (eqv_witness (slt_CS_carrier A))
-              (eqv_witness (slt_CS_label A))
-              (slt_CS_trans_certs A)
-              (eqv_witness (slt_C_carrier B))
-              (eqv_witness (slt_C_label B))
-              (slt_C_trans_certs B) 
-
-
-          ; slt_exists_plus_ann_d := check_exists_ann_llex
-              (slt_CS_exists_plus_ann_d A)
-              (slt_C_exists_plus_ann_d B)
-
-
-          ; slt_id_ann_certs_d :=  bops_llex_product_certs_exists_id_ann_decide 
-              (slt_CS_id_ann_certs_d A)  
-              (slt_C_id_ann_certs_d B)                 
-          ; slt_certs := slt_llex_product_certs L₁ S₁ L₂ S₂
-              (eqv_witness (slt_C_carrier B))
-              (eqv_witness (slt_CS_label A)) 
-              (eqv_witness (slt_C_label B))
-              (eqv_witness (slt_CS_carrier A)) 
-              (eqv_witness (slt_C_carrier B))
-              (eqv_eq (slt_CS_carrier A)) 
-              (eqv_eq (slt_C_carrier B)) 
-              (slt_CS_plus A) 
-              (slt_C_plus B)
-              (slt_CS_trans A) 
-              (slt_C_trans B) 
-              ((inl (sg_CS_selective (slt_CS_plus_certs A))))
-              (slt_CS_trans_certs A) 
-              (slt_C_trans_certs B)
-              (slt_CS_certs A)
-              (slt_C_certs B)
-                                 
-          ; slt_ast := ast.Cas_ast ("slt_llex_product_CS_C", 
-            [slt_CS_ast A; slt_C_ast B]) 
-        |}.
-    Defined.
-       
-   
-       
-
-
-   Definition llex_product_from_slt_CI_slt_C_zero_is_ltr_ann 
-    {L₁ S₁ L₂ S₂: Type} (A : @slt_CI L₁ S₁) 
-    (B : @slt_C_zero_is_ltr_ann L₂ S₂) :  @slt (L₁ * L₂) (S₁ * S₂).
-    refine
-    {|
-        slt_carrier := eqv_product
-          (slt_CI_carrier A) (slt_C_zero_is_ltr_ann_carrier B)
-      ; slt_label := eqv_product 
-          (slt_CI_label A) 
-          (slt_C_zero_is_ltr_ann_label B)
-      ; slt_plus  := bop_llex 
-          (match slt_C_zero_is_ltr_ann_id_ann_certs B with
-            | Assert_Slt_Exists_Id_Ann_Equal s => s
-          end) 
-          (eqv_eq (slt_CI_carrier A)) 
-          (slt_CI_plus A) 
-          (slt_C_zero_is_ltr_ann_plus B)                                             
-      ; slt_trans := ltr_product 
-          (slt_CI_trans A) 
-          (slt_C_zero_is_ltr_ann_trans B) 
-      ; slt_plus_certs := sg_llex_certificates 
-          (eqv_eq (slt_CI_carrier A)) 
-          (eqv_witness (slt_CI_carrier A)) 
-          (eqv_new (slt_CI_carrier A)) 
-          (eqv_witness (slt_C_zero_is_ltr_ann_carrier B)) 
-          (match slt_C_zero_is_ltr_ann_id_ann_certs B with
-          | Assert_Slt_Exists_Id_Ann_Equal s => s
-          end)
-          (eqv_new (slt_C_zero_is_ltr_ann_carrier B)) 
-          (slt_CI_plus A)
-          (sg_CI_certs_to_sg_certs  
-            (eqv_eq (slt_CI_carrier A))
-            (slt_CI_plus A)
-            (eqv_witness (slt_CI_carrier A))
-            (eqv_new (slt_CI_carrier A))
-            (slt_CI_plus_certs A))
-          (sg_C_certs_to_sg_certs  
-            (eqv_eq (slt_C_zero_is_ltr_ann_carrier B))
-            (slt_C_zero_is_ltr_ann_plus B)
-            (eqv_witness (slt_C_zero_is_ltr_ann_carrier B))
-            (eqv_new (slt_C_zero_is_ltr_ann_carrier B))
-            (slt_C_zero_is_ltr_ann_plus_certs B))
-          Assert_Idempotent
-          (sg_CI_commutative (slt_CI_plus_certs A))                              
-      ; slt_trans_certs  := ltr_product_certs 
-          (eqv_witness (slt_CI_carrier A))
-          (eqv_witness (slt_CI_label A))
-          (slt_CI_trans_certs A)
-          (eqv_witness (slt_C_zero_is_ltr_ann_carrier B))
-          (eqv_witness (slt_C_zero_is_ltr_ann_label B))
-          (slt_C_zero_is_ltr_ann_trans_certs B) 
-      ; slt_exists_plus_ann_d := check_exists_ann_llex
-          (slt_CI_exists_plus_ann_d A)
-          (slt_C_zero_is_ltr_ann_exists_plus_ann_d B)                        
-      ; slt_id_ann_certs_d := bops_llex_product_certs_exists_id_ann_decide 
-          (slt_CI_id_ann_certs_d A) 
-          (Certify_SLT_Id_Ann_Proof_Equal 
-            (match slt_C_zero_is_ltr_ann_id_ann_certs B with
-              | Assert_Slt_Exists_Id_Ann_Equal s => s
-            end))
-      ; slt_certs := slt_llex_product_certs L₁ S₁ L₂ S₂
-           (match slt_C_zero_is_ltr_ann_id_ann_certs B with
-          | Assert_Slt_Exists_Id_Ann_Equal s => s
-          end) (* need to chagne *)
-          (eqv_witness (slt_CI_label A)) 
-          (eqv_witness (slt_C_zero_is_ltr_ann_label B))
-          (eqv_witness (slt_CI_carrier A)) 
-          (eqv_witness (slt_C_zero_is_ltr_ann_carrier B))
-          (eqv_eq (slt_CI_carrier A)) 
-          (eqv_eq (slt_C_zero_is_ltr_ann_carrier B))
-          (slt_CI_plus A)
-          (slt_C_zero_is_ltr_ann_plus B)  
-          (slt_CI_trans A)
-          (slt_C_zero_is_ltr_ann_trans B)  _  
-          (slt_CI_trans_certs A) 
-          (slt_C_zero_is_ltr_ann_trans_certs B)
-          (slt_CI_certs A)
-          (slt_C_zero_is_ltr_ann_certs B)
-      ; slt_ast := ast.Cas_ast ("slt_llex_product_CI_C_zero_is_ann", 
-            [slt_CI_ast A; slt_C_zero_is_ltr_ann_ast B]) 
-    |}.
-   
-    right.
-    refine 
-      match slt_C_zero_is_ltr_ann_id_ann_certs B with 
-      | Assert_Slt_Exists_Id_Ann_Equal s => 
-          (Assert_Exists_Id s, Assert_Exists_Ann s) 
-      end.
-  Defined.
-
+Definition sg_ltr_llex_product {LS S LT T: Type} 
+ (A : @sg_ltr_S LS S)
+ (B : @sg_ltr LT T) : @sg_ltr (LS * LT) (S * T) :=
+let eqvS  := sg_ltr_S_carrier A in
+let eqvT  := sg_ltr_carrier B in
+let eqvLS := sg_ltr_S_label A in
+let eqvLT := sg_ltr_label B in
+let wS    := eqv_witness eqvS in
+let nS    := eqv_new eqvS in
+let wT    := eqv_witness eqvT in
+let nT    := eqv_new eqvT in 
+let eqS   := eqv_eq eqvS in
+let eqT   := eqv_eq eqvT in
+let eqLS  := eqv_eq eqvLS in 
+let wLS   := eqv_witness eqvLS in 
+let eqLT  := eqv_eq eqvLT in 
+let wLT   := eqv_witness eqvLT in 
+let addS  := sg_ltr_S_plus A in
+let addT  := sg_ltr_plus B in
+let ltrS  := sg_ltr_S_ltr A in
+let ltrT  := sg_ltr_ltr B in
+let addSP := sg_ltr_S_plus_props A in 
+let addTP := sg_ltr_plus_props B in
+let ltrSP := sg_ltr_S_ltr_props A in 
+let ltrTP := sg_ltr_ltr_props B in 
+let id_annSP := sg_ltr_S_id_ann_props_d A in
+let id_annTP := sg_ltr_id_ann_props_d B in 
+      {|
+        sg_ltr_carrier :=
+          eqv_product eqvS eqvT
+      ; sg_ltr_label :=
+          eqv_product eqvLS eqvLT 
+      ; sg_ltr_plus :=
+          bop_llex wT eqS addS addT 
+      ; sg_ltr_ltr :=
+          ltr_product_op ltrS ltrT 
+      ; sg_ltr_plus_props :=
+          sg_CS_sg_C_llex_certificates eqS wS nS wT nT addS addSP addTP
+      ; sg_ltr_ltr_props :=
+          ltr_product_properties ltrSP ltrTP wLS wS wLT wT 
+      ; sg_ltr_id_ann_props_d :=
+          sg_ltr_llex_product_proofs_exists_id_ann_decidable LS S LT T
+            id_annSP id_annTP 
+      ; sg_ltr_props :=
+          sg_ltr_llex_product_properties_selective_version LS S LT T
+            eqS wLT eqT wT addS addT
+            ltrS ltrT ltrSP ltrTP (sg_ltr_S_props A) (sg_ltr_props B)
+      ; sg_ltr_ast :=
+          ast.Cas_ast ("sg_ltr_llex_product", 
+              [sg_ltr_S_ast A; sg_ltr_ast B])
+      |}.
 
 End Combinators.   
   
 End CAS.
 
 Section MCAS.
+  Definition sg_ltr_llex_product_below_sg_ltr_S {LS S LT T : Type}
+    (A : @below_sg_ltr_S LS S)
+    (B : @below_sg_ltr LT T) := 
+    classify_sg_ltr (sg_ltr_llex_product (cast_up_sg_ltr_S A) (cast_up_sg_ltr B)).  
 
-  
-  Definition mcas_slt_llex_product {L₁ S₁ L₂ S₂: Type}
-    (A : @slt_mcas L₁ S₁) (B : @slt_mcas L₂ S₂) 
-    : @slt_mcas (L₁ * L₂) (S₁ * S₂) :=
-    match cast_slt_mcas_to_slt_CS A with
-    | SLT_CS slt₁ => 
-        match cast_slt_mcas_to_slt_C B with 
-        | SLT_C slt₂ => 
-            slt_classify_slt (llex_product_from_slt_CS_slt_C slt₁ slt₂)
-        | _ => 
-            SLT_Error ["Cannot cast the second componento of A_slt_C"] 
-        end
-    | _  => 
-        match cast_slt_mcas_to_slt_CI A with  
-        | SLT_CI slt₃ => 
-          match cast_slt_mcas_to_slt_C_zero_is_ltr_ann B with 
-          | SLT_C_Zero_Is_Ltr_ann slt₄ => 
-              slt_classify_slt 
-                (llex_product_from_slt_CI_slt_C_zero_is_ltr_ann slt₃ slt₄)
-          | _ => 
-             SLT_Error ["Cannot cast the second componento of A_slt_C_zero_is_ltr_ann"]
-          end
-        | _ => SLT_Error ["Cannot cast up the first component of A_SLT_CS and A_SLT_CI"]
-        end
+  Definition mcas_sg_ltr_llex_product {LS S LT T : Type}
+    (A : @sg_ltr_mcas LS S)
+    (B : @sg_ltr_mcas LT T)  : @sg_ltr_mcas (LS * LT) (S * T) :=
+    match A, B with
+    | MCAS_sg_ltr A', MCAS_sg_ltr B'               =>
+        match cast_below_sg_ltr_to_below_sg_ltr_S A' with
+        | Some bcs => MCAS_sg_ltr (sg_ltr_llex_product_below_sg_ltr_S bcs B')
+        | None     => MCAS_sg_ltr_Error ("sg_ltr_llex_product : the additive component of the first argument must be selective." :: nil)
+        end 
+    | MCAS_sg_ltr_Error sl1, MCAS_sg_ltr_Error sl2 =>
+        MCAS_sg_ltr_Error (sl1 ++ sl2)
+    | MCAS_sg_ltr_Error sl1, _ =>
+        MCAS_sg_ltr_Error sl1
+    | _,  MCAS_sg_ltr_Error sl2  =>
+        MCAS_sg_ltr_Error sl2
     end.
-    
-    
 
 End MCAS.
 
 
 Section Verify.
-  Context 
-    {L₁ S₁ L₂ S₂ : Type}.
 
-  
-  Lemma correct_bops_llex_product_certs_exists_id_ann_decide :
-    forall 
-    (l₁ : L₁) (s₁ : S₁) 
-    (l₂ : L₂) (s₂ : S₂)
-    (brelS₁ : brel S₁) 
-    (brelS₂ : brel S₂)
-    (brelL₁ : brel L₁)
-    (brelL₂ : brel L₂) 
-    (bopS₁ : binary_op S₁)
-    (bopS₂ : binary_op S₂) 
-    (ltr₁ : ltr_type L₁ S₁)
-    (ltr₂ : ltr_type L₂ S₂) 
-    (pf₁ : slt_exists_id_ann_decidable brelS₁ bopS₁ ltr₁)
-    (pf₂ : slt_exists_id_ann_decidable brelS₂ bopS₂ ltr₂)
-    (eqv_proofL₁ : eqv_proofs L₁ brelL₁)
-    (eqv_proofL₂ : eqv_proofs L₂ brelL₂)
-    (eqv_proofS₁ : eqv_proofs S₁ brelS₁)
-    (eqv_proofS₂ : eqv_proofs S₂ brelS₂),
-    bops_llex_product_certs_exists_id_ann_decide 
-      (p2c_slt_exists_id_ann_check brelS₁ bopS₁ ltr₁ pf₁)
-      (p2c_slt_exists_id_ann_check brelS₂ bopS₂ ltr₂ pf₂) = 
-    p2c_slt_exists_id_ann_check 
-      (brel_product brelS₁ brelS₂)
-      (bop_llex s₂ brelS₁ bopS₁ bopS₂)
-      (ltr_product ltr₁ ltr₂)
-      (bops_llex_product_proofs_exists_id_ann_decide L₁ S₁ L₂ S₂
-        l₁ l₂ s₁ s₂ brelL₁ brelL₂ brelS₁ brelS₂
-        eqv_proofL₁ eqv_proofL₂ 
-        eqv_proofS₁ eqv_proofS₂
-        bopS₁ bopS₂ ltr₁ ltr₂ 
-        pf₁ pf₂).
-  Proof.
-    intros *.
-    destruct pf₁, pf₂; simpl.
-    + destruct p; simpl; reflexivity.
-    + destruct p; simpl; reflexivity.
-    + destruct p; simpl; reflexivity.
-    + destruct p; simpl; reflexivity.
-    + destruct p; simpl; reflexivity.
-    + destruct p, p0; simpl; reflexivity.
-    + destruct p, p0, b, b0,
-      eqv_proofS₁, eqv_proofS₂; simpl; reflexivity.
-    + destruct p, p0; simpl; reflexivity.
-    + destruct p, b, s, p, 
-      eqv_proofS₁, eqv_proofS₂; reflexivity.
-    + destruct p, s, b, x, 
-      eqv_proofS₁, eqv_proofS₂, y, p; reflexivity.
-    + destruct p, p0; simpl; reflexivity.
-    + destruct p, p0; simpl; reflexivity.
-    + destruct p, p0, l, l0; reflexivity.
-    + destruct p, l, s, p; reflexivity. 
-    + destruct p, l, s, x0, y, p; reflexivity.
-    + destruct p, s, p; reflexivity.
-    + destruct p, s, p,
-      eqv_proofS₁, eqv_proofS₂, 
-      b; reflexivity.
-    + destruct p, l, s, p; reflexivity.
-    + destruct s, p, s0, p; reflexivity.
-    + destruct s0, s, x, y, p, p0; reflexivity.
-    + destruct s, p, eqv_proofL₁,
-      eqv_proofL₂, eqv_proofS₁,
-      eqv_proofS₂, x; reflexivity.
-    + destruct s, p, eqv_proofL₁,
-      eqv_proofL₂, eqv_proofS₁,
-      eqv_proofS₂, x, y, p, b; reflexivity.
-    + destruct s, p, x, y, p, eqv_proofL₁,
-      eqv_proofL₂, eqv_proofS₁,
-      eqv_proofS₂, l; reflexivity.
-    + destruct s0, s, x0, y, p, 
-      eqv_proofL₁,
-      eqv_proofL₂, eqv_proofS₁,
-      eqv_proofS₂, p0; reflexivity.
-    + destruct s0, s, x0, x, y,
-      y0, p0, p; reflexivity.
-  Qed.
 
-  
+Section Decide.
 
-  Lemma correct_slt_llex_product_distributive_certify_left :
-    forall
-    (argT : S₂)
-    (s₁: S₁)
-    (l₁: L₁)
-    (s₂: S₂)
-    (l₂: L₂)
-    (brelS₁: brel S₁)
-    (brelS₂: brel S₂)
-    (brelL₁: brel L₁)
-    (brelL₂: brel L₂)
-    (bopS₁: binary_op S₁)
-    (bopS₂: binary_op S₂)
-    (ltr₁: ltr_type L₁ S₁)
-    (ltr₂: ltr_type L₂ S₂)
-    (eqv_pfS₁: eqv_proofs S₁ brelS₁)
-    (eqv_pfL₁: eqv_proofs L₁ brelL₁)
-    (eqv_pfS₂: eqv_proofs S₂ brelS₂)
-    (eqv_pfL₂: eqv_proofs L₂ brelL₂)
-    (bop_cong₁: bop_congruence S₁ brelS₁ bopS₁)
-    (ltr_cong₁: ltr_congruence L₁ S₁ brelL₁ brelS₁ ltr₁)
-    (ltr_left_can₁: ltr_left_cancellative_decidable L₁ S₁ brelS₁ ltr₁)
-    (slt_dist₁: slt_distributive_decidable brelS₁ bopS₁ ltr₁)
-    (bop_cong₂: bop_congruence S₂ brelS₂ bopS₂)
-    (bop_com₂: bop_commutative S₂ brelS₂ bopS₂)
-    (bop_idem₁ : bop_idempotent S₁ brelS₁ bopS₁)
-    (selS_or_annT : bop_selective S₁ brelS₁ bopS₁)
-    (ltr_cong₂: ltr_congruence L₂ S₂ brelL₂ brelS₂ ltr₂)
-    (ltr_left_cons₂: ltr_left_constant_decidable L₂ S₂ brelS₂ ltr₂)
-    (ltr_left_can₂: ltr_left_cancellative_decidable L₂ S₂ brelS₂ ltr₂)
-    (slt_dist₂: slt_distributive_decidable brelS₂ bopS₂ ltr₂),
-    slt_llex_product_distributive_certify L₁ S₁ L₂ S₂ s₂ l₁ l₂
-      s₁ argT brelS₁ brelS₂ bopS₁ bopS₂ ltr₁
-      ltr₂ (inl Assert_Selective)
-      (p2c_slt_distributive_check brelS₁ bopS₁ ltr₁ slt_dist₁)
-      (p2c_slt_distributive_check brelS₂ bopS₂ ltr₂ slt_dist₂)
-      (p2c_ltr_left_cancellative L₁ S₁ brelS₁ ltr₁ ltr_left_can₁)
-      (p2c_ltr_left_constant L₂ S₂ brelS₂ ltr₂ ltr_left_cons₂) =
-    p2c_slt_distributive_check (brel_product brelS₁ brelS₂)
-      (bop_llex s₂ brelS₁ bopS₁ bopS₂)
-      (ltr_product ltr₁ ltr₂)
-      (slt_llex_product_distributive_decide L₁ S₁ L₂ S₂ brelL₁ brelS₁ brelS₂ s₂
-         l₁ l₂ s₁  argT eqv_pfL₁ eqv_pfS₁ eqv_pfS₂
-         bopS₁ bopS₂
-         bop_idem₁ bop_com₂
-         ltr₁ ltr₂ bop_cong₁ bop_cong₂ ltr_cong₁
-         bop_com₂ (inl selS_or_annT) slt_dist₁ slt_dist₂
-         ltr_left_can₁ ltr_left_cons₂).
-  Proof.
-    intros until slt_dist₂.
-     unfold slt_llex_product_distributive_certify,
-      slt_llex_product_distributive_decide; simpl.
-    destruct slt_dist₁, slt_dist₂, ltr_left_can₁; 
-    simpl.
-    + reflexivity.
-    + destruct l, x, p; simpl.
-      destruct ltr_left_cons₂; simpl.
-      ++ reflexivity.
-      ++ 
-        destruct l0, x, p; simpl.
-        destruct y; simpl. 
-        unfold A_witness_slt_llex_product_not_left_distributive,
-        witness_slt_llex_product_not_left_distributive_new; 
-        reflexivity.
-    + destruct s0, x, p; simpl.
-      reflexivity.
-    + destruct s0, x, p; simpl.
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-  Qed.
+Variables (LS S LT T : Type)  
+          (eqLS : brel LS)
+          (eqLT : brel LT)
+          (eqS : brel S)
+          (eqT : brel T)
+          (conS : brel_congruence _ eqS eqS)
+          (refS : brel_reflexive _ eqS)
+          (symS : brel_symmetric _ eqS)
+          (trnS : brel_transitive _ eqS)
+          (conT : brel_congruence _ eqT eqT)          
+          (refT : brel_reflexive _ eqT)
+          (symT : brel_symmetric _ eqT)
+          (trnT : brel_transitive _ eqT)          
+          (argT : T)
+          (wLS : LS)
+          (wLT : LT)                     
+          (wS : S)
+          (wT : T)           
+          (eqvLS : eqv_proofs LS eqLS)
+          (eqvLT : eqv_proofs LT eqLT)                     
+          (eqvS : eqv_proofs S eqS)
+          (eqvT : eqv_proofs T eqT)           
+          (addS : binary_op S) 
+          (addT : binary_op T)
+          (idemS : bop_idempotent S eqS addS)
+          (commS : bop_commutative S eqS addS)
+          (commT : bop_commutative T eqT addT)                     
+          (ltrS : ltr_type LS S)
+          (ltrT : ltr_type LT T)
+          (a_congS : bop_congruence S eqS addS)
+          (a_congT : bop_congruence T eqT addT)
+          (ltr_congS : A_ltr_congruence eqLS eqS ltrS).                     
 
- 
-  Lemma correct_slt_llex_product_distributive_certify_right :
-    forall
-    (argT : S₂)
-    (s₁: S₁)
-    (l₁: L₁)
-    (s₂: S₂)
-    (l₂: L₂)
-    (brelS₁: brel S₁)
-    (brelS₂: brel S₂)
-    (brelL₁: brel L₁)
-    (brelL₂: brel L₂)
-    (bopS₁: binary_op S₁)
-    (bopS₂: binary_op S₂)
-    (ltr₁: ltr_type L₁ S₁)
-    (ltr₂: ltr_type L₂ S₂)
-    (eqv_pfS₁: eqv_proofs S₁ brelS₁)
-    (eqv_pfL₁: eqv_proofs L₁ brelL₁)
-    (eqv_pfS₂: eqv_proofs S₂ brelS₂)
-    (eqv_pfL₂: eqv_proofs L₂ brelL₂)
-    (bop_cong₁: bop_congruence S₁ brelS₁ bopS₁)
-    (ltr_cong₁: ltr_congruence L₁ S₁ brelL₁ brelS₁ ltr₁)
-    (ltr_left_can₁: ltr_left_cancellative_decidable L₁ S₁ brelS₁ ltr₁)
-    (slt_dist₁: slt_distributive_decidable brelS₁ bopS₁ ltr₁)
-    (bop_cong₂: bop_congruence S₂ brelS₂ bopS₂)
-    (bop_com₂: bop_commutative S₂ brelS₂ bopS₂)
-    (bop_idem₁ : bop_idempotent S₁ brelS₁ bopS₁)
-    (selS_or_annT :  
-      bop_is_id S₂ brelS₂ bopS₂ s₂ * ltr_is_ann L₂ S₂ brelS₂ ltr₂ s₂)
-    (ltr_cong₂: ltr_congruence L₂ S₂ brelL₂ brelS₂ ltr₂)
-    (ltr_left_cons₂: ltr_left_constant_decidable L₂ S₂ brelS₂ ltr₂)
-    (ltr_left_can₂: ltr_left_cancellative_decidable L₂ S₂ brelS₂ ltr₂)
-    (slt_dist₂: slt_distributive_decidable brelS₂ bopS₂ ltr₂),
-    slt_llex_product_distributive_certify L₁ S₁ L₂ S₂ s₂ l₁ l₂
-      s₁ argT brelS₁ brelS₂ bopS₁ bopS₂ ltr₁
-      ltr₂ (inr (Assert_Exists_Id s₂, Assert_Exists_Ann s₂))
-      (p2c_slt_distributive_check brelS₁ bopS₁ ltr₁ slt_dist₁)
-      (p2c_slt_distributive_check brelS₂ bopS₂ ltr₂ slt_dist₂)
-      (p2c_ltr_left_cancellative L₁ S₁ brelS₁ ltr₁ ltr_left_can₁)
-      (p2c_ltr_left_constant L₂ S₂ brelS₂ ltr₂ ltr_left_cons₂) =
-    p2c_slt_distributive_check (brel_product brelS₁ brelS₂)
-      (bop_llex s₂ brelS₁ bopS₁ bopS₂)
-      (ltr_product ltr₁ ltr₂)
-      (slt_llex_product_distributive_decide L₁ S₁ L₂ S₂ brelL₁ brelS₁ brelS₂ s₂
-         l₁ l₂ s₁  argT eqv_pfL₁ eqv_pfS₁ eqv_pfS₂
-         bopS₁ bopS₂
-         bop_idem₁ bop_com₂
-         ltr₁ ltr₂ bop_cong₁ bop_cong₂ ltr_cong₁
-         bop_com₂ (inr selS_or_annT) slt_dist₁ slt_dist₂
-         ltr_left_can₁ ltr_left_cons₂).
-  Proof.
-    intros until slt_dist₂.
-    unfold slt_llex_product_distributive_certify, 
-    slt_llex_product_distributive_decide.
-    destruct slt_dist₁, slt_dist₂, ltr_left_can₁; simpl.
-    + reflexivity.
-    + destruct l, x, p; simpl.
-      destruct ltr_left_cons₂; simpl.
-      ++ reflexivity.
-      ++ 
-        destruct l0, x, p; simpl.
-        destruct y; simpl. 
-        unfold A_witness_slt_llex_product_not_left_distributive,
-        witness_slt_llex_product_not_left_distributive_new.
-        reflexivity.
-    + destruct s0, x, p; simpl.
-      reflexivity.
-    + destruct s0, x, p; simpl.
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-    + destruct s, x, p; simpl. 
-      reflexivity.
-  Qed.
 
-   
+Theorem correct_sg_ltr_llex_product_proofs_exists_id_ann_decidable
+    (idaS_d : A_sg_ltr_exists_id_ann_decidable eqS addS ltrS)
+    (idaT_d : A_sg_ltr_exists_id_ann_decidable eqT addT ltrT) :           
+  p2c_sg_ltr_exists_id_ann_decidable
+    (brel_product eqS eqT)
+    (bop_llex wT eqS addS addT)
+    (ltr_product_op ltrS ltrT)
+    (A_sg_ltr_llex_product_proofs_exists_id_ann_decidable
+       LS S LT T eqS eqT
+       refS symS refT wT wLS wLT addS addT ltrS ltrT idaS_d idaT_d)
+  =
+  sg_ltr_llex_product_proofs_exists_id_ann_decidable LS S LT T 
+     (p2c_sg_ltr_exists_id_ann_decidable eqS addS ltrS idaS_d)
+     (p2c_sg_ltr_exists_id_ann_decidable eqT addT ltrT idaT_d). 
+Proof. unfold A_sg_ltr_llex_product_proofs_exists_id_ann_decidable,
+         sg_ltr_llex_product_proofs_exists_id_ann_decidable,
+         p2c_sg_ltr_exists_id_ann_decidable;
+         destruct idaS_d as [[p1 p2] | [[idS p1] p2] | [p1 [idS p2]] | [id_annS [p1 p2]] | [[idS annS] [[p1 p2] p3]]]; 
+         destruct idaT_d as [[q1 q2] | [[idT q1] q2] | [q1 [idT q2]] | [id_annT [q1 q2]] | [[idT annT] [[q1 q2] q3]]];
+         reflexivity. 
+Qed.
 
-  Lemma correct_slt_llex_product_absorptive_certify : 
-    forall 
-      (s₂: S₂)
-      (l₂: L₂)
-      (x: S₂)
-      (brelS₁: brel S₁)
-      (brelS₂: brel S₂)
-      (bopS₁: binary_op S₁)
-      (bopS₂ : binary_op S₂)
-      (ltr₁: ltr_type L₁ S₁)
-      (ltr₂: ltr_type L₂ S₂)
-      (bop_idemp : bop_idempotent S₁ brelS₁ bopS₁)
-      (slt_absorptive_decidable₁: 
-        slt_absorptive_decidable brelS₁ bopS₁ ltr₁)
-      (slt_absorptive_decidable₂: 
-        slt_absorptive_decidable brelS₂ bopS₂ ltr₂)  
-      (slt_strictly_absorptive₁: 
-        slt_strictly_absorptive_decidable brelS₁ bopS₁ ltr₁)
-      (eqv_pf₁: eqv_proofs S₁ brelS₁)
-      (eqv_pf₂: eqv_proofs S₂ brelS₂),
-      slt_llex_product_absorptive_certify L₁ S₁ L₂ S₂ l₂ s₂
-        (p2c_slt_strictly_absorptive_check brelS₁ bopS₁ ltr₁
-          slt_strictly_absorptive₁)
-        (p2c_slt_absorptive_check brelS₁ bopS₁ ltr₁
-          slt_absorptive_decidable₁)
-        (p2c_slt_absorptive_check brelS₂ bopS₂
-          ltr₂ slt_absorptive_decidable₂) =
-      p2c_slt_absorptive_check (brel_product brelS₁ brelS₂)
-        (bop_llex x brelS₁ bopS₁ bopS₂)
-        (ltr_product ltr₁ ltr₂)
-        (slt_llex_product_absorptive_decide L₁ S₁ L₂ S₂ brelS₁ brelS₂ x
-          l₂ s₂ eqv_pf₁ eqv_pf₂ bopS₁
-          bopS₂ bop_idemp ltr₁
-          ltr₂ slt_strictly_absorptive₁
-          slt_absorptive_decidable₁ slt_absorptive_decidable₂).
-  Proof.
-    intros until eqv_pf₂.
-    unfold slt_llex_product_absorptive_certify, 
-    p2c_slt_absorptive_check; simpl.
-    destruct slt_strictly_absorptive₁; simpl.
-    + reflexivity.
-    + destruct s, x0; simpl.  
-      destruct slt_absorptive_decidable₁,
-      slt_absorptive_decidable₂; simpl.
-      ++ reflexivity.
-      ++ destruct s1, x0; simpl.
-          reflexivity.
-      ++ destruct s0, x0; simpl; 
-          reflexivity. 
-      ++ destruct s0, x0; simpl; 
-          reflexivity.
-  Qed.
+Lemma correct_sg_ltr_llex_product_distributive_decide
+   (selS : bop_selective S eqS addS)
+   (LCS_d : A_ltr_cancellative_decidable eqS ltrS)
+   (LKT_d : A_ltr_constant_decidable eqT ltrT)
+   (LDS_d : A_sg_ltr_distributive_decidable eqS addS ltrS)
+   (LDT_d : A_sg_ltr_distributive_decidable eqT addT ltrT): 
+    p2c_sg_ltr_distributive_decidable
+      (brel_product eqS eqT)
+      (bop_llex wT eqS addS addT)
+      (ltr_product_op ltrS ltrT)
+      (A_sg_ltr_llex_product_distributive_decide LS S LT T
+         eqLS eqS eqT wT wLS wLT wS wT eqvLS eqvS eqvT
+         addS addT idemS commT ltrS ltrT a_congS a_congT ltr_congS commT (inl selS)
+           LDS_d LDT_d LCS_d LKT_d) (wLS, wLT) (wS, wT)
+   = 
+   sg_ltr_llex_product_distributive_decide LS S LT T wT eqS eqT
+        addS addT ltrS ltrT wLT wT (inl Assert_Selective)
+        (p2c_sg_ltr_distributive_decidable eqS addS ltrS LDS_d wLS wS)
+        (p2c_sg_ltr_distributive_decidable eqT addT ltrT LDT_d wLT wT)
+        (p2c_ltr_cancellative_decidable eqS ltrS LCS_d wLS wS)
+        (p2c_ltr_constant_decidable eqT ltrT LKT_d wLT wT). 
+Proof.  destruct
+           LCS_d as [LCS | [[l1 [s1 s2]] [A B]] ],
+           LKT_d as [LKT | [[l2 [t1 t2]] NKT] ],
+           LDS_d as [LDS | [[l3 [s3 s4]] NDS] ],
+           LDT_d as [LDT | [[l4 [t3 t4]] NDT] ]; 
+         unfold A_sg_ltr_llex_product_distributive_decide,
+         sg_ltr_llex_product_distributive_decide,
+         p2c_sg_ltr_distributive_decidable, p2c_ltr_cancellative_decidable,
+         p2c_ltr_constant_decidable; simpl; try reflexivity. 
+Qed.
+
+Print A_sg_ltr_not_absorptive. 
+Lemma correct_sg_ltr_llex_product_absorptive_decide
+  (LSAS_d : A_sg_ltr_strictly_absorptive_decidable eqS addS ltrS)
+  (LAS_d : A_sg_ltr_absorptive_decidable eqS addS ltrS)
+  (LAT_d : A_sg_ltr_absorptive_decidable eqT addT ltrT) : 
+  p2c_sg_ltr_absorptive_decidable
+    (brel_product eqS eqT)
+    (bop_llex wT eqS addS addT)
+    (ltr_product_op ltrS ltrT)
+    (A_sg_ltr_llex_product_absorptive_decide LS S LT T eqS eqT
+       wT wLT wT eqvS eqvT addS addT idemS
+       ltrS ltrT LSAS_d LAS_d LAT_d)
+    (wLS, wLT) (wS, wT)
+    = 
+    sg_ltr_llex_product_absorptive_decide LS S LT T wLT wT
+        (p2c_sg_ltr_strictly_absorptive_decidable eqS addS ltrS LSAS_d wLS wS)
+        (p2c_sg_ltr_absorptive_decidable eqS addS ltrS LAS_d wLS wS)
+        (p2c_sg_ltr_absorptive_decidable eqT addT ltrT LAT_d wLT wT).
+Proof.  destruct
+           LSAS_d as [LSAS | [[l1 s1] [A | A]] ],
+           LAS_d as [LAS | [[l3 s3] NAS] ],
+           LAT_d as [LAT | [[l4 t3] NAT] ]; 
+         unfold A_sg_ltr_llex_product_absorptive_decide,
+         sg_ltr_llex_product_absorptive_decide,
+         p2c_sg_ltr_strictly_absorptive_decidable, 
+         p2c_sg_ltr_absorptive_decidable ; simpl; try reflexivity. 
+Qed.
+
+    
+Lemma correct_sg_ltr_llex_product_strictly_absorptive_decide
+  (LSAS_d : A_sg_ltr_strictly_absorptive_decidable eqS addS ltrS)
+  (LAS_d : A_sg_ltr_absorptive_decidable eqS addS ltrS)
+  (LSAT_d : A_sg_ltr_strictly_absorptive_decidable eqT addT ltrT) : 
+  p2c_sg_ltr_strictly_absorptive_decidable
+    (brel_product eqS eqT)
+    (bop_llex wT eqS addS addT)
+    (ltr_product_op ltrS ltrT)
+    (A_sg_ltr_llex_product_strictly_absorptive_decide LS S LT T eqS eqT
+       wT wLT wT eqvS eqvT addS addT ltrS ltrT LSAS_d LAS_d LSAT_d)
+    (wLS, wLT) (wS, wT)
+  = 
+  sg_ltr_llex_product_strictly_absorptive_decide LS S LT T wLT wT
+    (p2c_sg_ltr_strictly_absorptive_decidable eqS addS ltrS LSAS_d wLS wS)
+    (p2c_sg_ltr_absorptive_decidable eqS addS ltrS LAS_d wLS wS)
+    (p2c_sg_ltr_strictly_absorptive_decidable eqT addT ltrT LSAT_d wLT wT).
+Proof.  destruct
+           LSAS_d as [LSAS | [[l1 s1] [A | A]] ],
+           LAS_d as [LAS | [[l3 s3] NAS] ],
+           LSAT_d as [LAT | [[l4 t3] [B | B]] ]; 
+         unfold A_sg_ltr_llex_product_absorptive_decide,
+         sg_ltr_llex_product_absorptive_decide,
+         p2c_sg_ltr_strictly_absorptive_decidable, 
+         p2c_sg_ltr_absorptive_decidable ; simpl; try reflexivity. 
+Qed.
   
 
-  Lemma correct_slt_llex_product_strictly_absorptive_certify : 
-    forall
-      (x: S₂)
-      (s₂: S₂)
-      (l₂: L₂)
-      (brelS₁: brel S₁)
-      (brelS₂: brel S₂)
-      (bopS₁: binary_op S₁)
-      (ltr₁: ltr_type L₁ S₁)
-      (bopS₂: binary_op S₂)
-      (ltr₂: ltr_type L₂ S₂)
-      (eqv_pf₁: eqv_proofs S₁ brelS₁)
-      (eqv_pf₂: eqv_proofs S₂ brelS₂)
-      (slt_absorptive_decidable₁:  
-        slt_absorptive_decidable brelS₁ bopS₁ ltr₁)
-      (slt_strictly_absorptive₁: 
-        slt_strictly_absorptive_decidable brelS₁ bopS₁ ltr₁)
-      (slt_absorptive₂: 
-        slt_absorptive_decidable brelS₂ bopS₂ ltr₂)
-      (slt_strictly_absorptive₂: 
-        slt_strictly_absorptive_decidable brelS₂ bopS₂ ltr₂),
-      slt_llex_product_strictly_absorptive_certify L₁ S₁ L₂ S₂ l₂
-        s₂
-        (p2c_slt_strictly_absorptive_check brelS₁ bopS₁ ltr₁
-          slt_strictly_absorptive₁)
-        (p2c_slt_absorptive_check brelS₁ bopS₁ ltr₁
-          slt_absorptive_decidable₁)
-        (p2c_slt_strictly_absorptive_check brelS₂ bopS₂
-          ltr₂ slt_strictly_absorptive₂) =
-      p2c_slt_strictly_absorptive_check (brel_product brelS₁ brelS₂)
-        (bop_llex x brelS₁ bopS₁ bopS₂)
-        (ltr_product ltr₁ ltr₂)
-        (slt_llex_product_strictly_absorptive_decide L₁ S₁ L₂ S₂ brelS₁
-          brelS₂ x l₂ s₂ eqv_pf₁ eqv_pf₂
-          bopS₁ bopS₂ ltr₁
-          ltr₂ slt_strictly_absorptive₁
-          slt_absorptive_decidable₁ slt_strictly_absorptive₂).
-  Proof.
-    intros until slt_strictly_absorptive₂.
-    unfold slt_llex_product_strictly_absorptive_certify,
-    p2c_slt_strictly_absorptive_check; simpl.
-    destruct slt_strictly_absorptive₁; simpl.
-    + reflexivity.
-    + destruct s, x0; simpl.  
-      destruct slt_absorptive_decidable₁; simpl.
-        ++ destruct slt_strictly_absorptive₂; simpl.
-          +++ reflexivity.
-          +++ destruct s1, x0; reflexivity.
-        ++ destruct s0, x0; simpl;
+
+End Decide. 
+
+
+Section Properties.    
+
+Variables (LS S LT T : Type)  
+          (eqLS : brel LS)
+          (eqLT : brel LT)
+          (eqS : brel S)
+          (eqT : brel T)
+          (argT : T)
+          (wLS : LS)
+          (wLT : LT)                     
+          (wS : S)
+          (wT : T)           
+          (eqvLSP : eqv_proofs LS eqLS)
+          (eqvLTP : eqv_proofs LT eqLT)                     
+          (eqvSP : eqv_proofs S eqS)
+          (eqvTP : eqv_proofs T eqT)           
+          (addS : binary_op S) 
+          (addT : binary_op T)
+          (ltrS : ltr_type LS S)
+          (ltrT : ltr_type LT T). 
+
+
+
+Theorem correct_sg_ltr_llex_product_properties_selective_version
+  (addSP : sg_CS_proofs S eqS addS)
+  (addTP : sg_C_proofs T eqT addT) 
+  (ltrSP : A_ltr_properties eqLS eqS ltrS)
+  (ltrTP : A_ltr_properties eqLT eqT ltrT)           
+  (PS : A_sg_ltr_properties eqS addS ltrS)
+  (PT : A_sg_ltr_properties eqT addT ltrT) : 
+      P2C_sg_ltr_properties
+        (brel_product eqS eqT)
+        (bop_llex wT eqS addS addT)
+        (ltr_product_op ltrS ltrT)
+        (@A_sg_ltr_llex_product_properties_selective_version 
+           LS S LT T eqLS wLS eqS wS eqLT wLT eqT wT
+           eqvLSP eqvSP eqvTP addS addT addSP addTP 
+           ltrS ltrT ltrSP ltrTP PS PT)
+        (wLS, wLT) (wS, wT)
+      =           
+     @sg_ltr_llex_product_properties_selective_version
+        LS S LT T      
+        eqS wLT eqT wT addS addT ltrS ltrT
+        (P2C_ltr_properties eqLS eqS ltrS ltrSP wLS wS)
+        (P2C_ltr_properties eqLT eqT ltrT ltrTP wLT wT)
+        (P2C_sg_ltr_properties eqS addS ltrS PS wLS wS)
+        (P2C_sg_ltr_properties eqT addT ltrT PT wLT wT).
+Proof. unfold A_sg_ltr_llex_product_properties_selective_version,
+         sg_ltr_llex_product_properties_selective_version,
+         P2C_sg_ltr_properties, P2C_ltr_properties;
+         destruct addSP, addTP, ltrSP, ltrTP, PS, PT; simpl. 
+       rewrite correct_sg_ltr_llex_product_distributive_decide.
+       rewrite correct_sg_ltr_llex_product_absorptive_decide.        
+       rewrite correct_sg_ltr_llex_product_strictly_absorptive_decide.
+       reflexivity.
+Qed.
+
+  End Properties.     
+
+
+Section Combinators.   
+
+  Context {LS S LT T : Type}.
+
+  Theorem correct_sg_ltr_llex_product 
+  (A : @A_sg_ltr_S LS S) (B : @A_sg_ltr LT T) : 
+    A2C_sg_ltr (A_sg_ltr_llex_product A B)
+    =
+   sg_ltr_llex_product (A2C_sg_ltr_S A) (A2C_sg_ltr B).
+  Proof. destruct A, B; unfold A_sg_ltr_llex_product,
+           sg_ltr_llex_product, A2C_sg_ltr_S,
+           A2C_sg_ltr; simpl.
+         rewrite correct_eqv_product.
+         rewrite correct_eqv_product.
+         rewrite <- correct_sg_CS_sg_C_llex_certificates. 
+         rewrite correct_ltr_product_properties. 
+         rewrite correct_sg_ltr_llex_product_proofs_exists_id_ann_decidable.
+         rewrite correct_sg_ltr_llex_product_properties_selective_version.
+         reflexivity. 
+  Qed. 
+
+  Theorem correct_sg_ltr_llex_product_below_sg_ltr_S
+    (A : @A_below_sg_ltr_S LS S)
+    (B : @A_below_sg_ltr LT T) :             
+    A2C_below_sg_ltr (A_sg_ltr_llex_product_below_sg_ltr_S A B)
+    =
+    sg_ltr_llex_product_below_sg_ltr_S
+      (A2C_below_sg_ltr_S A)
+      (A2C_below_sg_ltr B). 
+  Proof. destruct A, B;
+         unfold A_sg_ltr_llex_product_below_sg_ltr_S,
+           sg_ltr_llex_product_below_sg_ltr_S. 
+         - simpl. rewrite <- correct_classify_sg_ltr.
+           rewrite correct_sg_ltr_llex_product.
+           reflexivity. 
+         - rewrite cast_up_sg_ltr_A2C_commute.
+           rewrite cast_up_sg_ltr_S_A2C_commute.
+           rewrite <- correct_classify_sg_ltr.
+           rewrite correct_sg_ltr_llex_product.
+           reflexivity. 
+  Qed.
+
+  Theorem correct_cast_below_sg_ltr_to_below_sg_ltr_S
+    (A : @A_below_sg_ltr LS S) :
+ option_map A2C_below_sg_ltr_S (A_cast_below_sg_ltr_to_below_sg_ltr_S A)
+  =
+  cast_below_sg_ltr_to_below_sg_ltr_S (A2C_below_sg_ltr A). 
+Proof. destruct A; unfold A_cast_below_sg_ltr_to_below_sg_ltr_S,
+         cast_below_sg_ltr_to_below_sg_ltr_S; simpl; try reflexivity.
+Qed.
+
+  
+
+Theorem correct_mcas_sg_ltr_llex_product
+  (A : @A_sg_ltr_mcas LS S)
+  (B : @A_sg_ltr_mcas LT T) :
+  A2C_mcas_sg_ltr (A_mcas_sg_ltr_llex_product A B)
+  = 
+  mcas_sg_ltr_llex_product 
+    (A2C_mcas_sg_ltr A)
+    (A2C_mcas_sg_ltr B). 
+Proof. destruct A, B; try reflexivity.
+       - unfold A_mcas_sg_ltr_llex_product,
+           mcas_sg_ltr_llex_product; simpl.
+         rewrite <- correct_cast_below_sg_ltr_to_below_sg_ltr_S.          
+         destruct (A_cast_below_sg_ltr_to_below_sg_ltr_S a);
+           simpl; try reflexivity. 
+         + rewrite correct_sg_ltr_llex_product_below_sg_ltr_S.
            reflexivity.
-  Qed.
+Qed. 
   
-  
-  Lemma correct_llex_product_from_slt_CS_slt_C : 
-    forall A B, 
-      llex_product_from_slt_CS_slt_C (A2C_slt_cs A) (A2C_slt_c B) =
-      @A2C_slt (L₁ * L₂) (S₁ * S₂) 
-      (A_llex_product_from_A_slt_CS_A_slt_C A B).
-  Proof.
-    intros ? ?.
-    unfold llex_product_from_slt_CS_slt_C,
-    A_llex_product_from_A_slt_CS_A_slt_C.
-    unfold A2C_slt; simpl;
-    f_equal.
-    + rewrite correct_eqv_product;
-      reflexivity.
-    + rewrite correct_eqv_product; 
-      reflexivity.
-    + rewrite <-correct_sg_llex_certificates_CS_version.
-      f_equal.
-      ++
-        erewrite <-correctness_sg_CS_certs_to_sg_certs.
-        f_equal.
-        Unshelve. auto.
-      ++ erewrite <-correctness_sg_C_certs_to_sg_certs.
-        f_equal.
-        Unshelve. auto.
-    + rewrite <-correct_ltr_product_certs.
-      f_equal.
-    + erewrite <-correct_check_exists_ann_llex.
-      f_equal.
-    + apply correct_bops_llex_product_certs_exists_id_ann_decide.
-    + unfold slt_llex_product_certs,
-      slt_llex_product_proofs, P2C_slt; simpl.
-      f_equal.
-      ++
-        eapply correct_slt_llex_product_distributive_certify_left.
-        exact (A_eqv_proofs _ (A_slt_C_label B)).
-        exact (A_left_transform_congruence _ _ _ _ _ (A_slt_C_trans_proofs B)).
-        exact (A_left_transform_left_cancellative_d _ _ _ _ _ (A_slt_C_trans_proofs B)).
-      ++ eapply correct_slt_llex_product_absorptive_certify.
-      ++ eapply correct_slt_llex_product_strictly_absorptive_certify.
-         exact (A_slt_absorptive_d _ _ _ (A_slt_C_proofs B)). 
-    Qed.
-
-
-    
-
-
-
-   
-
-
-  Lemma correct_llex_product_from_slt_CI_slt_C_zero_is_ltr_ann : 
-    forall A B,
-      llex_product_from_slt_CI_slt_C_zero_is_ltr_ann 
-        (A2C_slt_ci A) (A2C_slt_C_zero_is_ltr_ann B) =
-    @A2C_slt (L₁ * L₂) (S₁ * S₂)
-        (A_llex_product_from_A_slt_CI_A_slt_C_zero_is_ltr_ann A B).
-  Proof.
-    intros ? ?.
-    unfold llex_product_from_slt_CI_slt_C_zero_is_ltr_ann,
-    A_llex_product_from_A_slt_CI_A_slt_C_zero_is_ltr_ann.
-    unfold A2C_slt; simpl;
-    f_equal.
-    + rewrite correct_eqv_product;
-      reflexivity.
-    + rewrite correct_eqv_product; 
-      reflexivity.
-    + rewrite <-correct_sg_llex_certificates_CI_version.
-      f_equal.
-      ++
-        erewrite <-correctness_sg_CI_certs_to_sg_certs.
-        f_equal.
-        Unshelve.
-        auto.
-      ++ 
-        erewrite <-correctness_sg_C_certs_to_sg_certs.
-        f_equal.
-        Unshelve.
-        auto.
-    + rewrite <-correct_ltr_product_certs.
-      f_equal.
-    + erewrite <-correct_check_exists_ann_llex.
-      f_equal.
-    + rewrite <-correct_bops_llex_product_certs_exists_id_ann_decide.
-      reflexivity.
-    + unfold slt_llex_product_certs,
-      slt_llex_product_proofs, P2C_slt; simpl.
-      f_equal.
-      ++ 
-        eapply correct_slt_llex_product_distributive_certify_right;
-        try eassumption.
-        exact (A_eqv_proofs _ (A_slt_C_zero_is_ltr_ann_label B)).
-        exact (A_left_transform_congruence _ _ _ _ _ (A_slt_C_zero_is_ltr_ann_trans_proofs B)).
-        exact (A_left_transform_left_cancellative_d _ _ _ _ _ 
-          (A_slt_C_zero_is_ltr_ann_trans_proofs B)).
-      ++  eapply correct_slt_llex_product_absorptive_certify.
-      ++  eapply correct_slt_llex_product_strictly_absorptive_certify.
-          exact (A_slt_absorptive_d _ _ _ (A_slt_C_zero_is_ltr_ann_proofs B)).   
-  Qed.
-    
-
-  Lemma correct_mcas_slt_llex_product :
-   forall pf₁ pf₂, 
-   mcas_slt_llex_product 
-      (A2C_mcas_slt pf₁) (A2C_mcas_slt pf₂) = 
-    @A2C_mcas_slt (L₁ * L₂) (S₁ * S₂)  
-      (A_mcas_slt_llex_product pf₁ pf₂).
-  Proof.
-    intros pf₁ pf₂.
-    unfold mcas_slt_llex_product,
-    A_mcas_slt_llex_product.
-    rewrite correctness_cast_slt_mcas_to_slt_CS.
-    rewrite correctness_cast_slt_mcas_to_slt_CI.
-    rewrite correctness_cast_slt_mcas_to_slt_C.
-    rewrite correctness_cast_slt_mcas_to_slt_C_zero_is_ltr_ann.
-    destruct (cast_A_slt_mcas_to_A_slt_CS_is_A_slt_CS_or_error pf₁) as [[A Ha] | [al Ha]].
-    + 
-      rewrite Ha; simpl.
-      destruct(cast_A_slt_mcas_to_A_slt_C_is_A_slt_C_or_error pf₂) as [[b Hb] | [bl Hb]].
-      ++ 
-        rewrite Hb; simpl.
-        rewrite <-correctness_slt_classify_slt.
-        f_equal.
-        rewrite correct_llex_product_from_slt_CS_slt_C;
-        reflexivity.
-      ++ 
-        destruct(cast_A_slt_mcas_to_A_slt_C_is_A_slt_C_or_error pf₂) as [[c Hc] | [cl Hc]].
-        +++ 
-          rewrite Hc; simpl.
-          rewrite <-correctness_slt_classify_slt.
-          f_equal.
-          rewrite correct_llex_product_from_slt_CS_slt_C;
-          reflexivity.
-        +++ rewrite Hc; simpl.
-            reflexivity.
-    + 
-      rewrite Ha; simpl.
-      destruct(cast_A_slt_mcas_to_A_slt_CI_is_A_slt_CI_or_error pf₁) as [[b Hb] | [bl Hb]].
-      ++ 
-        rewrite Hb; simpl.
-        destruct 
-        (cast_A_slt_mcas_to_A_slt_C_zero_is_ltr_ann_to_A_slt_C_zero_is_ltr_ann_or_error pf₂)
-        as [[c Hc] | [cl Hc]].
-        +++
-          rewrite Hc; simpl.
-          rewrite <-correctness_slt_classify_slt.
-          f_equal.
-          rewrite correct_llex_product_from_slt_CI_slt_C_zero_is_ltr_ann;
-          reflexivity.
-        +++
-          rewrite Hc; simpl;
-          reflexivity.
-      ++ 
-        rewrite Hb; simpl;
-        reflexivity.
-  Time Qed.
-
+End Combinators.   
 
 End Verify.   
 
