@@ -19,7 +19,8 @@ Lemma map_congruence
           (eqB : brel B)
           (f g : A → B)
           (cong : ∀ a a', eqA a a' = true -> eqB (f a) (g a') = true): 
-      ∀ (l1 l2 : list A),  (brel_list eqA l1 l2 = true) -> brel_list eqB (map f l1) (map g l2) = true.
+      ∀ (l1 l2 : list A),  (brel_list eqA l1 l2 = true) -> 
+      brel_list eqB (map f l1) (map g l2) = true.
  Proof. induction l1. 
           + intros l2 I.  destruct l2. 
             ++ compute. reflexivity.
@@ -37,7 +38,8 @@ Lemma fold_right_congruence
           (eqA : brel A)
           (eqB : brel B)
           (f g : B → A → A)
-          (cong : ∀ b b' a a', eqB b b' = true -> eqA a a' = true -> eqA (f b a) (g b' a') = true): 
+          (cong : ∀ b b' a a', eqB b b' = true -> eqA a a' = true -> 
+          eqA (f b a) (g b' a') = true): 
   ∀ (a a' : A) (l l' : list B),
     (eqA a a'= true) ->
       (brel_list eqB l l' = true) ->
@@ -55,12 +57,14 @@ Lemma fold_right_congruence
                exact (cong _ _ _ _ J C). 
  Qed.
 
+
  Lemma fold_left_congruence 
           (A B : Type)
           (eqA : brel A)
           (eqB : brel B)
           (f g : A → B → A)
-          (cong : ∀ b b' a a', eqB b b' = true -> eqA a a' = true -> eqA (f a b) (g a' b') = true): 
+          (cong : ∀ b b' a a', eqB b b' = true -> eqA a a' = true -> 
+          eqA (f a b) (g a' b') = true): 
   ∀ (l l' : list B) (a a' : A),
     (eqA a a'= true) ->
       (brel_list eqB l l' = true) ->
@@ -117,7 +121,8 @@ Lemma fold_right_congruence
    (symB : brel_symmetric B eqB)
    (f : A → B) : 
    ∀ (X : finite_set A) (b : B) ,  
-     in_set eqB (map f X) b = true → {a' : A & (in_set eqA X a' = true) * (eqB (f a') b = true)}.
+     in_set eqB (map f X) b = true → 
+     {a' : A & (in_set eqA X a' = true) * (eqB (f a') b = true)}.
  Proof. induction X; intros b H1.
         - compute in H1. discriminate H1. 
         - simpl in H1. apply bop_or_elim in H1.
@@ -143,8 +148,9 @@ Lemma fold_right_congruence
           (trnB : brel_transitive B eqB)          
           (eqfg: ∀ a a', eqA a a' = true -> eqB (f a) (g a') = true)
           (cong: ∀ a a', eqA a a' = true -> eqB (g a) (g a') = true): 
-   ∀ (l1 l2 : finite_set A),  (brel_set eqA l1 l2 = true) ->
-                               (∀ a : B, in_set eqB (map f l1) a = true → in_set eqB (map g l2) a = true). 
+   ∀ (l1 l2 : finite_set A),  
+   (brel_set eqA l1 l2 = true) ->
+  (∀ a : B, in_set eqB (map f l1) a = true → in_set eqB (map g l2) a = true). 
  Proof. intros l1 l2 H1 b H3. 
         apply brel_set_elim_prop in H1;auto.
         destruct H1 as [H1 H2]. 
@@ -172,7 +178,8 @@ Qed.
           (eqfg: ∀ a a', eqA a a' = true -> eqB (f a) (g a') = true)
           (congg: ∀ a a', eqA a a' = true -> eqB (g a) (g a') = true)
           (congf: ∀ a a' : A, eqA a a' = true → eqB (f a) (f a') = true) : 
-      ∀ (l1 l2 : finite_set A),  (brel_set eqA l1 l2 = true) -> brel_set eqB (map f l1) (map g l2) = true.
+      ∀ (l1 l2 : finite_set A),  (brel_set eqA l1 l2 = true) ->
+       brel_set eqB (map f l1) (map g l2) = true.
  Proof. intros l1 l2 H1.
         apply brel_set_intro_prop; auto.
         split. 
@@ -207,7 +214,8 @@ Lemma fold_symmetric_with_equality
   (symA : brel_symmetric A eqA)
   (trnA : brel_transitive A eqA)
   (assoc : bop_associative A eqA b)
-  (comm  : bop_commutative A eqA b) : ∀ X a, eqA (fold_left b X a) (fold_right b a X) = true. 
+  (comm  : bop_commutative A eqA b) : ∀ X a, 
+  eqA (fold_left b X a) (fold_right b a X) = true. 
 Proof. induction X as [ | a1 l IHX]; intro a. 
        - simpl; auto.
        - assert (H1 := IHX a).
@@ -218,13 +226,15 @@ Proof. induction X as [ | a1 l IHX]; intro a.
          + assert (H1 := IHl (b a1 a0)).
            assert (H2 := assoc a a1 a0).
            assert (H3 := assoc a1 a0 (fold_right b a l)).
-           assert (H4 : eqA (fold_left b l (b (b a a1) a0)) (fold_left b l (b a (b a1 a0))) = true).
+           assert (H4 : eqA (fold_left b l (b (b a a1) a0)) 
+           (fold_left b l (b a (b a1 a0))) = true).
            {
              apply fold_left_set_congruence_simple; auto.
            } 
            assert (H5 := trnA _ _ _ H4 H1). 
            exact (trnA _ _ _ H5 H3). 
   Qed.
+
 Lemma tmp
   (A : Type)
   (eqA : brel A) :  
@@ -235,28 +245,29 @@ Lemma tmp
                        (brel_set eqA Y (Y1 ++ a1 :: Y2) = true)}. 
   Admitted. 
   
-Lemma fold_left_set_congruence 
-          (A : Type)
-          (eqA : brel A)
-          (b : binary_op A)
-          (refA : brel_reflexive A eqA): 
-  ∀ (X Y : finite_set A) (a a' : A),
-    (eqA a a' = true) ->
-      (brel_set eqA X Y = true) ->
-        eqA (fold_left b X a) (fold_left b Y a') = true.
+
+  Lemma fold_left_set_congruence 
+  (A : Type)
+  (eqA : brel A)
+  (b : binary_op A)
+  (refA : brel_reflexive A eqA): 
+∀ (X Y : finite_set A) (a a' : A),
+(eqA a a' = true) ->
+(brel_set eqA X Y = true) ->
+eqA (fold_left b X a) (fold_left b Y a') = true.
 Proof. 
-  induction X as [ | a1 X IHX]; intros Y a a' H0 H1.
-       - destruct Y.
-         + compute. exact H0.
-         + compute in H1. discriminate H1. 
-       - destruct Y as [ | a2 Y].
-         + compute in H1. discriminate H1. 
-         + simpl.
-           case_eq(eqA a1 a2); intro H2.
-           * admit. (* OK *)
-           * assert (H3 := tmp _ eqA _ _ _ _ H2 H1).
-             destruct H3 as [[[[X1 X2] Y1] Y2] [H3 H4]].
-             admit. 
+induction X as [ | a1 X IHX]; intros Y a a' H0 H1.
+- destruct Y.
+ + compute. exact H0.
+ + compute in H1. discriminate H1. 
+- destruct Y as [ | a2 Y].
+ + compute in H1. discriminate H1. 
+ + simpl.
+   case_eq(eqA a1 a2); intro H2.
+   * admit. (* OK *)
+   * assert (H3 := tmp _ eqA _ _ _ _ H2 H1).
+     destruct H3 as [[[[X1 X2] Y1] Y2] [H3 H4]].
+     admit. 
 Admitted. 
 (*
 fold_left_app: 
